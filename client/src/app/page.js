@@ -1,15 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-blue-500/20 antialiased overflow-x-hidden">
       {/* Fixed Background Backdrop */}
@@ -26,68 +20,7 @@ export default function Home() {
       </div>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center glass-light rounded-full px-5 md:px-8 py-3 translate-y-2">
-          <div className="flex items-center gap-2 cursor-pointer group">
-            <div className="w-8 h-8 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg transition-transform group-hover:rotate-12">
-              V
-            </div>
-            <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none group-hover:text-blue-600 transition-colors">Vyapar<span className="text-amber-500">Sathi</span></span>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-10">
-            {['Platforms', 'Pricing', 'Company', 'Features'].map((item) => (
-              <a key={item} href="#" className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">{item}</a>
-            ))}
-          </div>
-
-          <div className="hidden sm:flex items-center gap-4">
-            <button className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Log In</button>
-            <button className="btn-primary-yb py-2 px-5 md:px-6 text-sm shadow-sm">Get Started</button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button 
-            className="lg:hidden p-2 text-slate-600 hover:text-blue-600 focus:outline-none"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6" : "M4 6h16M4 12h16M4 18h16"} />
-            </svg>
-          </button>
-        </div>
-
-        {/* Mobile Navigation Drawer */}
-        <div className={`lg:hidden fixed inset-0 z-[60] bg-white/90 backdrop-blur-2xl transition-all duration-300 ${mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-          <div className="flex flex-col h-full p-8">
-            <div className="flex justify-between items-center mb-12">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white">V</div>
-                <span className="text-2xl font-black text-slate-900 uppercase">VyaparSathi</span>
-              </div>
-              <button 
-                className="p-3 text-slate-900"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="flex flex-col gap-8 flex-1 overflow-y-auto">
-              {['Platforms', 'Pricing', 'Company', 'Features'].map((item) => (
-                <a key={item} href="#" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-slate-900 uppercase tracking-tighter hover:text-blue-600 transition-colors">{item}</a>
-              ))}
-            </div>
-
-            <div className="pt-8 border-t border-slate-200 space-y-4">
-              <button className="w-full py-5 text-xl font-bold text-slate-600">Log In</button>
-              <button className="w-full py-5 rounded-2xl bg-gradient-to-r from-amber-400 to-blue-600 text-white font-black text-xl shadow-xl shadow-blue-500/20">GET STARTED</button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <main className="relative z-10 flex-1">
@@ -170,43 +103,7 @@ export default function Home() {
       </main>
 
       {/* Dark Modern Footer */}
-      <footer className="relative z-10 py-16 md:py-24 px-6 md:px-12 bg-slate-950 text-white border-t border-slate-900">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-20">
-          <div className="space-y-6 md:space-y-8">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">V</div>
-              <span className="text-xl font-black tracking-tight text-white uppercase italic">VyaparSathi</span>
-            </div>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed max-w-xs">
-              Leading the retail revolution with high-precision multisite management.
-            </p>
-          </div>
-
-          {[
-            { title: 'The Suite', links: ['Dashboard', 'Intelligence', 'Security', 'Compliance'] },
-            { title: 'Merchant House', links: ['Support', 'Liaison', 'Merchant Network', 'Contact'] },
-            { title: 'Protocols', links: ['Privacy', 'Sovereignty', 'Terms', 'Data Ethics'] },
-          ].map((col, i) => (
-            <div key={i} className="space-y-6 md:space-y-8">
-              <h4 className="text-amber-400 font-black uppercase text-[10px] tracking-[0.4em] leading-none">{col.title}</h4>
-              <ul className="space-y-3 md:space-y-4 text-xs font-bold uppercase tracking-widest text-slate-400">
-                {col.links.map(link => (
-                  <li key={link}><a href="#" className="hover:text-white transition-colors">{link}</a></li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        
-        <div className="max-w-7xl mx-auto pt-16 md:pt-20 mt-16 md:mt-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-10 text-slate-500 text-[10px] font-black tracking-[0.5em] text-center md:text-left">
-          <p>© MMXXVI VYAPAR SATHI GLOBAL &bull; ALL RIGHTS RESERVED</p>
-          <div className="flex gap-8 md:gap-10">
-            {['Twitter', 'GitHub', 'LinkedIn'].map(s => (
-              <a key={s} href="#" className="hover:text-blue-400 transition-colors uppercase">{s}</a>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
