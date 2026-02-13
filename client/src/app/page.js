@@ -55,6 +55,7 @@ export default function Home() {
       {/* Fixed Background Backdrop */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         {/* Static Radial Gradient Base */}
+        {/* Static Radial Gradient Base */}
         <div className="absolute inset-0 bg-rad-yb"></div>
 
         {/* Scattered Small Dark Yellow Blurry Dots */}
@@ -74,6 +75,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-noise opacity-[0.03] contrast-150 brightness-100"></div>
 
         {/* Static Mesh Overlay */}
+        <div className="absolute inset-0 bg-mesh-light opacity-60"></div>
         <div className="absolute inset-0 bg-mesh-light opacity-60"></div>
       </div>
 
