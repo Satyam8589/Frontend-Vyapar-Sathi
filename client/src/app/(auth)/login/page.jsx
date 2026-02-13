@@ -3,33 +3,35 @@ import Image from 'next/image';
 
 export default function AuthLoginPage() {
   return (
-    <div className='min-h-screen flex flex-col lg:flex-row'>
-      {/* Form Section */}
-      <div className='w-full lg:w-1/2 flex items-center justify-center px-4 py-10 bg-slate-50'>
-        <div className='w-full max-w-md'>
-          <AuthForm mode="login" />
-        </div>
-      </div>
-      
-      {/* Image Section */}
-      <div className='hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-600 to-purple-700 items-center justify-center p-12'>
-        <div className='absolute inset-0 bg-black/10'></div>
-        <div className='relative z-10 text-center text-white space-y-6'>
-          <div className='relative w-full h-[500px] mb-8'>
-            <Image
-              src='/images/auth/loginImage.png'
-              alt='Login illustration'
-              fill
-              className='object-contain drop-shadow-2xl'
-              priority
-            />
+    <div className='min-h-screen bg-slate-50 px-4 py-10 sm:py-12 lg:px-6'>
+      <div className='mx-auto flex w-full max-w-6xl items-center justify-center'>
+        <div className='w-full'>
+          <div className='mb-8 text-center sm:mb-10'>
+            <h1 className='text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl'>VyaparSathi</h1>
           </div>
-          <h2 className='text-4xl font-bold drop-shadow-lg'>
-            Welcome to VyaparSathi
-          </h2>
-          <p className='text-xl text-blue-100 max-w-md mx-auto'>
-            Your trusted partner for seamless business management and growth
-          </p>
+
+          <div className='grid w-full items-center gap-10 lg:grid-cols-[460px_minmax(0,1fr)] lg:gap-14'>
+            <div className='order-2 lg:order-1'>
+              <AuthForm mode="login" />
+            </div>
+
+            <div className='order-1 hidden lg:flex lg:order-2 lg:justify-center'>
+              <div className='w-full max-w-xl'>
+                <div className='relative aspect-[5/4] overflow-hidden rounded-2xl bg-white'>
+                  <Image
+                    src='/images/auth/loginImage.png'
+                    alt='Streamline your daily operations'
+                    fill
+                    priority
+                    className='object-cover border border-slate-200 shadow-sm'
+                  />
+                </div>
+                <div className='mt-4 space-y-2 text-center'>
+                  <p className='text-base leading-6 text-slate-600'>Manage billing, inventory, and customer records in one place.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
