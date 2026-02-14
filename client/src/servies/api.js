@@ -31,9 +31,17 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
+      // Handle unauthorized access - token invalid/expired
       localStorage.removeItem('authToken');
       window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      // Handle forbidden - user not registered in database
+      const message = error.response?.data?.message || 'Access forbidden';
+      if (message.includes('not registered') || message.includes('complete registration')) {
+        // Redirect to signup/register page if user hasn't completed registration
+        localStorage.removeItem('authToken');
+        window.location.href = '/signUp';
+      }
     }
     return Promise.reject(error.response?.data || error.message);
   }

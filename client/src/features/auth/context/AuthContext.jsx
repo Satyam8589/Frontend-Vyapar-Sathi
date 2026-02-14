@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/config/firebase';
+import { apiPost } from '@/servies/api';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +19,20 @@ export function AuthProvider({ children }) {
         if (nextUser) {
           const token = await nextUser.getIdToken();
           localStorage.setItem('authToken', token);
+          
+          // Sync user with backend (try login, if fails try register)
+          try {
+            await apiPost('/auth/login');
+          } catch (error) {
+            // If user doesn't exist in DB, register them
+            if (error.message?.includes('not found') || error.success === false) {
+              try {
+                await apiPost('/auth/register');
+              } catch (registerError) {
+                console.error('Failed to sync user with backend:', registerError);
+              }
+            }
+          }
         } else {
           localStorage.removeItem('authToken');
         }
