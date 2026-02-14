@@ -8,8 +8,8 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 // Navigation items with paths
 const NAV_ITEMS = [
   { label: 'StoreDashboard', href: '/storeDashboard' },
-  { label: 'About', href: '/About' },
-  { label: 'Docs', href: '/Docs' },
+  { label: 'About', href: '/about' },
+  { label: 'Docs', href: '/docs' },
   { label: 'Features', href: '/#features' },
 ];
 
