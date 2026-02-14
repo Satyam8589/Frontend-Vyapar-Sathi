@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Footer from '@/components/Footer';
 
 const quickStats = [
 // ... existing quickStats
@@ -202,7 +203,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-
+      <Footer />
     </div>
   );
 }
