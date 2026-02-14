@@ -82,7 +82,7 @@ const StoreList = ({ stores, loading, error, onStoreClick, viewMode = 'grid' }) 
         <div
           key={store._id}
           onClick={() => onStoreClick?.(store)}
-          className="group bg-white/70 backdrop-blur-md rounded-[2rem] border border-slate-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+          className="group relative bg-white/70 backdrop-blur-md rounded-[2rem] border border-slate-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">

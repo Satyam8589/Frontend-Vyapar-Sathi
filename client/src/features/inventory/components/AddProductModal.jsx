@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-const AddProductModal = ({ isOpen, onClose, onAdd }) => {
+const AddProductModal = ({ isOpen, onClose, onAction, loading, editingProduct }) => {
   const [formData, setFormData] = useState({
     name: '',
     category: 'General',
@@ -13,27 +13,57 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
     barcode: '',
   });
 
-  // Reset form when modal closes/opens
+  // Reset/Populate form when modal opens or editingProduct changes
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        name: '',
-        category: 'General',
-        qty: '',
-        unit: 'Pieces',
-        price: '',
-        expDate: '',
-        barcode: '',
-      });
+      if (editingProduct) {
+        // Format date to YYYY-MM-DD for input type="date"
+        let formattedDate = '';
+        if (editingProduct.expDate) {
+          const date = new Date(editingProduct.expDate);
+          formattedDate = date.toISOString().split('T')[0];
+        }
+
+        setFormData({
+          name: editingProduct.name || '',
+          category: editingProduct.category || 'General',
+          qty: (editingProduct.quantity || editingProduct.qty || 0).toString(),
+          unit: editingProduct.unit || 'Pieces',
+          price: (editingProduct.price || 0).toString(),
+          expDate: formattedDate,
+          barcode: editingProduct.barcode || '',
+        });
+      } else {
+        setFormData({
+          name: '',
+          category: 'General',
+          qty: '',
+          unit: 'Pieces',
+          price: '',
+          expDate: '',
+          barcode: '',
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editingProduct]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onAdd?.(formData);
-    onClose();
+    // Map qty to quantity as expected by the backend and ensure numeric types
+    const submissionData = {
+      ...formData,
+      quantity: Number(formData.qty),
+      price: Number(formData.price)
+    };
+    
+    // If editing, include the ID
+    if (editingProduct) {
+      submissionData._id = editingProduct._id;
+    }
+    
+    onAction?.(submissionData);
   };
 
   const handleChange = (e) => {
@@ -54,10 +84,15 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
         {/* Header */}
         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Add New Asset</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Register a new product to your inventory</p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">
+              {editingProduct ? 'Update Asset' : 'Add New Asset'}
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              {editingProduct ? `Modifying ${editingProduct.name}` : 'Register a new product to your inventory'}
+            </p>
           </div>
           <button 
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
           >
@@ -190,16 +225,19 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
           <div className="mt-10 flex gap-4">
             <button
               type="button"
+              disabled={loading}
               onClick={onClose}
-              className="flex-1 px-8 py-4 bg-slate-100 text-slate-600 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all"
+              className="flex-1 px-8 py-4 bg-slate-100 text-slate-600 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-[2] btn-primary-yb py-4 font-black uppercase tracking-widest shadow-lg shadow-blue-500/10"
+              disabled={loading}
+              className="flex-[2] btn-primary-yb py-4 font-black uppercase tracking-widest shadow-lg shadow-blue-500/10 disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              Initialize Stocks
+              {loading && <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
+              <span>{loading ? 'Processing...' : (editingProduct ? 'Commit Changes' : 'Initialize Stocks')}</span>
             </button>
           </div>
         </form>
