@@ -17,7 +17,7 @@ export default function AuthForm({ mode = 'login' }) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/');
+      router.replace('/storeDashboard');
     }
   }, [isAuthenticated, isLoading, router]);
 

@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 const quickStats = [
-// ... existing quickStats
   { label: 'Active Outlets', value: '1,200+' },
   { label: 'Avg Sync Latency', value: '< 180ms' },
   { label: 'Monthly Transactions', value: '14M+' },
@@ -13,7 +13,6 @@ const quickStats = [
 ];
 
 const capabilities = [
-// ... existing capabilities
   {
     title: 'Store Isolation',
     desc: 'Each branch runs in its own secured data boundary so teams can scale without cross-store risk.',
@@ -35,7 +34,6 @@ const capabilities = [
 ];
 
 const workflow = [
-// ... existing workflow
   {
     step: '01',
     title: 'Launch Outlet',
@@ -55,6 +53,13 @@ const workflow = [
 
 export default function Home() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace('/storeDashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-blue-500/20 antialiased overflow-x-hidden">

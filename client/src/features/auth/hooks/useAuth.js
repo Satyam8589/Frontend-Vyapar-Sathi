@@ -34,17 +34,17 @@ export function useAuth() {
 
   const signup = async (payload) => {
     await withLoading(() => signUpWithEmail(payload));
-    router.push('/');
+    router.push('/storeDashboard');
   };
 
   const login = async (payload) => {
     await withLoading(() => loginWithEmail(payload));
-    router.push('/');
+    router.push('/storeDashboard');
   };
 
   const loginWithGoogleProvider = async () => {
     await withLoading(() => loginWithGoogle());
-    router.push('/');
+    router.push('/storeDashboard');
   };
 
   const logout = async () => {
