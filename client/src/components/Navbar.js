@@ -2,11 +2,32 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+
+// Navigation items with paths
+const NAV_ITEMS = [
+  { label: 'StoreDashboard', href: '/storeDashboard' },
+  { label: 'About', href: '/About' },
+  { label: 'Docs', href: '/Docs' },
+  { label: 'Features', href: '/#features' },
+];
+
+// Helper function to get user initials
+const getUserInitials = (displayName) => {
+  if (!displayName) return 'U';
+  return displayName
+    .split(' ')
+    .map((name) => name[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated, isLoading, isSubmitting, logout } = useAuth();
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
 
   return (
     <nav className="fixed top-0 w-full z-50 px-4 md:px-6 py-4">
@@ -19,8 +40,10 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center gap-10">
-          {['Platforms', 'Pricing', 'Company', 'Features'].map((item) => (
-            <a key={item} href="#" className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">{item}</a>
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.label} href={item.href} className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">
+              {item.label}
+            </Link>
           ))}
         </div>
 
@@ -37,13 +60,46 @@ export default function Navbar() {
           )}
 
           {!isLoading && isAuthenticated && (
-            <button
-              onClick={logout}
-              disabled={isSubmitting}
-              className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors disabled:opacity-70"
-            >
-              Logout
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                {user?.photoURL ? (
+                  <Image
+                    src={user.photoURL}
+                    alt={user.displayName || 'User'}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                    {getUserInitials(user?.displayName)}
+                  </div>
+                )}
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-slate-200">
+                    <p className="text-sm font-semibold text-slate-900">{user?.displayName || 'User'}</p>
+                    <p className="text-xs text-slate-600">{user?.email}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setProfileMenuOpen(false);
+                    }}
+                    disabled={isSubmitting}
+                    className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-70"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -77,19 +133,21 @@ export default function Navbar() {
           </div>
           
           <div className="flex flex-col gap-8 flex-1 overflow-y-auto">
-            {['Platforms', 'Pricing', 'Company', 'Features'].map((item) => (
-              <a key={item} href="#" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-slate-900 uppercase tracking-tighter hover:text-blue-600 transition-colors">{item}</a>
+            {NAV_ITEMS.map((item) => (
+              <Link key={item.label} href={item.href} onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-slate-900 uppercase tracking-tighter hover:text-blue-600 transition-colors">
+                {item.label}
+              </Link>
             ))}
           </div>
 
           <div className="pt-8 border-t border-slate-200 space-y-4">
             {!isLoading && !isAuthenticated && (
               <>
-                <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="block w-full py-5 text-xl font-bold text-slate-600 text-center">
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full py-5 text-xl font-bold text-slate-600 text-center">
                   Log In
                 </Link>
                 <Link
-                  href="/auth/signUp"
+                  href="/signUp"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block w-full py-5 rounded-2xl bg-gradient-to-r from-amber-400 to-blue-600 text-white font-black text-xl shadow-xl shadow-blue-500/20 text-center"
                 >
@@ -99,16 +157,39 @@ export default function Navbar() {
             )}
 
             {!isLoading && isAuthenticated && (
-              <button
-                onClick={async () => {
-                  await logout();
-                  setMobileMenuOpen(false);
-                }}
-                disabled={isSubmitting}
-                className="w-full py-5 text-xl font-bold text-slate-600 disabled:opacity-70"
-              >
-                Logout
-              </button>
+              <div className="space-y-4">
+                {/* User Profile Section */}
+                <div className="flex items-center gap-3 p-4 bg-slate-100 rounded-lg">
+                  {user?.photoURL ? (
+                    <Image
+                      src={user.photoURL}
+                      alt={user.displayName || 'User'}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-blue-600 flex items-center justify-center text-sm font-bold text-white">
+                      {getUserInitials(user?.displayName)}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{user?.displayName || 'User'}</p>
+                    <p className="text-xs text-slate-600 truncate">{user?.email}</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={async () => {
+                    await logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  disabled={isSubmitting}
+                  className="w-full py-5 text-xl font-bold text-slate-600 disabled:opacity-70"
+                >
+                  Logout
+                </button>
+              </div>
             )}
           </div>
         </div>

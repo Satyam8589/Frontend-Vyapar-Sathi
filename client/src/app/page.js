@@ -87,7 +87,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="relative z-10 flex-1">
-        <section className="pt-32 md:pt-44 pb-16 md:pb-20 px-4 md:px-6">
+        <section className="pt-12 pb-16 md:pb-20 px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 border border-white/90 shadow-sm backdrop-blur-sm animate-fade-in-up [animation-delay:200ms]">
@@ -113,8 +113,10 @@ export default function Home() {
                  className="w-full sm:w-auto btn-primary-yb text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-lg shadow-blue-500/10">
                   Launch Your Store
                 </button>
-                <button className="w-full sm:w-auto btn-secondary-light text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-sm">
-                  Explore Features
+                <button 
+                  onClick={() => router.push('/storeDashboard')}
+                  className="w-full sm:w-auto btn-secondary-light text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-sm">
+                  Visit Stores Dashboard
                 </button>
               </div>
             </div>
