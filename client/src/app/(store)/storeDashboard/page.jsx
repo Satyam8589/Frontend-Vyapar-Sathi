@@ -22,9 +22,9 @@ const StoreDashboard = () => {
 
   // Handle store click
   const handleStoreClick = (store) => {
-    // Navigate to store details page (to be implemented)
+    // Navigate to inventory store page
     console.log('Store clicked:', store);
-    // router.push(`/store/${store._id}`);
+    router.push('/inventoryStore');
   };
 
   // Handle create store
