@@ -1,7 +1,7 @@
 'use client';
 
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 
 const quickStats = [
   { label: 'Active Outlets', value: '1,200+' },
@@ -50,6 +50,8 @@ const workflow = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-blue-500/20 antialiased overflow-x-hidden">
       {/* Fixed Background Backdrop */}
@@ -79,8 +81,6 @@ export default function Home() {
         <div className="absolute inset-0 bg-mesh-light opacity-60"></div>
       </div>
 
-      {/* Navigation */}
-      <Navbar />
 
       {/* Main Content */}
       <main className="relative z-10 flex-1">
@@ -105,7 +105,9 @@ export default function Home() {
               </p>
 
               <div className="mt-10 md:mt-12 flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center px-4 animate-fade-in-up [animation-delay:800ms]">
-                <button className="w-full sm:w-auto btn-primary-yb text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-lg shadow-blue-500/10">
+                <button
+                  onClick={() => router.push('/createStore')}
+                 className="w-full sm:w-auto btn-primary-yb text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-lg shadow-blue-500/10">
                   Launch Your Store
                 </button>
                 <button className="w-full sm:w-auto btn-secondary-light text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-sm">
@@ -196,8 +198,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Dark Modern Footer */}
-      <Footer />
     </div>
   );
 }
