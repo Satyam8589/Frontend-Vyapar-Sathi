@@ -48,7 +48,27 @@ export default function AuthForm({ mode = 'login' }) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
+      {/* Back Button */}
+      <button
+        onClick={() => router.push('/')}
+        className="absolute -top-12 left-0 flex items-center gap-2 group text-slate-500 hover:text-blue-600 transition-all duration-300"
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/70 backdrop-blur-md border border-slate-200 shadow-sm group-hover:shadow-md group-hover:border-blue-200 transition-all">
+          <svg
+            className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+          </svg>
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          Back to Home
+        </span>
+      </button>
+
       <div className="w-full rounded-3xl glass-light p-5 sm:p-7 lg:p-8 shadow-2xl shadow-blue-500/5">
         <div className="mb-4 lg:mb-6 space-y-1">
           <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl lg:text-3xl leading-tight uppercase">
