@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { InventoryTable, InventoryStats, InventoryFilters, AddProductModal, DeleteConfirmModal, ProductDetailModal } from '@/features/inventory/components';
+import { InventoryTable, InventoryStats, InventoryFilters, AddProductModal, DeleteConfirmModal, ProductDetailModal, StoreDetailsSidebar } from '@/features/inventory/components';
 import { InventoryProvider, useInventoryContext } from '@/features/inventory/context/inventoryContext';
 
 const InventoryContent = () => {
@@ -16,6 +16,7 @@ const InventoryContent = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const { 
     products, 
@@ -89,6 +90,9 @@ const InventoryContent = () => {
     setSelectedProduct(null);
   };
 
+  const handleOpenSidebar = () => setIsSidebarOpen(true);
+  const handleCloseSidebar = () => setIsSidebarOpen(false);
+
   return (
     <div className="flex flex-col relative antialiased min-h-screen">
       <main className="relative z-10 p-4 md:p-8">
@@ -146,7 +150,11 @@ const InventoryContent = () => {
         <InventoryStats stats={stats} />
 
         {/* Search and Filters Bar */}
-        <InventoryFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <InventoryFilters 
+          searchTerm={searchTerm} 
+          setSearchTerm={setSearchTerm} 
+          onMenuClick={handleOpenSidebar}
+        />
 
         {/* Inventory Table Area */}
         <InventoryTable 
@@ -184,6 +192,12 @@ const InventoryContent = () => {
         onClose={handleCloseDetailModal}
         product={selectedProduct}
         currencySymbol={currencySymbol}
+      />
+
+      <StoreDetailsSidebar 
+        isOpen={isSidebarOpen}
+        onClose={handleCloseSidebar}
+        store={currentStore}
       />
     </div>
   );

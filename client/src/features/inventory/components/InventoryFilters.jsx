@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const InventoryFilters = ({ searchTerm, setSearchTerm }) => {
+const InventoryFilters = ({ searchTerm, setSearchTerm, onMenuClick }) => {
   return (
     <section className="mb-6 animate-fade-in-up [animation-delay:400ms]">
       <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] p-4 border border-white/80 shadow-sm flex flex-col md:flex-row gap-4 items-center">
@@ -19,8 +19,19 @@ const InventoryFilters = ({ searchTerm, setSearchTerm }) => {
           </svg>
         </div>
         
-        <div className="flex gap-3">
-          <select className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none cursor-pointer">
+        <div className="flex gap-3 items-center">
+          {/* Navigation Menu Toggle */}
+          <button 
+            onClick={onMenuClick}
+            className="p-3 bg-white/50 border border-slate-200 rounded-2xl text-slate-600 hover:text-blue-600 hover:bg-white transition-all font-bold shadow-sm group"
+            title="Store Information"
+          >
+            <svg className="h-6 w-6 transform group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+          </button>
+
+          <select className="px-4 py-3 bg-white/50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none cursor-pointer appearance-none min-w-[160px]">
             <option>All Categories</option>
             <option>Beverages</option>
             <option>Bakery</option>
