@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 
 const quickStats = [
+// ... existing quickStats
   { label: 'Active Outlets', value: '1,200+' },
   { label: 'Avg Sync Latency', value: '< 180ms' },
   { label: 'Monthly Transactions', value: '14M+' },
@@ -11,6 +12,7 @@ const quickStats = [
 ];
 
 const capabilities = [
+// ... existing capabilities
   {
     title: 'Store Isolation',
     desc: 'Each branch runs in its own secured data boundary so teams can scale without cross-store risk.',
@@ -32,6 +34,7 @@ const capabilities = [
 ];
 
 const workflow = [
+// ... existing workflow
   {
     step: '01',
     title: 'Launch Outlet',

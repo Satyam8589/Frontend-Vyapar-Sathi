@@ -49,20 +49,20 @@ export default function AuthForm({ mode = 'login' }) {
 
   return (
     <div className="w-full">
-      <div className="w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/60 sm:p-7 lg:p-8">
-        <div className="mb-6 space-y-1.5 sm:mb-7">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem] sm:leading-9">
-            {isSignup ? 'Create account' : 'Welcome back'}
+      <div className="w-full rounded-3xl glass-light p-5 sm:p-7 lg:p-8 shadow-2xl shadow-blue-500/5">
+        <div className="mb-4 lg:mb-6 space-y-1">
+          <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl lg:text-3xl leading-tight uppercase">
+            {isSignup ? 'CREATE ACCOUNT' : 'WELCOME BACK'}
           </h1>
-          <p className="text-sm leading-6 text-slate-600">
-            {isSignup ? 'Start using VyaparSathi with Firebase auth.' : 'Sign in to continue to your dashboard.'}
+          <p className="text-slate-600 font-bold italic text-[10px] md:text-xs lg:text-sm leading-relaxed">
+            {isSignup ? 'Join the next generation of retail management.' : 'Access your command center to manage your retail flow.'}
           </p>
         </div>
 
-        <form className="space-y-4" onSubmit={onSubmit}>
+        <form className="space-y-3 lg:space-y-3" onSubmit={onSubmit}>
           {isSignup && (
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-slate-800" htmlFor="name">
+            <div className="space-y-1">
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500" htmlFor="name">
                 Name
               </label>
               <input
@@ -72,14 +72,14 @@ export default function AuthForm({ mode = 'login' }) {
                 required
                 value={formData.name}
                 onChange={onChange}
-                className="block h-11 w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3.5 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-                placeholder="Your name"
+                className="block h-11 lg:h-11 w-full rounded-xl border border-white/60 bg-white/40 px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                placeholder="Full Name"
               />
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-800" htmlFor="email">
+          <div className="space-y-1">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500" htmlFor="email">
               Email
             </label>
             <input
@@ -89,13 +89,13 @@ export default function AuthForm({ mode = 'login' }) {
               required
               value={formData.email}
               onChange={onChange}
-              className="block h-11 w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3.5 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              className="block h-11 lg:h-11 w-full rounded-xl border border-white/60 bg-white/40 px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
               placeholder="you@example.com"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-800" htmlFor="password">
+          <div className="space-y-1">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500" htmlFor="password">
               Password
             </label>
             <input
@@ -106,27 +106,28 @@ export default function AuthForm({ mode = 'login' }) {
               minLength={6}
               value={formData.password}
               onChange={onChange}
-              className="block h-11 w-full rounded-lg border border-slate-300 bg-slate-50/50 px-3.5 text-base text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-              placeholder="At least 6 characters"
+              className="block h-11 lg:h-11 w-full rounded-xl border border-white/60 bg-white/40 px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-              <p className="text-sm font-medium text-red-700">{error}</p>
+            <div className="rounded-2xl border border-red-200 bg-red-50/50 backdrop-blur-sm px-5 py-4">
+              <p className="text-sm font-bold text-red-600 italic leading-relaxed">{error}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-1 h-11 w-full rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full btn-primary-yb text-base font-black uppercase tracking-widest py-3 md:py-3.5 shadow-lg shadow-blue-500/10 mt-1"
           >
-            {isSubmitting ? 'Please wait...' : isSignup ? 'Create account' : 'Sign in'}
+            {isSubmitting ? 'PROCESSING...' : isSignup ? 'GET STARTED' : 'SIGN IN'}
           </button>
         </form>
 
-        <div className="relative my-5 sm:my-6">
+
+        <div className="relative my-3 sm:my-4">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-200"></div>
           </div>
@@ -145,7 +146,7 @@ export default function AuthForm({ mode = 'login' }) {
             }
           }}
           disabled={isSubmitting}
-          className="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+          className="flex h-11 lg:h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-white/60 bg-white/40 px-4 text-[10px] font-black uppercase tracking-widest text-slate-700 transition-all duration-300 hover:bg-white/80 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
         >
           <span className="inline-flex h-5 w-5 flex-none items-center justify-center">
             <svg
@@ -164,12 +165,12 @@ export default function AuthForm({ mode = 'login' }) {
           <span className="leading-none">Continue with Google</span>
         </button>
 
-        <div className="mt-6 border-t border-slate-200 pt-4">
-          <p className="text-center text-sm text-slate-600">
-            {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+        <div className="mt-5 lg:mt-5 border-t border-slate-200/60 pt-3 lg:pt-4">
+          <p className="text-center text-[10px] font-bold text-slate-500 italic">
+            {isSignup ? 'ALREADY HAVE AN ACCOUNT?' : "DON'T HAVE AN ACCOUNT?"}{' '}
             <Link
               href={isSignup ? '/login' : '/signUp'}
-              className="font-semibold text-blue-600 transition-colors hover:text-blue-700"
+              className="font-black text-blue-600 transition-colors hover:text-blue-700 uppercase tracking-wider ml-1"
             >
               {isSignup ? 'Sign in' : 'Create account'}
             </Link>
