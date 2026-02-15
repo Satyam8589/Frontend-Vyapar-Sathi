@@ -45,7 +45,7 @@ const FormNavigation = ({
           </Button>
         ) : (
           <Button
-            type="submit"
+            type="button"
             variant="primary"
             onClick={onSubmit}
             loading={loading}

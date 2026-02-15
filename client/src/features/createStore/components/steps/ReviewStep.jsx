@@ -1,15 +1,17 @@
 'use client';
 
-import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useCreateStoreContext } from '../../context/CreateStoreContext';
 import { getCurrencySymbol } from '../../utils/helpers';
 import { BUSINESS_TYPES } from '../../constants';
+import Button from '../ui/Button';
 
 /**
  * ReviewStep - Step 4: Review and submit
  */
 const ReviewStep = () => {
-  const { formData, submitError, submitSuccess } = useCreateStoreContext();
+  const router = useRouter();
+  const { formData, submitError, submitSuccess, createdStore } = useCreateStoreContext();
   
   const getBusinessTypeLabel = (value) => {
     const type = BUSINESS_TYPES.find(t => t.value === value);
@@ -113,30 +115,8 @@ const ReviewStep = () => {
         </div>
       </div>
       
-      {/* Success Message */}
-      {submitSuccess && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <svg
-              className="w-5 h-5 text-green-600 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <p className="text-green-800 font-medium">
-              Store created successfully! Redirecting to dashboard...
-            </p>
-          </div>
-        </div>
-      )}
-      
+
+
       {/* Error Message */}
       {submitError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">

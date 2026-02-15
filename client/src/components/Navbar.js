@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 // Navigation items with paths
 const NAV_ITEMS = [
   { label: 'StoreDashboard', href: '/storeDashboard' },
-  { label: 'About', href: '/About' },
-  { label: 'Docs', href: '/Docs' },
+  { label: 'About', href: '/about' },
+  { label: 'Docs', href: '/docs' },
   { label: 'Features', href: '/#features' },
 ];
 
@@ -25,13 +26,14 @@ const getUserInitials = (displayName) => {
 };
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
 
   return (
     <nav className="fixed top-0 w-full z-50 px-4 md:px-6 py-4">
-      <div className="max-w-7xl mx-auto flex justify-between items-center glass-light rounded-full px-5 md:px-8 py-3 translate-y-2">
+      <div className="max-w-7xl mx-auto flex justify-between items-center glass-light rounded-full px-5 md:px-8 py-3 translate-y-2 border-emerald-400/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07),0_0_15px_rgba(52,211,153,0.25)]">
         <Link href="/" className="flex items-center gap-2 cursor-pointer group">
           <div className="w-8 h-8 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg transition-transform group-hover:rotate-12">
             V
@@ -40,11 +42,22 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center gap-10">
-          {NAV_ITEMS.map((item) => (
-            <Link key={item.label} href={item.href} className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors uppercase tracking-widest">
-              {item.label}
-            </Link>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+            return (
+              <Link 
+                key={item.label} 
+                href={item.href} 
+                className={`text-sm uppercase tracking-widest transition-all duration-300 relative py-1
+                  ${isActive 
+                    ? 'text-blue-600 font-extrabold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2.5px] after:bg-blue-600 after:rounded-full' 
+                    : 'text-slate-600 font-bold hover:text-blue-600'
+                  }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="hidden sm:flex items-center gap-4">
