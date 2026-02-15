@@ -1,4 +1,4 @@
-import { apiGet } from '@/servies/api';
+import { apiGet, apiDelete } from '@/servies/api';
 
 /**
  * Store Dashboard Service - Handles store fetching and management API calls
@@ -33,10 +33,7 @@ export const fetchStoreById = async (storeId) => {
  */
 export const deleteStore = async (storeId) => {
   try {
-    // Assuming there's a delete endpoint
-    const response = await apiGet(`/store/${storeId}`, {
-      method: 'DELETE'
-    });
+    const response = await apiDelete(`/store/${storeId}`);
     return response;
   } catch (error) {
     throw error;

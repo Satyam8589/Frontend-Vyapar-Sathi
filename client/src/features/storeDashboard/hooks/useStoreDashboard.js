@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { fetchAllStores } from '../services/storeDashboardService';
 import { filterStores, sortStores } from '../utils/helpers';
 
@@ -9,8 +9,7 @@ import { filterStores, sortStores } from '../utils/helpers';
  */
 export const useStoreDashboard = () => {
   const [stores, setStores] = useState([]);
-  const [filteredStores, setFilteredStores] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
@@ -19,39 +18,36 @@ export const useStoreDashboard = () => {
   });
 
   /**
-   * Fetch all stores
+   * Load stores from API
    */
-  const fetchStores = useCallback(async () => {
+  const loadStores = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-      
       const response = await fetchAllStores();
       const storesData = response?.data || [];
       
       setStores(storesData);
-      setFilteredStores(storesData);
-      setLoading(false);
+      setError(null);
     } catch (err) {
       const errorMessage = err?.message || 'Failed to fetch stores';
       setError(errorMessage);
+    } finally {
       setLoading(false);
     }
   }, []);
 
   /**
-   * Apply filters and sorting
+   * Fetch all stores
    */
-  const applyFilters = useCallback(() => {
-    let result = filterStores(stores, filters);
-    result = sortStores(result, filters.sortBy);
-    setFilteredStores(result);
-  }, [stores, filters]);
+  const fetchStores = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    await loadStores();
+  }, [loadStores]);
 
-  // Apply filters when stores or filters change
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
+  const filteredStores = useMemo(() => {
+    let result = filterStores(stores, filters);
+    return sortStores(result, filters.sortBy);
+  }, [stores, filters]);
 
   /**
    * Update filters
@@ -80,8 +76,8 @@ export const useStoreDashboard = () => {
 
   // Fetch stores on mount
   useEffect(() => {
-    fetchStores();
-  }, [fetchStores]);
+    loadStores();
+  }, [loadStores]);
 
   return {
     stores: filteredStores,

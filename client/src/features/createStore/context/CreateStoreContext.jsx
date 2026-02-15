@@ -40,6 +40,7 @@ export const CreateStoreProvider = ({ children }) => {
   const [step, setStep] = useState(1); // For multi-step form
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [createdStore, setCreatedStore] = useState(null);
 
   /**
    * Update form field
@@ -160,15 +161,9 @@ export const CreateStoreProvider = ({ children }) => {
       // Submit to API
       const response = await createStore(formData);
       
+      setCreatedStore(response.data); // Store the response data
       setSubmitSuccess(true);
       setLoading(false);
-      
-      // You can customize the redirect path as needed
-      // For now, we'll keep users on the page to see success message
-      // Uncomment the lines below to redirect after creation
-      // setTimeout(() => {
-      //   router.push('/dashboard'); 
-      // }, 2000);
       
       return { success: true, data: response };
     } catch (error) {
@@ -194,6 +189,7 @@ export const CreateStoreProvider = ({ children }) => {
     errors,
     submitError,
     submitSuccess,
+    createdStore, // Add createdStore to context
     
     // Multi-step form
     step,
