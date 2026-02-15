@@ -2,7 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { InventoryTable, InventoryStats, InventoryFilters, AddProductModal, DeleteConfirmModal, ProductDetailModal, StoreDetailsSidebar } from '@/features/inventory/components';
+import { 
+  InventoryTable, 
+  InventoryStats, 
+  InventoryFilters, 
+  AddProductModal, 
+  EditProductModal,
+  DeleteConfirmModal, 
+  ProductDetailModal, 
+  StoreDetailsSidebar 
+} from '@/features/inventory/components';
 import { InventoryProvider, useInventoryContext } from '@/features/inventory/context/inventoryContext';
 
 const InventoryContent = () => {
@@ -10,7 +19,8 @@ const InventoryContent = () => {
   const params = useParams();
   const storeId = params.storeId;
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -40,7 +50,7 @@ const InventoryContent = () => {
 
   const handleEdit = (item) => {
     setEditingProduct(item);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
   };
 
   const handleDelete = (item) => {
@@ -60,23 +70,28 @@ const InventoryContent = () => {
     }
   };
 
-  const handleModalAction = async (data) => {
-    let result;
-    if (editingProduct) {
-      result = await updateProduct(editingProduct._id, data);
-    } else {
-      result = await addProduct(data);
-    }
-
+  const handleAddProduct = async (data) => {
+    const result = await addProduct(data);
     if (result.success) {
-      handleCloseModal();
+      setIsAddModalOpen(false);
     } else {
       alert(result.error);
     }
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleUpdateProduct = async (data) => {
+    if (editingProduct) {
+      const result = await updateProduct(editingProduct._id, data);
+      if (result.success) {
+        handleCloseEditModal();
+      } else {
+        alert(result.error);
+      }
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
     setEditingProduct(null);
   };
 
@@ -124,7 +139,7 @@ const InventoryContent = () => {
               </button>
 
               <button 
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => setIsAddModalOpen(true)}
                 className="btn-primary-yb py-4 px-8 shadow-lg shadow-blue-500/10 flex items-center gap-2 group"
               >
                 <svg className="h-5 w-5 transform group-hover:scale-110 transition-transform font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,11 +187,18 @@ const InventoryContent = () => {
       </main>
 
       <AddProductModal 
-        isOpen={isModalOpen} 
-        onClose={handleCloseModal}
-        onAction={handleModalAction}
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)}
+        onAction={handleAddProduct}
         loading={loading}
-        editingProduct={editingProduct}
+      />
+
+      <EditProductModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onUpdate={handleUpdateProduct}
+        loading={loading}
+        product={editingProduct}
       />
 
       <DeleteConfirmModal

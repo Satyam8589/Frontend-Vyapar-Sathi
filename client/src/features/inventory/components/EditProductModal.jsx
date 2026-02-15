@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
+const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   const [formData, setFormData] = useState({
     name: '',
     category: 'General',
@@ -13,33 +13,44 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     barcode: '',
   });
 
-  // Reset form when modal opens
+  // Populate form when product changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && product) {
+      // Format date to YYYY-MM-DD for input type="date"
+      let formattedDate = '';
+      if (product.expDate) {
+        try {
+          const date = new Date(product.expDate);
+          formattedDate = date.toISOString().split('T')[0];
+        } catch (e) {
+          console.error("Invalid date format:", product.expDate);
+        }
+      }
+
       setFormData({
-        name: '',
-        category: 'General',
-        qty: '',
-        unit: 'Pieces',
-        price: '',
-        expDate: '',
-        barcode: '',
+        name: product.name || '',
+        category: product.category || 'General',
+        qty: (product.quantity || product.qty || 0).toString(),
+        unit: product.unit || 'Pieces',
+        price: (product.price || 0).toString(),
+        expDate: formattedDate,
+        barcode: product.barcode || '',
       });
     }
-  }, [isOpen]);
+  }, [isOpen, product]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Map qty to quantity as expected by the backend and ensure numeric types
     const submissionData = {
       ...formData,
+      _id: product._id,
       quantity: Number(formData.qty),
       price: Number(formData.price)
     };
     
-    onAction?.(submissionData);
+    onUpdate?.(submissionData);
   };
 
   const handleChange = (e) => {
@@ -61,10 +72,10 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">
-              Add New Asset
+              Update Asset
             </h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-              Register a new product to your inventory
+              Modifying <span className="text-blue-600">"{product?.name}"</span> in your inventory
             </p>
           </div>
           <button 
@@ -89,7 +100,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Ex: Organic Almond Milk"
+                placeholder="Product Name"
                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-900"
               />
             </div>
@@ -114,19 +125,18 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
             {/* Qty & Unit */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Initial Qty</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Current Stock</label>
               <input
                 required
                 type="number"
                 name="qty"
                 value={formData.qty}
                 onChange={handleChange}
-                placeholder="0"
                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-900"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Unit of Measure</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Unit</label>
               <select
                 name="unit"
                 value={formData.unit}
@@ -151,7 +161,6 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                placeholder="0.00"
                 className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-900"
               />
             </div>
@@ -166,34 +175,15 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               />
             </div>
 
-            {/* Barcode with Scanner Button */}
+            {/* Barcode */}
             <div className="md:col-span-2 flex flex-col gap-1.5">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Barcode / EAN</label>
-              <div className="relative group flex items-center gap-3">
-                <div className="relative flex-1">
-                  <input
-                    name="barcode"
-                    value={formData.barcode}
-                    onChange={handleChange}
-                    placeholder="Scan or enter barcode"
-                    className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-900"
-                  />
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                  </svg>
-                </div>
-                
-                <button 
-                  type="button"
-                  className="flex items-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-blue-500/20 active:scale-95 group/scan"
-                >
-                  <svg className="h-5 w-5 animate-pulse group-hover/scan:animate-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12h10" />
-                  </svg>
-                  <span>Scan</span>
-                </button>
-              </div>
+              <input
+                name="barcode"
+                value={formData.barcode}
+                onChange={handleChange}
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-900"
+              />
             </div>
           </div>
 
@@ -205,7 +195,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               onClick={onClose}
               className="flex-1 px-8 py-4 bg-slate-100 text-slate-600 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all disabled:opacity-50"
             >
-              Cancel
+              Discard
             </button>
             <button
               type="submit"
@@ -213,7 +203,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               className="flex-[2] btn-primary-yb py-4 font-black uppercase tracking-widest shadow-lg shadow-blue-500/10 disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {loading && <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-              <span>{loading ? 'Processing...' : 'Initialize Stocks'}</span>
+              <span>{loading ? 'Updating...' : 'Commit Changes'}</span>
             </button>
           </div>
         </form>
@@ -222,4 +212,4 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   );
 };
 
-export default AddProductModal;
+export default EditProductModal;
