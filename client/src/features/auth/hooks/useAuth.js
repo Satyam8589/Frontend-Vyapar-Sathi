@@ -49,7 +49,7 @@ export function useAuth() {
 
   const logout = async () => {
     await withLoading(() => logoutUser());
-    router.push('/auth/login');
+    router.push('/login');
   };
 
   return {
