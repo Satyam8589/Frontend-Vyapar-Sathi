@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { fetchAllStores } from '../services/storeDashboardService';
 import { filterStores, sortStores } from '../utils/helpers';
 import { VIEW_MODES } from '../constants';
+import { showError } from '@/utils/toast';
 
 // Create Context
 const StoreDashboardContext = createContext(undefined);
@@ -56,6 +57,7 @@ export const StoreDashboardProvider = ({ children }) => {
     } catch (err) {
       const errorMessage = err?.message || 'Failed to fetch stores';
       setError(errorMessage);
+      showError(errorMessage);
       setLoading(false);
       return { success: false, error: errorMessage };
     }
