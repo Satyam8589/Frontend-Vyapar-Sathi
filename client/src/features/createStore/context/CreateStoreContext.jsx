@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { createStore, validateStoreData } from '../services/storeService';
+import { showSuccess, showError, showWarning } from '@/utils/toast';
 
 // Create Context
 const CreateStoreContext = createContext(undefined);
@@ -110,14 +111,22 @@ export const CreateStoreProvider = ({ children }) => {
       if (validation.errors.email) stepErrors.email = validation.errors.email;
       
       setErrors(stepErrors);
-      return Object.keys(stepErrors).length === 0;
+      const isValid = Object.keys(stepErrors).length === 0;
+      if (!isValid) {
+        showWarning('Please fill in all required fields correctly.');
+      }
+      return isValid;
     } else if (currentStep === 2) {
       // Address validation
       const stepErrors = {};
       if (validation.errors.fullAddress) stepErrors.fullAddress = validation.errors.fullAddress;
       
       setErrors(stepErrors);
-      return Object.keys(stepErrors).length === 0;
+      const isValid = Object.keys(stepErrors).length === 0;
+      if (!isValid) {
+        showWarning('Please provide a valid address.');
+      }
+      return isValid;
     }
     
     return validation.isValid;
@@ -155,6 +164,7 @@ export const CreateStoreProvider = ({ children }) => {
       if (!validation.isValid) {
         setErrors(validation.errors);
         setLoading(false);
+        showError('Please fix the errors before submitting.');
         return { success: false, errors: validation.errors };
       }
 
@@ -164,12 +174,14 @@ export const CreateStoreProvider = ({ children }) => {
       setCreatedStore(response.data); // Store the response data
       setSubmitSuccess(true);
       setLoading(false);
+      showSuccess(`Store "${formData.name}" created successfully!`);
       
       return { success: true, data: response };
     } catch (error) {
       setLoading(false);
       const errorMessage = error?.message || 'Failed to create store. Please try again.';
       setSubmitError(errorMessage);
+      showError(errorMessage);
       return { success: false, error: errorMessage };
     }
   }, [formData]);
