@@ -1,5 +1,5 @@
-import DocumentsHeader from "./components/DocumentsHeader";
-import DocumentList from "./components/DocumentList";
+import DocumentsHeader from "@/features/documents/components/DocumentsHeader";
+import DocumentList from "@/features/documents/components/DocumentList";
 
 export const metadata = {
   title: "Documents | Vyapar Sathi",
