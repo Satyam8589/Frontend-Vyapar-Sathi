@@ -28,8 +28,8 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center glass-light rounded-full px-5 md:px-8 py-3 translate-y-2 border-emerald-400/30 shadow-[0_8px_32px_0_rgba(31,38,135,0.07),0_0_15px_rgba(52,211,153,0.25)]">
+      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 pt-3 pb-2 pointer-events-none backdrop-blur-3xl">
+        <div className="relative pointer-events-auto max-w-7xl mx-auto flex justify-between items-center bg-white/70 rounded-full px-5 md:px-8 py-3 border border-white/60 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 cursor-pointer group">
