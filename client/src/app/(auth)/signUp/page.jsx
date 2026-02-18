@@ -3,6 +3,9 @@ import Image from 'next/image';
 import Background from '@/components/Background';
 import Link from 'next/link';
 
+// Skip prerendering for this auth page - render on demand
+export const dynamic = 'force-dynamic';
+
 export default function AuthSignUpPage() {
   return (
     <div className='min-h-screen lg:h-screen relative flex items-start lg:items-center justify-center selection:bg-blue-500/20 antialiased lg:overflow-hidden px-4 pt-6 pb-8 sm:pt-10 sm:pb-12 lg:py-0 lg:px-6'>
