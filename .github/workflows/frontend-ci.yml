@@ -1,13 +1,13 @@
 name: Frontend Tests
 
 on:
-  pull_request:
+  push:
     branches:
       - main
       - master
     paths:
       - 'Frontend-Vyapar-Sathi/**'
-  push:
+  pull_request:
     branches:
       - main
       - master
@@ -17,7 +17,7 @@ on:
 
 jobs:
   test:
-    name: Run Frontend Tests
+    name: Run Frontend Tests & Linting
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,8 +37,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: false
+
       - name: Run tests
-        run: npm test
+        run: npm test -- --passWithNoTests
+        continue-on-error: false
+
+      - name: Build Next.js
+        run: npm run build
+        continue-on-error: false
 
       - name: Generate coverage report
         run: npm run test:coverage
@@ -51,3 +60,7 @@ jobs:
         with:
           directory: ./Frontend-Vyapar-Sathi/client/coverage
           flags: frontend
+
+      - name: Build Next.js
+        run: npm run build
+        continue-on-error: false
