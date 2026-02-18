@@ -5,14 +5,10 @@ on:
     branches:
       - main
       - master
-    paths:
-      - 'Frontend-Vyapar-Sathi/**'
   pull_request:
     branches:
       - main
       - master
-    paths:
-      - 'Frontend-Vyapar-Sathi/**'
   workflow_dispatch:
 
 jobs:
