@@ -1,0 +1,36 @@
+const DashboardHeader = ({ onCreateStore }) => {
+  return (
+    <section className="pt-6 pb-4 px-4 md:px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+          <div className="animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 border border-white/90 shadow-sm backdrop-blur-sm mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Command Center</span>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">MY STORES</h1>
+            <p className="mt-2 text-sm md:text-base text-slate-600 font-bold italic max-w-xl">
+              Manage and monitor your entire retail network from one central interface.
+            </p>
+          </div>
+
+          <div className="animate-fade-in [animation-delay:200ms] flex items-center gap-2">
+            <button
+              onClick={onCreateStore}
+              className="btn-primary-yb hover:scale-100 py-3 px-6 shadow-lg shadow-blue-500/10 flex items-center gap-2 group text-sm"
+            >
+              <svg className="h-4 w-4 transform group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="font-black uppercase tracking-widest">Create New Store</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default DashboardHeader;
