@@ -14,7 +14,13 @@ export default function Providers({ children }) {
     <AuthProvider>
       <Background />
       {!isAuthPage && <Navbar />}
-      <div className={`relative z-10 min-h-screen ${!isAuthPage ? 'pt-24' : ''}`}>
+      <div
+        className={`relative z-10 min-h-screen ${!isAuthPage ? 'pt-24' : ''}`}
+        style={!isAuthPage ? {
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, transparent 60px, black 96px)',
+          maskImage: 'linear-gradient(to bottom, transparent 0px, transparent 60px, black 96px)',
+        } : {}}
+      >
         {children}
       </div>
       {/* Toast Notifications */}
