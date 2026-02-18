@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import Button from './ui/Button';
 
 /**
@@ -15,13 +16,26 @@ const FormNavigation = ({
   loading = false,
   canGoNext = true,
 }) => {
+  const router = useRouter();
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
-  
+
   return (
     <div className="flex justify-between items-center pt-6 border-t mt-8">
       <div>
-        {!isFirstStep && (
+        {isFirstStep ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => router.push('/storeDashboard')}
+            disabled={loading}
+          >
+            {/* Mobile: compact */}
+            <span className="sm:hidden">← Back</span>
+            {/* Desktop: full label */}
+            <span className="hidden sm:inline">← Back to Dashboard</span>
+          </Button>
+        ) : (
           <Button
             type="button"
             variant="secondary"
@@ -32,7 +46,7 @@ const FormNavigation = ({
           </Button>
         )}
       </div>
-      
+
       <div className="flex gap-3">
         {!isLastStep ? (
           <Button

@@ -45,12 +45,12 @@ export default function Navbar() {
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
             return (
-              <Link 
-                key={item.label} 
-                href={item.href} 
+              <Link
+                key={item.label}
+                href={item.href}
                 className={`text-sm uppercase tracking-widest transition-all duration-300 relative py-1
-                  ${isActive 
-                    ? 'text-blue-600 font-extrabold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2.5px] after:bg-blue-600 after:rounded-full' 
+                  ${isActive
+                    ? 'text-blue-600 font-extrabold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2.5px] after:bg-blue-600 after:rounded-full'
                     : 'text-slate-600 font-bold hover:text-blue-600'
                   }`}
               >
@@ -116,9 +116,9 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button 
-          className="lg:hidden p-2 text-slate-600 hover:text-blue-600 focus:outline-none"
+        {/* Mobile Menu Button — only on mobile (hidden sm+) */}
+        <button
+          className="sm:hidden p-2 text-slate-600 hover:text-blue-600 focus:outline-none"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@ export default function Navbar() {
               <div className="w-10 h-10 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white">V</div>
               <span className="text-2xl font-black text-slate-900 uppercase">VyaparSathi</span>
             </div>
-            <button 
+            <button
               className="p-3 text-slate-900"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -144,7 +144,7 @@ export default function Navbar() {
               </svg>
             </button>
           </div>
-          
+
           <div className="flex flex-col gap-8 flex-1 overflow-y-auto">
             {NAV_ITEMS.map((item) => (
               <Link key={item.label} href={item.href} onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-slate-900 uppercase tracking-tighter hover:text-blue-600 transition-colors">
