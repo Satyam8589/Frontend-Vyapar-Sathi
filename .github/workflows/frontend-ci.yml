@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Frontend-Vyapar-Sathi/client
+        working-directory: client
 
     steps:
       - name: Checkout code
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
         run: npm ci
