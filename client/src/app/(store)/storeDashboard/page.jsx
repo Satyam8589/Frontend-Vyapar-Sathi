@@ -48,10 +48,10 @@ const StoreDashboard = () => {
                 </p>
               </div>
 
-              <div className="animate-fade-in-up [animation-delay:200ms] flex items-center gap-2">
+              <div className="animate-fade-in [animation-delay:200ms] flex items-center gap-2">
                 <button
                   onClick={handleCreateStore}
-                  className="btn-primary-yb py-3 px-6 shadow-lg shadow-blue-500/10 flex items-center gap-2 group text-sm"
+                  className="btn-primary-yb hover:scale-100 py-3 px-6 shadow-lg shadow-blue-500/10 flex items-center gap-2 group text-sm"
                 >
                   <svg className="h-4 w-4 transform group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
