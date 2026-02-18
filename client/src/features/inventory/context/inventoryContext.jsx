@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useAuthContext } from '@/features/auth/context/AuthContext';
 import * as inventoryService from '../services/inventoryService';
 import { fetchStoreById } from '@/features/storeDashboard/services/storeDashboardService';
+import { showSuccess, showError } from '@/utils/toast';
 
 const InventoryContext = createContext(null);
 
@@ -42,6 +43,7 @@ export const InventoryProvider = ({ children }) => {
     } catch (err) {
       const msg = err?.message || err?.error || 'Failed to fetch products';
       setError(msg);
+      showError(msg);
       console.error('INVENTORY_FETCH_ERROR:', err);
     } finally {
       setLoading(false);
@@ -82,10 +84,12 @@ export const InventoryProvider = ({ children }) => {
         }));
       }
 
+      showSuccess(`Product "${productData.name}" added successfully!`);
       return { success: true, data: newProduct };
     } catch (err) {
       const errorMessage = err?.message || 'Failed to add product';
       setError(errorMessage);
+      showError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -98,10 +102,13 @@ export const InventoryProvider = ({ children }) => {
       setLoading(true);
       const updatedProduct = await inventoryService.updateProduct(productId, updateData);
       setProducts(prev => prev.map(p => p._id === productId ? updatedProduct : p));
+      showSuccess('Product updated successfully!');
       return { success: true };
     } catch (err) {
-      setError(err?.message || 'Failed to update product');
-      return { success: false, error: err?.message };
+      const errorMessage = err?.message || 'Failed to update product';
+      setError(errorMessage);
+      showError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -128,10 +135,13 @@ export const InventoryProvider = ({ children }) => {
         }));
       }
 
+      showSuccess('Product deleted successfully!');
       return { success: true };
     } catch (err) {
-      setError(err?.message || 'Failed to delete product');
-      return { success: false, error: err?.message };
+      const errorMessage = err?.message || 'Failed to delete product';
+      setError(errorMessage);
+      showError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }

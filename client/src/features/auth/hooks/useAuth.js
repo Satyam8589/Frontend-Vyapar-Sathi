@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '../context/AuthContext';
+import { showSuccess, showError } from '@/utils/toast';
 import {
   getAuthErrorMessage,
   loginWithEmail,
@@ -33,23 +34,47 @@ export function useAuth() {
   };
 
   const signup = async (payload) => {
-    await withLoading(() => signUpWithEmail(payload));
-    router.push('/storeDashboard');
+    try {
+      await withLoading(() => signUpWithEmail(payload));
+      showSuccess('Account created successfully! Welcome aboard!');
+      router.push('/storeDashboard');
+    } catch (err) {
+      showError(getAuthErrorMessage(err));
+      throw err;
+    }
   };
 
   const login = async (payload) => {
-    await withLoading(() => loginWithEmail(payload));
-    router.push('/storeDashboard');
+    try {
+      await withLoading(() => loginWithEmail(payload));
+      showSuccess('Welcome back! Login successful.');
+      router.push('/storeDashboard');
+    } catch (err) {
+      showError(getAuthErrorMessage(err));
+      throw err;
+    }
   };
 
   const loginWithGoogleProvider = async () => {
-    await withLoading(() => loginWithGoogle());
-    router.push('/storeDashboard');
+    try {
+      await withLoading(() => loginWithGoogle());
+      showSuccess('Welcome! Signed in with Google successfully.');
+      router.push('/storeDashboard');
+    } catch (err) {
+      showError(getAuthErrorMessage(err));
+      throw err;
+    }
   };
 
   const logout = async () => {
-    await withLoading(() => logoutUser());
-    router.push('/login');
+    try {
+      await withLoading(() => logoutUser());
+      showSuccess('Logged out successfully. See you soon!');
+      router.push('/login');
+    } catch (err) {
+      showError('Failed to logout. Please try again.');
+      throw err;
+    }
   };
 
   return {
