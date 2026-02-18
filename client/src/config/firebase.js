@@ -13,8 +13,15 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+// Only initialize Firebase if we have a valid API key (skip during build time)
+let app;
+let auth;
+let googleProvider;
+
+if (process.env.NEXT_PUBLIC_API_KEY) {
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
+}
 
 export { app, auth, googleProvider };
