@@ -3,14 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
   body {
     @apply bg-white text-slate-800 antialiased;
+    /* Promote body to its own compositor layer for smoother scrolling */
+    will-change: scroll-position;
+    overscroll-behavior-y: none;
   }
 }
 
 @layer components {
   .glass-light {
-    @apply bg-white/40 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-white/60 border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    /* backdrop-blur removed from glass-light — it causes scroll jank on mobile.
+       Use it only on elements that truly need it and are not in the scroll path. */
   }
   
   .glass-hover-light {
