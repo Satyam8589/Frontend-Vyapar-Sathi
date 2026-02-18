@@ -42,16 +42,12 @@ jobs:
         continue-on-error: false
 
       - name: Run tests
-        run: npm test -- --passWithNoTests
+        run: npm test -- --coverage --watchAll=false
         continue-on-error: false
 
       - name: Build Next.js
         run: npm run build
         continue-on-error: false
-
-      - name: Generate coverage report
-        run: npm run test:coverage
-        continue-on-error: true
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -60,7 +56,3 @@ jobs:
         with:
           directory: ./Frontend-Vyapar-Sathi/client/coverage
           flags: frontend
-
-      - name: Build Next.js
-        run: npm run build
-        continue-on-error: false
