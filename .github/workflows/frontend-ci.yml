@@ -25,6 +25,15 @@ jobs:
         with:
           node-version: 20
 
+      - name: Debug - List files
+        run: |
+          echo "=== REPO ROOT ==="
+          ls -la
+          echo "=== client/ DIRECTORY ==="
+          ls -la client/ || echo "NO client/ DIRECTORY FOUND"
+          echo "=== package-lock.json check ==="
+          test -f client/package-lock.json && echo "FOUND: client/package-lock.json" || echo "MISSING: client/package-lock.json"
+
       - name: Install dependencies
         run: npm ci --prefix client
 
