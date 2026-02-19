@@ -9,9 +9,9 @@
   }
   body {
     @apply bg-white text-slate-800 antialiased;
-    /* Promote body to its own compositor layer for smoother scrolling */
-    will-change: scroll-position;
-    overscroll-behavior-y: none;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
   }
 }
 

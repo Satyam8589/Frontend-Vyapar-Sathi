@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import PageLoader from "@/components/PageLoader";
 
 const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [formData, setFormData] = useState({
     name: "",
     category: "General",
@@ -80,17 +85,15 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
     }
   }, [isOpen, product]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!product?._id) return;
     const submissionData = {
       ...formData,
       _id: product._id,
       quantity: Number(formData.qty),
       price: Number(formData.price),
     };
-
     onUpdate?.(submissionData);
   };
 
@@ -99,20 +102,22 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  return (
+  if (!mounted || !isOpen) return null;
+
+  return ReactDOM.createPortal(
     <>
       {showOverlay && <PageLoader message="Updating product in inventory..." />}
-      <div className="fixed top-24 inset-x-0 bottom-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      <div className="fixed top-0 inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-8rem)] animate-scale-up scrollbar-hide">
+      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-8rem)] animate-scale-up scrollbar-hide">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
           <div>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
               Edit Product
@@ -122,32 +127,45 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
               <span className="font-bold text-blue-600">"{product?.name}"</span>
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 hover:bg-white/80 rounded-xl text-slate-400 hover:text-slate-600 transition-colors border border-slate-200 shadow-sm"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              form="edit-product-form"
+              disabled={loading}
+              className="btn-primary-yb py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              {loading && (
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              )}
+              <span>{loading ? "Updating..." : "Save Changes"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2.5 hover:bg-white/80 rounded-xl text-slate-400 hover:text-slate-600 transition-colors border border-slate-200 shadow-sm"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form id="edit-product-form" onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-12 gap-3">
             {/* Name */}
-            <div className="md:col-span-2 flex flex-col gap-2">
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Product Name
               </label>
@@ -162,7 +180,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
             </div>
 
             {/* Category */}
-            <div className="md:col-span-2 flex flex-col gap-2">
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Category
               </label>
@@ -182,8 +200,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
             </div>
 
             {/* Qty & Unit */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <div className="col-span-5 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                 Current Stock
               </label>
               <input
@@ -195,8 +213,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <div className="col-span-7 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                 Unit
               </label>
               <select
@@ -214,9 +232,9 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
             </div>
 
             {/* Price & Exp Date */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                Unit Price (₹)
+            <div className="col-span-5 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
+                Price (₹)
               </label>
               <input
                 required
@@ -228,8 +246,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <div className="col-span-7 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                 Expiry Date
               </label>
               <input
@@ -242,7 +260,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
             </div>
 
             {/* Barcode */}
-            <div className="md:col-span-2 flex flex-col gap-2">
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Barcode / EAN
               </label>
@@ -254,32 +272,11 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
               />
             </div>
           </div>
-
-          {/* Footer Actions */}
-          <div className="mt-6 flex gap-3">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={onClose}
-              className="flex-1 px-5 py-3 bg-slate-100/80 text-slate-700 font-bold rounded-xl hover:bg-slate-200/80 transition-all disabled:opacity-50 border border-slate-200 shadow-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-[2] btn-primary-yb py-3 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg"
-            >
-              {loading && (
-                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              )}
-              <span>{loading ? "Updating..." : "Save Changes"}</span>
-            </button>
-          </div>
         </form>
       </div>
     </div>
-  </>
+  </>,
+  document.body
 );
 };
 
