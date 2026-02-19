@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 // Default toast options with custom styling
 const defaultOptions = {
   duration: 4000,
-  position: 'top-right',
+  position: 'bottom-right',
   style: {
     background: '#fff',
     color: '#0f172a',

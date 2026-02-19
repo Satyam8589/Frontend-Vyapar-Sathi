@@ -25,9 +25,10 @@ export default function Providers({ children }) {
       </div>
       {/* Toast Notifications */}
       <Toaster
-        position="top-right"
+        position="bottom-right"
         reverseOrder={false}
         gutter={8}
+        containerClassName="z-50"
         toastOptions={{
           duration: 4000,
           style: {
@@ -35,6 +36,7 @@ export default function Providers({ children }) {
             color: '#0f172a',
             fontWeight: '600',
             fontSize: '14px',
+            zIndex: '9999',
           },
         }}
       />
