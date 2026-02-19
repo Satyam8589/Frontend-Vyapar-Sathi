@@ -16,6 +16,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: "",
         category: "General",

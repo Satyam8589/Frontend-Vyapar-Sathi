@@ -27,6 +27,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         }
       }
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: product.name || "",
         category: product.category || "General",
@@ -76,7 +77,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
             </h2>
             <p className="text-xs text-slate-600 mt-0.5 font-semibold">
               Editing{" "}
-              <span className="font-bold text-blue-600">"{product?.name}"</span>
+              <span className="font-bold text-blue-600">&quot;{product?.name}&quot;</span>
             </p>
           </div>
           <button

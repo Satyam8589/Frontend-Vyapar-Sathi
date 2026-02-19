@@ -53,7 +53,7 @@ const DeleteConfirmModal = ({
           <p className="text-slate-700 font-medium">
             Are you sure you want to delete{" "}
             <span className="font-bold text-red-600">
-              "{productName || "this item"}"
+              &quot;{productName || "this item"}&quot;
             </span>
             ? This will permanently remove it from your inventory.
           </p>

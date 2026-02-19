@@ -44,6 +44,7 @@ export function AuthProvider({ children }) {
         }
       }
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     });
 

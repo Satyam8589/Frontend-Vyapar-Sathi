@@ -66,7 +66,7 @@ const CreationFlowModal = ({
               Congratulations!
             </h2>
             <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] mb-8 leading-relaxed max-w-[240px] mx-auto">
-              Your business <span className="text-blue-600">"{storeName}"</span> has been successfully registered.
+              Your business <span className="text-blue-600">&quot;{storeName}&quot;</span> has been successfully registered.
             </p>
 
             <Button
