@@ -5,19 +5,19 @@ import React from "react";
 const InventoryFilters = ({ searchTerm, setSearchTerm, onMenuClick }) => {
   return (
     <section className="mb-4 animate-fade-in-up [animation-delay:200ms]">
-      <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-2">
+      <div className="bg-white rounded-lg p-2 sm:p-3 border border-gray-200 shadow-sm">
+        <div className="flex flex-row gap-1 sm:gap-2">
           {/* Search Input */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <input
               type="text"
-              placeholder="Search products, SKU or barcode..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400 text-sm"
+              placeholder="Search..."
+              className="w-full pl-8 pr-2 sm:pr-4 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400 text-xs sm:text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <svg
-              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -32,9 +32,9 @@ const InventoryFilters = ({ searchTerm, setSearchTerm, onMenuClick }) => {
           </div>
 
           {/* Filter Actions */}
-          <div className="flex gap-2">
-            <select className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-medium text-gray-700 outline-none cursor-pointer text-sm min-w-[140px] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-              <option>All Categories</option>
+          <div className="flex gap-1 sm:gap-2">
+            <select className="px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg font-medium text-gray-700 outline-none cursor-pointer text-xs sm:text-sm min-w-fit sm:min-w-[140px] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+              <option>All</option>
               <option>Beverages</option>
               <option>Bakery</option>
               <option>Dairy</option>
@@ -43,11 +43,11 @@ const InventoryFilters = ({ searchTerm, setSearchTerm, onMenuClick }) => {
             {/* Store Settings Button */}
             <button
               onClick={onMenuClick}
-              className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all"
+              className="p-1.5 sm:p-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all flex-shrink-0"
               title="Store Information"
             >
               <svg
-                className="h-5 w-5"
+                className="h-4 w-4 sm:h-5 sm:w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
