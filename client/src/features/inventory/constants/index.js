@@ -1,3 +1,10 @@
+// Inventory Default Settings
+export const INVENTORY_DEFAULTS = {
+  LOW_STOCK_THRESHOLD: 10,
+  CURRENCY_SYMBOL: '₹',
+  DEFAULT_CURRENCY: 'INR',
+};
+
 export const MOCK_INVENTORY = [
   {
     id: 'PRD-001',

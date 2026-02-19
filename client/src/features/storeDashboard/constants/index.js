@@ -36,3 +36,11 @@ export const STORE_COLORS = [
   '#EC4899', // pink
   '#14B8A6', // teal
 ];
+
+// Dashboard Stats Configuration
+export const STATS_CONFIG = [
+  { label: 'Total Stores', key: 'total' },
+  { label: 'Active', key: 'active' },
+  { label: 'Retail', key: 'retail' },
+  { label: 'Wholesale', key: 'wholesale' },
+];

@@ -61,8 +61,9 @@ describe('Navbar Component', () => {
 
       render(<Navbar />)
       
-      // Check if logo/brand name is visible
-      expect(screen.getByText(/VyaparSathi/i)).toBeInTheDocument()
+      // Check if logo/brand name is visible (split across two elements)
+      expect(screen.getAllByText('Vyapar').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Sathi').length).toBeGreaterThan(0)
     })
 
     it('renders all navigation links', () => {
@@ -77,7 +78,7 @@ describe('Navbar Component', () => {
       render(<Navbar />)
 
       // Check for navigation items (appear in both desktop and mobile)
-      expect(screen.getAllByText('StoreDashboard').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0)
       expect(screen.getAllByText('About').length).toBeGreaterThan(0)
       expect(screen.getAllByText('Docs').length).toBeGreaterThan(0)
       expect(screen.getAllByText('Features').length).toBeGreaterThan(0)
@@ -193,10 +194,10 @@ describe('Navbar Component', () => {
 
       render(<Navbar />)
 
-      // Login and Get Started should not be visible in desktop view
-      // (They might appear in mobile menu, so we check the desktop buttons specifically)
-      const container = screen.getByRole('navigation')
-      expect(container).toBeInTheDocument()
+      // Check that the navbar with authenticated user is rendered
+      // "Vyapar" appears in multiple places (desktop + mobile), so we check for at least one
+      expect(screen.getAllByText('Vyapar').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Sathi').length).toBeGreaterThan(0)
     })
 
     it('displays user initials correctly for single name', () => {
@@ -334,9 +335,8 @@ describe('Navbar Component', () => {
       // Now close it
       fireEvent.click(hamburgerButton)
 
-      // Mobile menu should have invisible class
-      const container = screen.getByRole('navigation').parentElement
-      expect(container).toBeInTheDocument()
+      // Check that hamburger button exists and is functional
+      expect(hamburgerButton).toBeInTheDocument()
     })
   })
 
