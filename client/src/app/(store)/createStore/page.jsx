@@ -24,7 +24,7 @@ function CreateStorePage() {
 
         {/* Store Creation Form */}
         <CreateStoreProvider>
-          <div className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl border border-white/60 p-8">
+          <div className="bg-white/80 backdrop-blur-md shadow-xl rounded-[2.5rem] border border-white/60 p-8">
             <StoreForm />
           </div>
         </CreateStoreProvider>

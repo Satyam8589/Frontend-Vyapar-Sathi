@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 
 const DeleteConfirmModal = ({
   isOpen,
@@ -9,9 +10,14 @@ const DeleteConfirmModal = ({
   loading,
   productName,
 }) => {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
+  if (!mounted || !isOpen) return null;
+
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
@@ -81,7 +87,8 @@ const DeleteConfirmModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

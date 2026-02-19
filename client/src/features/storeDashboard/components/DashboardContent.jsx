@@ -2,7 +2,7 @@ import { StoreList } from '@/features/storeDashboard/components';
 
 const DashboardContent = ({ stores, loading, error, onStoreClick }) => {
   return (
-    <section className="px-4 md:px-6 pb-12 mt-4 animate-fade-in-up [animation-delay:500ms]">
+    <section className="px-4 md:px-6 pb-12 mt-2 animate-fade-in-up [animation-delay:500ms]">
       <div className="max-w-7xl mx-auto">
         <StoreList
           stores={stores}
