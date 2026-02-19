@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import PageLoader from '@/components/PageLoader';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/storeDashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -22,12 +23,56 @@ export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [loaderMessage, setLoaderMessage] = useState('');
+  const loaderTimerRef = useRef(null);
   const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
 
   const close = () => setMobileMenuOpen(false);
 
+  // Handle logout with delayed loader
+  const handleLogout = async () => {
+    let loaderTriggered = false;
+    const startTime = Date.now();
+
+    // Start a timer to show loader if logout takes too long
+    loaderTimerRef.current = setTimeout(() => {
+      setLoaderMessage('Signing out of your session...');
+      loaderTriggered = true;
+    }, 1000);
+
+    try {
+      await logout();
+      
+      // If loader appeared, wait until it has been shown for at least 2 seconds
+      if (loaderTriggered) {
+        const elapsed = Date.now() - startTime;
+        const minDisplayTotal = 3000; // 1s threshold + 2s display
+        if (elapsed < minDisplayTotal) {
+          await new Promise(r => setTimeout(r, minDisplayTotal - elapsed));
+        }
+      }
+
+      setProfileMenuOpen(false);
+      close();
+    } finally {
+      if (loaderTimerRef.current) {
+        clearTimeout(loaderTimerRef.current);
+        loaderTimerRef.current = null;
+      }
+      setLoaderMessage('');
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (loaderTimerRef.current) clearTimeout(loaderTimerRef.current);
+    };
+  }, []);
+
   return (
     <>
+      {loaderMessage && <PageLoader message={loaderMessage} />}
       <nav className="fixed top-0 w-full z-50 px-4 md:px-6 pt-3 pb-2 pointer-events-none backdrop-blur-3xl">
         <div className="relative pointer-events-auto max-w-7xl mx-auto flex justify-between items-center bg-white/70 rounded-full px-5 md:px-8 py-3 border border-white/60 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
 
@@ -92,7 +137,7 @@ export default function Navbar() {
                       <p className="text-xs text-slate-500">{user?.email}</p>
                     </div>
                     <button
-                      onClick={() => { logout(); setProfileMenuOpen(false); }}
+                      onClick={handleLogout}
                       disabled={isSubmitting}
                       className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-70"
                     >
@@ -238,7 +283,7 @@ export default function Navbar() {
 
                 {/* Logout */}
                 <button
-                  onClick={async () => { await logout(); close(); }}
+                  onClick={handleLogout}
                   disabled={isSubmitting}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all disabled:opacity-50"
                 >

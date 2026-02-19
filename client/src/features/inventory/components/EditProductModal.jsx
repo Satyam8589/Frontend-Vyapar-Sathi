@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import PageLoader from "@/components/PageLoader";
 
 const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,46 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
     expDate: "",
     barcode: "",
   });
+
+  const [showOverlay, setShowOverlay] = useState(false);
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  // Handle delayed loading overlay
+  useEffect(() => {
+    if (loading) {
+      startTimeRef.current = Date.now();
+      timerRef.current = setTimeout(() => {
+        setShowOverlay(true);
+      }, 1000);
+    } else {
+      const handleLoadingFinish = async () => {
+        // If the overlay was actually shown, check if it was shown for enough time
+        if (showOverlay && startTimeRef.current) {
+          const elapsed = Date.now() - startTimeRef.current;
+          const minDelayTotal = 3000; // 1s threshold + 2s display
+          if (elapsed < minDelayTotal) {
+            await new Promise(r => setTimeout(r, minDelayTotal - elapsed));
+          }
+        }
+
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        setShowOverlay(false);
+        startTimeRef.current = null;
+      };
+
+      handleLoadingFinish();
+    }
+    
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [loading, showOverlay]);
 
   // Populate form when product changes
   useEffect(() => {
@@ -59,7 +100,9 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   };
 
   return (
-    <div className="fixed top-24 inset-x-0 bottom-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+    <>
+      {showOverlay && <PageLoader message="Updating product in inventory..." />}
+      <div className="fixed top-24 inset-x-0 bottom-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
@@ -236,7 +279,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         </form>
       </div>
     </div>
-  );
+  </>
+);
 };
 
 export default EditProductModal;
