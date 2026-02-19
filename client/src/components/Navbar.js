@@ -60,27 +60,6 @@ export default function Navbar() {
               );
             })}
           </div>
-          <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none group-hover:text-blue-600 transition-colors">Vyapar<span className="text-amber-500">Sathi</span></span>
-        </Link>
-
-        <div className="hidden lg:flex items-center gap-10">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`text-sm uppercase tracking-widest transition-all duration-300 relative py-1
-                  ${isActive
-                    ? 'text-blue-600 font-extrabold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2.5px] after:bg-blue-600 after:rounded-full'
-                    : 'text-slate-600 font-bold hover:text-blue-600'
-                  }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
 
           {/* Desktop auth */}
           <div className="hidden md:flex items-center gap-4">
