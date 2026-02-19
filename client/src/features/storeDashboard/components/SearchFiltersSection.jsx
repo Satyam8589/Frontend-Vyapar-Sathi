@@ -1,8 +1,8 @@
 const SearchFiltersSection = ({ filters, updateFilters, refreshStores }) => {
   return (
-    <section className="py-3 px-4 md:px-6">
+    <section className="py-1.5 px-4 md:px-6">
       <div className="max-w-7xl mx-auto transition-all duration-300 animate-fade-in-up [animation-delay:400ms]">
-        <div className="bg-white/80 rounded-2xl p-3 border border-slate-200 shadow-sm">
+        <div className="bg-white/80 rounded-2xl p-2.5 border border-slate-200 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
             {/* Search Input */}

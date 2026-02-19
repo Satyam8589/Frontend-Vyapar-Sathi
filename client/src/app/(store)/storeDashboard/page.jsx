@@ -113,17 +113,13 @@ const StoreDashboard = () => {
       <main className="relative z-10">
 
         {/* ── Header ── */}
-        <DashboardHeader onCreateStore={handleCreateStore} />
-
-        {/* ── Mobile Store Panel ── */}
-        <div className="px-4 md:px-6 md:hidden">
-          <MobileStorePanel
-            filters={filters}
-            updateFilters={updateFilters}
-            refreshStores={refreshStores}
-            stats={stats}
-          />
-        </div>
+        <DashboardHeader 
+          onCreateStore={handleCreateStore}
+          filters={filters}
+          updateFilters={updateFilters}
+          refreshStores={refreshStores}
+          stats={stats}
+        />
 
         {/* ── Stats Bar — desktop only ── */}
         <StatsBar stats={stats} />

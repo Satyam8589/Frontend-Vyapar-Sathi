@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import PageLoader from "@/components/PageLoader";
 
 const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [formData, setFormData] = useState({
     name: "",
     category: "General",
@@ -69,17 +74,13 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Map qty to quantity as expected by the backend and ensure numeric types
     const submissionData = {
       ...formData,
       quantity: Number(formData.qty),
       price: Number(formData.price),
     };
-
     onAction?.(submissionData);
   };
 
@@ -88,18 +89,20 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  return (
+  if (!mounted || !isOpen) return null;
+
+  return ReactDOM.createPortal(
     <>
       {showOverlay && <PageLoader message="Adding product to inventory..." />}
-      <div className="fixed top-24 inset-x-0 bottom-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      <div className="fixed top-0 inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-8rem)] animate-scale-up scrollbar-hide">
+      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-8rem)] animate-scale-up scrollbar-hide">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
           <div>
@@ -146,9 +149,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
         {/* Form */}
         <form id="add-product-form" onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-12 gap-3">
             {/* Name */}
-            <div className="md:col-span-2 flex flex-col gap-2">
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Product Name
               </label>
@@ -163,7 +166,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
             </div>
 
             {/* Department */}
-            <div className="md:col-span-2 flex flex-col gap-2">
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Category
               </label>
@@ -183,9 +186,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
             </div>
 
             {/* Qty & Unit */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                Initial Quantity
+            <div className="col-span-5 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
+                Initial Qty
               </label>
               <input
                 required
@@ -197,8 +200,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <div className="col-span-7 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                 Unit
               </label>
               <select
@@ -216,9 +219,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
             </div>
 
             {/* Price & Exp Date */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                Unit Price (₹)
+            <div className="col-span-5 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
+                Price (₹)
               </label>
               <input
                 required
@@ -231,8 +234,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <div className="col-span-7 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                 Expiry Date
               </label>
               <input
@@ -245,7 +248,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
             </div>
 
             {/* Barcode with Scanner Button */}
-            <div className="md:col-span-2 flex flex-col gap-2">
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Barcode / EAN
               </label>
@@ -305,7 +308,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         </form>
       </div>
     </div>
-  </>
+  </>,
+  document.body
 );
 };
 

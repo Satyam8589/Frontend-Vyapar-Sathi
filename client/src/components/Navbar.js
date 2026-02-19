@@ -73,12 +73,12 @@ export default function Navbar() {
   return (
     <>
       {loaderMessage && <PageLoader message={loaderMessage} />}
-      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 pt-3 pb-2 pointer-events-none backdrop-blur-3xl">
-        <div className="relative pointer-events-auto max-w-7xl mx-auto flex justify-between items-center bg-white/70 rounded-full px-5 md:px-8 py-3 border border-white/60 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
+      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 pt-2 pb-1.5 pointer-events-none backdrop-blur-3xl">
+        <div className="relative pointer-events-auto max-w-7xl mx-auto flex justify-between items-center bg-white/70 rounded-full px-5 md:px-8 py-2 border border-white/60 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 cursor-pointer group">
-            <div className="w-8 h-8 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg transition-transform group-hover:rotate-12">
+            <div className="w-7 h-7 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg transition-transform group-hover:rotate-12 text-sm">
               VS
             </div>
             <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none group-hover:text-blue-600 transition-colors">
