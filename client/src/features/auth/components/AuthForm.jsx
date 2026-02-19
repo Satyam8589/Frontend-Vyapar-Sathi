@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
+import PageLoader from '@/components/PageLoader';
 
 export default function AuthForm({ mode = 'login' }) {
   const router = useRouter();
@@ -14,12 +15,64 @@ export default function AuthForm({ mode = 'login' }) {
     email: '',
     password: '',
   });
+  const [loaderMessage, setLoaderMessage] = useState('');
+  const loaderTimerRef = useRef(null);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace('/storeDashboard');
-    }
-  }, [isAuthenticated, isLoading, router]);
+    let loaderTriggered = false;
+    const startTime = Date.now();
+
+    const handleRedirect = async () => {
+      // 1. If currently submitting (API call)
+      if (isSubmitting) {
+        if (!loaderTimerRef.current) {
+          loaderTimerRef.current = setTimeout(() => {
+            setLoaderMessage('Authenticating your account...');
+            loaderTriggered = true;
+          }, 1000);
+        }
+      } 
+      // 2. If authenticated and needs redirect
+      else if (isAuthenticated) {
+        // Clear previous timer if any and start redirect timer
+        if (loaderTimerRef.current) clearTimeout(loaderTimerRef.current);
+        
+        loaderTimerRef.current = setTimeout(() => {
+          setLoaderMessage('Preparing your command center...');
+          loaderTriggered = true;
+        }, 1000);
+
+        // Perform the redirect
+        router.replace('/storeDashboard');
+
+        // If the loader was triggered, wait to ensure it's shown for 2 seconds
+        if (loaderTriggered) {
+          const elapsed = Date.now() - startTime;
+          const minDisplayTotal = 3000; 
+          if (elapsed < minDisplayTotal) {
+            await new Promise(r => setTimeout(r, minDisplayTotal - elapsed));
+          }
+        }
+      } 
+      // 3. Clear everything if neither
+      else {
+        if (loaderTimerRef.current) {
+          clearTimeout(loaderTimerRef.current);
+          loaderTimerRef.current = null;
+        }
+        setLoaderMessage('');
+      }
+    };
+
+    handleRedirect();
+
+    return () => {
+      if (loaderTimerRef.current) {
+        clearTimeout(loaderTimerRef.current);
+        loaderTimerRef.current = null;
+      }
+    };
+  }, [isAuthenticated, isSubmitting, router]);
 
   const onChange = (event) => {
     if (error) {
@@ -49,6 +102,9 @@ export default function AuthForm({ mode = 'login' }) {
 
   return (
     <div className="w-full relative">
+      {/* Delayed Loader Overlay */}
+      {loaderMessage && <PageLoader message={loaderMessage} />}
+
       {/* Back Button */}
       <button
         onClick={() => router.push('/')}
