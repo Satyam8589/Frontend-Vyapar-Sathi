@@ -102,9 +102,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-8rem)] animate-scale-up scrollbar-hide">
+      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-6rem)] animate-scale-up scrollbar-hide">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-start justify-between">
           <div>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
               Add New Product
@@ -113,38 +113,25 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               Register a new product to your inventory
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              form="add-product-form"
-              disabled={loading}
-              className="btn-primary-yb py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm"
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2.5 hover:bg-white/80 rounded-xl text-slate-400 hover:text-slate-600 transition-colors border border-slate-200 shadow-sm ml-4 flex-shrink-0"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              {loading && (
-                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              )}
-              <span>{loading ? "Adding..." : "Add Product"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2.5 hover:bg-white/80 rounded-xl text-slate-400 hover:text-slate-600 transition-colors border border-slate-200 shadow-sm"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
         {/* Form */}
@@ -306,6 +293,28 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
           </div>
 
         </form>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-xl font-bold transition-all text-slate-700 border border-slate-300 hover:bg-white/80 hover:border-slate-400 shadow-sm text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="add-product-form"
+            disabled={loading}
+            className="btn-primary-yb py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm"
+          >
+            {loading && (
+              <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            )}
+            <span>{loading ? "Adding..." : "Add Product"}</span>
+          </button>
+        </div>
       </div>
     </div>
   </>,
