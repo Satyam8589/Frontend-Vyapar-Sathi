@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import dynamic from "next/dynamic";
 import PageLoader from "@/components/PageLoader";
-import { resolveProductByBarcode } from "../services/inventoryService";
+import {
+  resolveProductByBarcode,
+  fetchFromMasterProduct,
+} from "../services/inventoryService";
 
 // Dynamically import BarcodeScanner — html5-qrcode accesses browser APIs,
 // so it must never run during SSR (Next.js server render).
@@ -14,7 +17,9 @@ const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), {
 
 const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -33,7 +38,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   // Barcode scanner / resolver state
   const [scannerOpen, setScannerOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const [resolveStatus, setResolveStatus] = useState(null); // "found" | "not_found" | "error"
+  const [resolvingStep, setResolvingStep] = useState(""); // "external" | "master"
+  const [resolveStatus, setResolveStatus] = useState(null); // "found" | "master_found" | "not_found" | "error"
 
   // Loading overlay state
   const [showOverlay, setShowOverlay] = useState(false);
@@ -52,22 +58,39 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
           const elapsed = Date.now() - startTimeRef.current;
           const minDelayTotal = 3000;
           if (elapsed < minDelayTotal) {
-            await new Promise(r => setTimeout(r, minDelayTotal - elapsed));
+            await new Promise((r) => setTimeout(r, minDelayTotal - elapsed));
           }
         }
-        if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
         setShowOverlay(false);
         startTimeRef.current = null;
       };
       handleLoadingFinish();
     }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [loading, showOverlay]);
 
   // Reset form + scanner state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setFormData({ name: "", brand: "", category: "General", qty: "", unit: "Pieces", price: "", expDate: "", barcode: "", image: "", source: "", confidence: null });
+      setFormData({
+        name: "",
+        brand: "",
+        category: "General",
+        qty: "",
+        unit: "Pieces",
+        price: "",
+        expDate: "",
+        barcode: "",
+        image: "",
+        source: "",
+        confidence: null,
+      });
       setScannerOpen(false);
       setResolving(false);
       setResolveStatus(null);
@@ -79,7 +102,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   /**
    * Core resolver logic — used by both scanner and manual entry.
-   * Fetches product details from the backend and autofills the form.
+   * Priority: 1) External API  2) MasterProduct DB  3) Manual fill
    */
   const resolveAndAutofill = async (barcode) => {
     if (!barcode || barcode.trim() === "") {
@@ -91,36 +114,43 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     setResolving(true);
 
     try {
-      const product = await resolveProductByBarcode(barcode);
+      // ── Step 1: Try external API (Open Food Facts, etc.) ──────────────────
+      setResolvingStep("external");
+      let product = await resolveProductByBarcode(barcode);
+      let source = "external";
 
+      // ── Step 2: Fallback to MasterProduct internal DB ─────────────────────
+      if (!product) {
+        setResolvingStep("master");
+        product = await fetchFromMasterProduct(barcode);
+        source = "master";
+      }
+
+      // ── Step 3: Neither found → prompt manual fill ────────────────────────
       if (!product) {
         setResolveStatus("not_found");
         return;
       }
 
-      // Parse quantity string (e.g. "125ml") into numeric qty + unit
-      const { qty: resolvedQty, unit: resolvedUnit } = parseQuantityString(product.quantity);
-
-      // Autofill available fields — keep user-entered price as-is
-      setFormData(prev => ({
+      // Autofill available fields — qty is always manually entered by shopkeeper
+      setFormData((prev) => ({
         ...prev,
         barcode,
         name: product.name || prev.name,
         brand: product.brand || prev.brand,
         category: mapToSelectCategory(product.category, product.source),
-        // Only overwrite qty/unit if the resolver gave us a valid quantity
-        ...(resolvedQty ? { qty: resolvedQty, unit: resolvedUnit } : {}),
         // Metadata from the resolver — sent to backend but not shown as editable fields
         image: product.image || "",
         source: product.source || "",
         confidence: product.confidence ?? null,
       }));
 
-      setResolveStatus("found");
+      setResolveStatus(source === "master" ? "master_found" : "found");
     } catch {
       setResolveStatus("error");
     } finally {
       setResolving(false);
+      setResolvingStep("");
     }
   };
 
@@ -130,7 +160,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
    */
   const handleScanComplete = async (barcode) => {
     setScannerOpen(false);
-    setFormData(prev => ({ ...prev, barcode }));
+    setFormData((prev) => ({ ...prev, barcode }));
     await resolveAndAutofill(barcode);
   };
 
@@ -152,17 +182,19 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
    */
   const parseQuantityString = (qtyStr) => {
     if (!qtyStr) return { qty: "", unit: "Pieces" };
-    const match = String(qtyStr).trim().match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]*)/);
+    const match = String(qtyStr)
+      .trim()
+      .match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]*)/);
     if (!match || !match[1]) return { qty: "", unit: "Pieces" };
     const num = match[1];
     const rawUnit = (match[2] || "").toLowerCase();
     let unit = "Pieces";
-    if (/^ml$/.test(rawUnit))                           unit = "ml";
-    else if (/^l$|^lt?r?s?$/.test(rawUnit))            unit = "Liters";
-    else if (/^g$|^gm$|^gram/.test(rawUnit))            unit = "g";
-    else if (/^kg$/.test(rawUnit))                      unit = "kg";
-    else if (/^pack|^pkt/.test(rawUnit))                unit = "Packs";
-    else if (/^bottle/.test(rawUnit))                   unit = "Bottles";
+    if (/^ml$/.test(rawUnit)) unit = "ml";
+    else if (/^l$|^lt?r?s?$/.test(rawUnit)) unit = "Liters";
+    else if (/^g$|^gm$|^gram/.test(rawUnit)) unit = "g";
+    else if (/^kg$/.test(rawUnit)) unit = "kg";
+    else if (/^pack|^pkt/.test(rawUnit)) unit = "Packs";
+    else if (/^bottle/.test(rawUnit)) unit = "Bottles";
     return { qty: num, unit };
   };
 
@@ -178,19 +210,47 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       return "General";
     }
     // Strip Open*Facts taxonomy prefixes like "en:" before matching
-    const cleaned = raw.replace(/\ben:[\w-]*/gi, "").replace(/,\s*,/g, ",").trim();
+    const cleaned = raw
+      .replace(/\ben:[\w-]*/gi, "")
+      .replace(/,\s*,/g, ",")
+      .trim();
     const lower = (cleaned || raw).toLowerCase();
-    if (/beauty|skin|hair|cosmeti|personal.?care|hygiene|soap|shampoo|lotion|cream|gel|cleanser|dental|oral|toothpaste|deodorant|sanitiz|sensodyne|dettol|cetaphil/.test(lower)) return "Personal Care";
-    if (/non.?food|household|cleaning/.test(lower))    return "Personal Care";
-    if (/beverage|drink|juice|water|soda|tea|coffee/.test(lower)) return "Beverages";
-    if (/bread|bak|biscuit|cake|cookie/.test(lower))              return "Bakery";
-    if (/dairy|milk|cheese|butter|yogurt|curd/.test(lower))       return "Dairy";
-    if (/produce|fruit|veg|fresh/.test(lower))                    return "Produce";
-    if (/snack|chip|crisp|nut|popcorn/.test(lower))               return "Snacks";
-    if (/pantry|grain|rice|flour|oil|spice|sauce/.test(lower))    return "Pantry";
+    if (
+      /beauty|skin|hair|cosmeti|personal.?care|hygiene|soap|shampoo|lotion|cream|gel|cleanser|dental|oral|toothpaste|deodorant|sanitiz|sensodyne|dettol|cetaphil/.test(
+        lower,
+      )
+    )
+      return "Personal Care";
+    if (/non.?food|household|cleaning/.test(lower)) return "Personal Care";
+    if (/beverage|drink|juice|water|soda|tea|coffee/.test(lower))
+      return "Beverages";
+    if (/bread|bak|biscuit|cake|cookie/.test(lower)) return "Bakery";
+    if (/dairy|milk|cheese|butter|yogurt|curd/.test(lower)) return "Dairy";
+    if (/produce|fruit|veg|fresh/.test(lower)) return "Produce";
+    if (/snack|chip|crisp|nut|popcorn/.test(lower)) return "Snacks";
+    if (/pantry|grain|rice|flour|oil|spice|sauce/.test(lower)) return "Pantry";
     // If Open*Facts source but no category match, treat as Personal Care
     if (/beauty/i.test(source)) return "Personal Care";
     return "General";
+  };
+
+  const getBarcodeInputClass = () => {
+    if (resolving) return "bg-blue-50 border-blue-300 cursor-wait";
+    if (resolveStatus === "found")
+      return "bg-green-50 border-green-400 focus:ring-2 focus:ring-green-400";
+    if (resolveStatus === "master_found")
+      return "bg-indigo-50 border-indigo-400 focus:ring-2 focus:ring-indigo-400";
+    if (resolveStatus === "not_found" || resolveStatus === "error")
+      return "bg-amber-50 border-amber-300 focus:ring-2 focus:ring-amber-400";
+    return "bg-slate-50/50 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
+  };
+
+  const getBarcodeIconClass = () => {
+    if (resolveStatus === "found") return "text-green-500";
+    if (resolveStatus === "master_found") return "text-indigo-500";
+    if (resolveStatus === "not_found" || resolveStatus === "error")
+      return "text-amber-500";
+    return "text-slate-400";
   };
 
   const handleSubmit = async (e) => {
@@ -204,8 +264,17 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       });
       if (result?.success) {
         setFormData({
-          name: "", brand: "", category: "General", qty: "", unit: "Pieces",
-          price: "", expDate: "", barcode: "", image: "", source: "", confidence: null,
+          name: "",
+          brand: "",
+          category: "General",
+          qty: "",
+          unit: "Pieces",
+          price: "",
+          expDate: "",
+          barcode: "",
+          image: "",
+          source: "",
+          confidence: null,
         });
         setResolveStatus(null);
       }
@@ -214,7 +283,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   if (!mounted || !isOpen) return null;
@@ -255,8 +324,18 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               onClick={onClose}
               className="p-2.5 hover:bg-white/80 rounded-xl text-slate-400 hover:text-slate-600 transition-colors border border-slate-200 shadow-sm ml-4 flex-shrink-0"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -264,7 +343,6 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
           {/* Form */}
           <form id="add-product-form" onSubmit={handleSubmit} className="p-6">
             <div className="grid grid-cols-12 gap-3">
-
               {/* Product Name */}
               <div className="col-span-12 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
@@ -283,7 +361,10 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               {/* Brand */}
               <div className="col-span-12 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                  Brand <span className="text-slate-400 normal-case font-medium">(optional)</span>
+                  Brand{" "}
+                  <span className="text-slate-400 normal-case font-medium">
+                    (optional)
+                  </span>
                 </label>
                 <input
                   name="brand"
@@ -396,14 +477,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                       onBlur={handleBarcodeBlur}
                       placeholder="Scan or enter barcode"
                       disabled={resolving}
-                      className={`w-full pl-11 pr-4 py-3 border rounded-xl outline-none transition-all text-slate-900 font-semibold
-                          ? "bg-blue-50 border-blue-300 cursor-wait"
-                          : resolveStatus === "found"
-                            ? "bg-green-50 border-green-400 focus:ring-2 focus:ring-green-400"
-                            : (resolveStatus === "not_found" || resolveStatus === "error")
-                              ? "bg-green-50 border-green-400 focus:ring-2 focus:ring-green-400"
-                              : "bg-slate-50/50 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        }`}
+                      className={`w-full pl-11 pr-4 py-3 border rounded-xl outline-none transition-all text-slate-900 font-semibold ${getBarcodeInputClass()}`}
                     />
 
                     {/* Left icon: spinner while resolving, barcode otherwise */}
@@ -411,15 +485,15 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 border-2 border-blue-400/30 border-t-blue-500 rounded-full animate-spin" />
                     ) : (
                       <svg
-                        className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${
-                          (resolveStatus === "found" || resolveStatus === "not_found" || resolveStatus === "error") ? "text-green-500"
-                          : "text-slate-400"
-                        }`}
+                        className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${getBarcodeIconClass()}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
                           d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
                         />
                       </svg>
@@ -430,14 +504,30 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   <button
                     type="button"
                     disabled={resolving}
-                    onClick={() => { setResolveStatus(null); setScannerOpen(true); }}
+                    onClick={() => {
+                      setResolveStatus(null);
+                      setScannerOpen(true);
+                    }}
                     className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/30 active:scale-95"
                   >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
                         d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"
                       />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12h10" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 12h10"
+                      />
                     </svg>
                     <span>{resolving ? "Resolving…" : "Scan"}</span>
                   </button>
@@ -447,12 +537,15 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 {resolving && (
                   <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    Looking up product details…
+                    {resolvingStep === "master"
+                      ? "Checking product catalogue…"
+                      : "Looking up product details…"}
                   </p>
                 )}
                 {resolveStatus === "found" && (
                   <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
-                    ✓ Product found — fields auto-filled. Review and adjust if needed.
+                    ✓ Product found — fields auto-filled. Review and adjust if
+                    needed.
                   </p>
                 )}
                 {resolveStatus === "found" && formData.image && (
@@ -461,26 +554,82 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                       src={formData.image}
                       alt={formData.name}
                       className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
-                      onError={e => { e.target.style.display = "none"; }}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
                     />
                     <div className="text-xs text-slate-600 font-medium leading-snug">
-                      {formData.brand && <p className="font-bold text-slate-800">{formData.brand}</p>}
+                      {formData.brand && (
+                        <p className="font-bold text-slate-800">
+                          {formData.brand}
+                        </p>
+                      )}
                       <p className="text-slate-500">via {formData.source}</p>
                     </div>
                   </div>
                 )}
+                {resolveStatus === "master_found" && (
+                  <div className="mt-1">
+                    <p className="text-xs text-indigo-700 font-semibold flex items-center gap-1.5">
+                      ✓ Found in product catalogue — fields auto-filled. Review
+                      and adjust if needed.
+                    </p>
+                    {formData.image && (
+                      <div className="flex items-center gap-3 mt-1.5 p-2 bg-indigo-50 border border-indigo-200 rounded-xl">
+                        <img
+                          src={formData.image}
+                          alt={formData.name}
+                          className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                        <div className="text-xs text-slate-600 font-medium leading-snug">
+                          {formData.brand && (
+                            <p className="font-bold text-slate-800">
+                              {formData.brand}
+                            </p>
+                          )}
+                          <p className="text-slate-500">
+                            From your product catalogue
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {resolveStatus === "not_found" && (
-                  <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
-                    ✓ New product! Please fill in the details manually.
-                  </p>
+                  <div className="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <p className="text-xs text-amber-800 font-bold flex items-center gap-1.5">
+                      <svg
+                        className="h-4 w-4 text-amber-500 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Product not found in any source
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      This barcode wasn&apos;t found in the external database or
+                      our product catalogue. Please fill in the product details
+                      manually below.
+                    </p>
+                  </div>
                 )}
                 {resolveStatus === "error" && (
-                  <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
-                    ✓ Could not reach lookup service. Please enter details manually.
+                  <p className="text-xs text-amber-700 font-semibold flex items-center gap-1.5">
+                    ⚠️ Could not reach lookup service. Please enter details
+                    manually.
                   </p>
                 )}
               </div>
-
             </div>
           </form>
 
@@ -508,10 +657,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         </div>
       </div>
     </>,
-    document.body
+    document.body,
   );
 };
-
-
 
 export default AddProductModal;
