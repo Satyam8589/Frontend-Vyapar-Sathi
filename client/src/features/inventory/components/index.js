@@ -10,3 +10,4 @@ export { default as StoreDetailsSidebar } from './StoreDetailsSidebar';
 export { default as InventoryHeader } from './InventoryHeader';
 export { default as InventoryErrorAlert } from './InventoryErrorAlert';
 export { default as InventoryPageWrapper } from './InventoryPageWrapper';
+export { default as BarcodeScanner } from './BarcodeScanner';
