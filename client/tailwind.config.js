@@ -25,6 +25,7 @@ module.exports = {
       animation: {
         'float': 'float 3s ease-in-out infinite',
         'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+        'scan-line': 'scanLine 1.8s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -34,7 +35,12 @@ module.exports = {
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
+        },
+        scanLine: {
+          '0%':   { top: '10%',  opacity: '1' },
+          '50%':  { top: '85%', opacity: '1' },
+          '100%': { top: '10%',  opacity: '1' },
+        },
       }
     },
   },
