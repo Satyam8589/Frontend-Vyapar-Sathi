@@ -87,3 +87,38 @@ export const fetchFromMasterProduct = async (barcode) => {
     return null;
   }
 };
+
+/**
+ * Save a product to the MasterProduct database.
+ * Only saves if the barcode doesn't already exist in MasterProduct.
+ * This helps build a shared product catalog from user submissions.
+ *
+ * @param {object} productData - Product data to save (name, brand, category, barcode, image)
+ * @returns {Promise<boolean>} - true if saved, false if already exists or error
+ */
+export const saveToMasterProduct = async (productData) => {
+  try {
+    // Only save if barcode is present
+    if (!productData.barcode) return false;
+
+    // Check if already exists in MasterProduct
+    const existing = await fetchFromMasterProduct(productData.barcode);
+    if (existing) return false; // Already in master DB, no need to save
+
+    // Prepare payload - only save catalog data, not store-specific data
+    const payload = {
+      barcode: productData.barcode,
+      name: productData.name,
+      brand: productData.brand || "",
+      category: productData.category || "General",
+      image: productData.image || "",
+    };
+
+    await apiPost("/products/master", payload);
+    return true;
+  } catch (error) {
+    // Silently fail - saving to MasterProduct is not critical
+    console.warn("Failed to save to MasterProduct:", error);
+    return false;
+  }
+};

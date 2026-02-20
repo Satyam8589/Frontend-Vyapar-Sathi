@@ -102,7 +102,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   /**
    * Core resolver logic — used by both scanner and manual entry.
-   * Priority: 1) External API  2) MasterProduct DB  3) Manual fill
+   * Priority: 1) MasterProduct DB  2) External API  3) Manual fill
    */
   const resolveAndAutofill = async (barcode) => {
     if (!barcode || barcode.trim() === "") {
@@ -114,16 +114,16 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     setResolving(true);
 
     try {
-      // ── Step 1: Try external API (Open Food Facts, etc.) ──────────────────
-      setResolvingStep("external");
-      let product = await resolveProductByBarcode(barcode);
-      let source = "external";
+      // ── Step 1: Try MasterProduct internal DB first (faster) ──────────────
+      setResolvingStep("master");
+      let product = await fetchFromMasterProduct(barcode);
+      let source = "master";
 
-      // ── Step 2: Fallback to MasterProduct internal DB ─────────────────────
+      // ── Step 2: Fallback to external API (Open Food Facts, etc.) ──────────
       if (!product) {
-        setResolvingStep("master");
-        product = await fetchFromMasterProduct(barcode);
-        source = "master";
+        setResolvingStep("external");
+        product = await resolveProductByBarcode(barcode);
+        source = "external";
       }
 
       // ── Step 3: Neither found → prompt manual fill ────────────────────────

@@ -84,6 +84,11 @@ export const InventoryProvider = ({ children }) => {
         }));
       }
 
+      // Save to MasterProduct DB if not already present (async, non-blocking)
+      inventoryService.saveToMasterProduct(productData).catch(() => {
+        // Silently ignore errors - saving to MasterProduct is optional
+      });
+
       showSuccess(`Product "${productData.name}" added successfully!`);
       return { success: true, data: newProduct };
     } catch (err) {
