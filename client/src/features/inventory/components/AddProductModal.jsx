@@ -18,12 +18,16 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   const [formData, setFormData] = useState({
     name: "",
+    brand: "",
     category: "General",
     qty: "",
     unit: "Pieces",
     price: "",
     expDate: "",
     barcode: "",
+    image: "",
+    source: "",
+    confidence: null,
   });
 
   // Barcode scanner / resolver state
@@ -63,7 +67,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   // Reset form + scanner state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setFormData({ name: "", category: "General", qty: "", unit: "Pieces", price: "", expDate: "", barcode: "" });
+      setFormData({ name: "", brand: "", category: "General", qty: "", unit: "Pieces", price: "", expDate: "", barcode: "", image: "", source: "", confidence: null });
       setScannerOpen(false);
       setResolving(false);
       setResolveStatus(null);
@@ -94,14 +98,22 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         return;
       }
 
-      // Autofill available fields — keep user-entered qty/price as-is
+      // Parse quantity string (e.g. "125ml") into numeric qty + unit
+      const { qty: resolvedQty, unit: resolvedUnit } = parseQuantityString(product.quantity);
+
+      // Autofill available fields — keep user-entered price as-is
       setFormData(prev => ({
         ...prev,
         barcode,
         name: product.name || prev.name,
-        category: product.category
-          ? mapToSelectCategory(product.category)
-          : prev.category,
+        brand: product.brand || prev.brand,
+        category: mapToSelectCategory(product.category, product.source),
+        // Only overwrite qty/unit if the resolver gave us a valid quantity
+        ...(resolvedQty ? { qty: resolvedQty, unit: resolvedUnit } : {}),
+        // Metadata from the resolver — sent to backend but not shown as editable fields
+        image: product.image || "",
+        source: product.source || "",
+        confidence: product.confidence ?? null,
       }));
 
       setResolveStatus("found");
@@ -135,32 +147,65 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   };
 
   /**
+   * Parse a quantity string like "125ml", "500g", "1L", "2kg" into { qty, unit }.
+   * Returns the best-matching unit from the form's select options.
+   */
+  const parseQuantityString = (qtyStr) => {
+    if (!qtyStr) return { qty: "", unit: "Pieces" };
+    const match = String(qtyStr).trim().match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]*)/);
+    if (!match || !match[1]) return { qty: "", unit: "Pieces" };
+    const num = match[1];
+    const rawUnit = (match[2] || "").toLowerCase();
+    let unit = "Pieces";
+    if (/^ml$/.test(rawUnit))                           unit = "ml";
+    else if (/^l$|^lt?r?s?$/.test(rawUnit))            unit = "Liters";
+    else if (/^g$|^gm$|^gram/.test(rawUnit))            unit = "g";
+    else if (/^kg$/.test(rawUnit))                      unit = "kg";
+    else if (/^pack|^pkt/.test(rawUnit))                unit = "Packs";
+    else if (/^bottle/.test(rawUnit))                   unit = "Bottles";
+    return { qty: num, unit };
+  };
+
+  /**
    * Map a free-text category from the API to one of our select options.
+   * Handles Open*Facts taxonomy tags (e.g. "en:open-beauty-facts") and null values.
    * Falls back to "General" when nothing matches.
    */
-  const mapToSelectCategory = (raw = "") => {
-    const lower = raw.toLowerCase();
+  const mapToSelectCategory = (raw = "", source = "") => {
+    if (!raw) {
+      // Use source as a fallback signal when category is null
+      if (/beauty/i.test(source)) return "Personal Care";
+      return "General";
+    }
+    // Strip Open*Facts taxonomy prefixes like "en:" before matching
+    const cleaned = raw.replace(/\ben:[\w-]*/gi, "").replace(/,\s*,/g, ",").trim();
+    const lower = (cleaned || raw).toLowerCase();
+    if (/beauty|skin|hair|cosmeti|personal.?care|hygiene|soap|shampoo|lotion|cream|gel|cleanser|dental|oral|toothpaste|deodorant|sanitiz|sensodyne|dettol|cetaphil/.test(lower)) return "Personal Care";
+    if (/non.?food|household|cleaning/.test(lower))    return "Personal Care";
     if (/beverage|drink|juice|water|soda|tea|coffee/.test(lower)) return "Beverages";
     if (/bread|bak|biscuit|cake|cookie/.test(lower))              return "Bakery";
     if (/dairy|milk|cheese|butter|yogurt|curd/.test(lower))       return "Dairy";
     if (/produce|fruit|veg|fresh/.test(lower))                    return "Produce";
+    if (/snack|chip|crisp|nut|popcorn/.test(lower))               return "Snacks";
     if (/pantry|grain|rice|flour|oil|spice|sauce/.test(lower))    return "Pantry";
+    // If Open*Facts source but no category match, treat as Personal Care
+    if (/beauty/i.test(source)) return "Personal Care";
     return "General";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (onAction) {
-      const result = await onAction({ ...formData, quantity: Number(formData.qty), price: Number(formData.price) });
+      const { qty, ...rest } = formData;
+      const result = await onAction({
+        ...rest,
+        quantity: Number(qty),
+        price: Number(formData.price),
+      });
       if (result?.success) {
         setFormData({
-          name: "",
-          category: "General",
-          qty: "",
-          unit: "Pieces",
-          price: "",
-          expDate: "",
-          barcode: "",
+          name: "", brand: "", category: "General", qty: "", unit: "Pieces",
+          price: "", expDate: "", barcode: "", image: "", source: "", confidence: null,
         });
         setResolveStatus(null);
       }
@@ -235,6 +280,20 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 />
               </div>
 
+              {/* Brand */}
+              <div className="col-span-12 flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Brand <span className="text-slate-400 normal-case font-medium">(optional)</span>
+                </label>
+                <input
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleChange}
+                  placeholder="Ex: Nestlé, Amul, Dettol"
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
+                />
+              </div>
+
               {/* Category */}
               <div className="col-span-12 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
@@ -252,6 +311,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   <option>Dairy</option>
                   <option>Produce</option>
                   <option>Pantry</option>
+                  <option>Snacks</option>
+                  <option>Personal Care</option>
                 </select>
               </div>
 
@@ -281,6 +342,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 cursor-pointer font-semibold"
                 >
                   <option>Pieces</option>
+                  <option>ml</option>
+                  <option>g</option>
                   <option>kg</option>
                   <option>Liters</option>
                   <option>Packs</option>
@@ -391,6 +454,20 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
                     ✓ Product found — fields auto-filled. Review and adjust if needed.
                   </p>
+                )}
+                {resolveStatus === "found" && formData.image && (
+                  <div className="flex items-center gap-3 mt-1 p-2 bg-green-50 border border-green-200 rounded-xl">
+                    <img
+                      src={formData.image}
+                      alt={formData.name}
+                      className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
+                      onError={e => { e.target.style.display = "none"; }}
+                    />
+                    <div className="text-xs text-slate-600 font-medium leading-snug">
+                      {formData.brand && <p className="font-bold text-slate-800">{formData.brand}</p>}
+                      <p className="text-slate-500">via {formData.source}</p>
+                    </div>
+                  </div>
                 )}
                 {resolveStatus === "not_found" && (
                   <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
