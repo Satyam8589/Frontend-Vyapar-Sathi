@@ -55,11 +55,7 @@ export const useInventoryPageLogic = () => {
   // Add new product
   const handleAddProduct = async (data) => {
     const result = await addProduct(data);
-    if (result.success) {
-      setIsAddModalOpen(false);
-    } else {
-      alert(result.error);
-    }
+    return result;
   };
 
   // Update existing product

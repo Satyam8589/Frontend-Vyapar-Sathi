@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+import { showSuccess, showError, showInfo } from "@/utils/toast";
 
 // Plays a short confirmation beep using the Web Audio API (no external dependency)
 const playBeep = () => {
@@ -22,7 +23,7 @@ const playBeep = () => {
   }
 };
 
-// Vibrate once briefly (supported on Android Chrome)
+// Vibrate once briefly
 const vibrate = () => {
   try {
     if (navigator.vibrate) navigator.vibrate(100);
@@ -36,79 +37,63 @@ const SCANNER_DIV_ID = "vyapar-barcode-reader";
 /**
  * BarcodeScanner
  *
- * A camera-based barcode scanner modal using html5-qrcode.
- * Must be dynamically imported (no SSR) — see AddProductModal.jsx.
- *
- * Props:
- *  onScan(barcode: string) — called once when a barcode is decoded
- *  onClose()              — called when user dismisses the modal
+ * Implements a "Camera First" workflow:
+ * 1. Shows live camera feed (preview only).
+ * 2. User clicks "Capture".
+ * 3. We grab the frame, freeze it, and try to decode a barcode from the image.
  */
 const BarcodeScanner = ({ onScan, onClose }) => {
   const [mounted, setMounted] = useState(false);
-  const [error, setError] = useState(null);       // camera permission / init errors
+  const [error, setError] = useState(null);
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const scannerRef = useRef(null);   // Html5Qrcode instance
-  const scannedRef = useRef(false);  // debounce — only fire onScan once
+  const Html5QrcodeRef = useRef(null); // The library class itself
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Initialise scanner after mount
+  // Initialise scanner after mount - Preview Mode Only
   useEffect(() => {
     if (!mounted) return;
 
-    let html5QrCode;
-
     const startScanner = async () => {
       try {
-        // Dynamically import so the module never runs during SSR
-        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
+        const { Html5Qrcode } = await import("html5-qrcode");
+        Html5QrcodeRef.current = Html5Qrcode;
 
-        html5QrCode = new Html5Qrcode(SCANNER_DIV_ID, { verbose: false });
+        const html5QrCode = new Html5Qrcode(SCANNER_DIV_ID, { verbose: false });
         scannerRef.current = html5QrCode;
 
         await html5QrCode.start(
-          { facingMode: "environment" }, // rear camera
+          { facingMode: "environment" }, 
           {
-            fps: 10,
+            fps: 30, // High FPS for smooth preview
             qrbox: { width: 260, height: 120 },
-            // Restrict to retail barcodes only — faster & no false QR positives
-            formatsToSupport: [
-              Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.UPC_A,
-              Html5QrcodeSupportedFormats.CODE_128,
-            ],
             aspectRatio: 1.7,
+            // We are NOT passing a success callback that does anything, 
+            // effectively just using this for the camera preview.
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            }
           },
           (decodedText) => {
-            // Debounce — ignore repeated fire for same scan
-            if (scannedRef.current) return;
-            scannedRef.current = true;
-
-            playBeep();
-            vibrate();
-
-            stopScanner().then(() => {
-              onScan(decodedText);
-            });
+             // Intentionally ignoring real-time results
+             // We only care when user clicks Capture
           },
-          () => {
-            // Per-frame decode error — normal, suppress
-          }
+          () => {}
         );
 
-        // Check if torch (flashlight) is available
+        // Check torch
         try {
           const capabilities = html5QrCode.getRunningTrackCameraCapabilities();
           if (capabilities?.torchFeature()?.isSupported()) {
             setTorchSupported(true);
           }
-        } catch {
-          // Torch capability API not available on this device
-        }
+        } catch {}
       } catch (err) {
         if (
           err?.name === "NotAllowedError" ||
@@ -128,28 +113,123 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     return () => {
       stopScanner();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]);
 
   const stopScanner = async () => {
     try {
       if (scannerRef.current) {
-        const state = scannerRef.current.getState();
-        // State 2 = SCANNING, only stop if active
-        if (state === 2) {
-          await scannerRef.current.stop();
+        if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
         }
         scannerRef.current.clear();
         scannerRef.current = null;
       }
-    } catch {
-      // Already stopped — ignore
-    }
+    } catch {}
   };
 
   const handleClose = async () => {
     await stopScanner();
     onClose();
+  };
+
+  /**
+   * Capture the current frame and try to scan it
+   */
+  const handleCapture = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    vibrate();
+
+    try {
+        // 1. Find the video element created by html5-qrcode
+        const videoElement = document.querySelector(`#${SCANNER_DIV_ID} video`);
+        if (!videoElement) {
+            throw new Error("Camera stream not ready");
+        }
+
+        // 2. Pause video to simulate "shutter capture"
+        videoElement.pause();
+
+        // 3. Draw current frame to a temporary canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        // 4. Convert canvas to File/Blob for scanning
+        // We use the 'scanFile' API on a new instance or a static method if available, 
+        // but since we have an active instance, we can't easily reuse it for file scan while it is "running" the camera.
+        // Actually, html5-qrcode library supports passing an image file to a new instance.
+        
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                setIsProcessing(false);
+                videoElement.play();
+                return;
+            }
+
+            const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+            
+            // We need a separate instance or logic to scan this file. 
+            // The running instance is busy with the camera stream.
+            // However, since we paused the video, we can stop the camera, scan the file, and if fail restart camera.
+            // OR: Calculate it purely client side if the library exposes a stateless scan function.
+            // Html5Qrcode has a staticish method but usually requires an instance.
+            
+            // Let's optimize: We don't need to stop the camera completely if we can just use the storage-based scan.
+            // But Html5Qrcode usually locks the element.
+            // A safer, albeit slightly heavier way: 
+            
+            try {
+                // We'll use a temporary hidden div for the file scanner to not interfere with the camera UI
+                // But wait, we can't scan a file easily without an instance attached to a DOM element usually.
+                // UNLESS we use the `Html5Qrcode` with a different element ID or the "BarcodeDetector" API directly if supported.
+                
+                // Let's try stopping the current scanner briefly to run the file scan.
+                // It gives the specific "Capture" UX anyway.
+                await scannerRef.current.stop();
+
+                // Now scan the file
+                const results = await scannerRef.current.scanFileV2(file, true);
+                
+                if (results && results.decodedText) {
+                    playBeep();
+                    onScan(results.decodedText);
+                    // Don't restart, we interpret this as success and closing is handled by parent, 
+                    // or parent keeps it open but we will be unmounted.
+                } else {
+                    throw new Error("No code found");
+                }
+            } catch (err) {
+                console.warn("Scan failed", err);
+                showInfo("No barcode detected in this image. Try getting closer.");
+                
+                // Restart camera preview
+                // We need to re-initialize the start sequence
+                // Quick hack: just triggering a re-render or re-calling start
+                // But since we are inside the function, let's just manually restart.
+                try {
+                     await scannerRef.current.start(
+                        { facingMode: "environment" }, 
+                        { fps: 30, qrbox: { width: 260, height: 120 }, aspectRatio: 1.7 }, 
+                        () => {}, 
+                        () => {}
+                     );
+                     // Video element is recreated, so no need to .play()
+                } catch (restartErr) {
+                    setError("Camera failed to restart.");
+                }
+            } finally {
+                setIsProcessing(false);
+            }
+        }, 'image/jpeg', 0.9);
+
+    } catch (err) {
+        console.error(err);
+        setIsProcessing(false);
+        showError("Capture failed. Please try again.");
+    }
   };
 
   const handleTorchToggle = async () => {
@@ -173,131 +253,96 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   if (!mounted) return null;
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
-      {/* Dark backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={handleClose}
-      />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black">
+      {/* Full screen simplified for camera feel */}
 
-      {/* Scanner card */}
-      <div className="relative w-full max-w-sm mx-4 rounded-3xl overflow-hidden bg-slate-900 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-slate-800">
-          <div>
-            <h3 className="text-white font-bold text-base">Scan Barcode</h3>
-            <p className="text-slate-400 text-xs mt-0.5">
-              Point camera at product barcode
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Torch toggle */}
+      {/* Header Controls */}
+      <div className="absolute top-0 left-0 right-0 z-10 px-6 py-6 flex items-center justify-between pointer-events-none">
+        <button
+            type="button"
+            onClick={handleClose}
+            className="pointer-events-auto p-3 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60 transition-all border border-white/10"
+        >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <div className="flex gap-4 pointer-events-auto">
             {torchSupported && (
               <button
                 type="button"
                 onClick={handleTorchToggle}
-                title={torchOn ? "Turn torch off" : "Turn torch on"}
-                className={`p-2 rounded-xl transition-colors ${
-                  torchOn
-                    ? "bg-yellow-400 text-yellow-900"
-                    : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                className={`p-3 rounded-full transition-all border border-white/10 backdrop-blur-md ${
+                  torchOn ? "bg-yellow-400 text-yellow-900" : "bg-black/40 text-white hover:bg-black/60"
                 }`}
               >
-                {/* Flashlight icon */}
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7 2v11h3v9l7-12h-4l4-8z" />
                 </svg>
               </button>
             )}
-
-            {/* Close */}
-            <button
-              type="button"
-              onClick={handleClose}
-              className="p-2 rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
         </div>
+      </div>
 
-        {/* Camera viewport */}
-        <div className="relative bg-black">
-          {error ? (
-            /* Error state */
-            <div className="flex flex-col items-center justify-center h-64 px-6 text-center gap-4">
-              <div className="p-3 rounded-full bg-red-500/20">
-                <svg
-                  className="h-8 w-8 text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <p className="text-red-400 text-sm font-semibold">{error}</p>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold hover:bg-slate-600 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          ) : (
+      {/* Camera Viewport Area */}
+      <div className="w-full h-full relative flex items-center justify-center bg-black">
+        {error ? (
+           <div className="flex flex-col items-center justify-center px-6 text-center gap-4">
+             <div className="p-4 rounded-full bg-red-500/20">
+               <svg className="h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+               </svg>
+             </div>
+             <p className="text-white font-medium">{error}</p>
+             <button onClick={handleClose} className="px-6 py-2 bg-slate-800 text-white rounded-full font-bold">Close</button>
+           </div>
+        ) : (
             <>
-              {/* html5-qrcode mounts the video feed inside this div */}
-              <div id={SCANNER_DIV_ID} className="w-full" />
-
-              {/* Scan frame overlay — purely decorative guide */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative w-64 h-28">
-                  {/* Corner brackets */}
-                  {["top-0 left-0 border-t-4 border-l-4 rounded-tl-lg",
-                    "top-0 right-0 border-t-4 border-r-4 rounded-tr-lg",
-                    "bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg",
-                    "bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg",
-                  ].map((cls, i) => (
-                    <div
-                      key={i}
-                      className={`absolute w-7 h-7 border-blue-400 ${cls}`}
-                    />
-                  ))}
-                  {/* Animated scan line */}
-                  <div className="absolute left-1 right-1 h-0.5 bg-blue-400/80 animate-scan-line rounded-full" />
+                <div id={SCANNER_DIV_ID} className="w-full h-full object-cover" />
+                
+                {/* HUD Overlay - simplified since we are not real-time detecting */}
+                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                    {/* Focus Brackets */}
+                    <div className="relative w-72 h-40 border-[2px] border-white/50 rounded-2xl">
+                        {/* Corner Accents */}
+                        <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
+                        <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg" />
+                        <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg" />
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg" />
+                    </div>
+                    <p className="mt-4 text-white/70 text-sm font-medium backdrop-blur-sm bg-black/20 px-3 py-1 rounded-full">
+                        Position code within frame
+                    </p>
                 </div>
-              </div>
             </>
-          )}
-        </div>
-
-        {/* Footer hint */}
-        {!error && (
-          <div className="px-5 py-3 bg-slate-800 text-center">
-            <p className="text-slate-400 text-xs">
-              Supports EAN-13 · UPC-A · CODE-128
-            </p>
-          </div>
         )}
       </div>
+
+      {/* Footer / Shutter Button */}
+      {!error && (
+          <div className="absolute bottom-0 left-0 right-0 py-10 flex items-center justify-center pointer-events-auto bg-gradient-to-t from-black/80 to-transparent">
+            {/* Shutter Button */}
+            <button
+                onClick={handleCapture}
+                disabled={isProcessing}
+                className="group relative flex items-center justify-center active:scale-95 transition-transform"
+            >
+                {/* Outer Ring */}
+                <div className={`h-20 w-20 rounded-full border-4 transition-all duration-200 ${
+                    isProcessing ? "border-blue-500 animate-pulse" : "border-white"
+                }`} />
+                
+                {/* Inner Circle */}
+                <div className={`absolute h-16 w-16 rounded-full transition-all duration-200 ${
+                    isProcessing ? "bg-blue-500 scale-75" : "bg-white group-hover:bg-gray-100"
+                }`} />
+            </button>
+            <p className="absolute bottom-4 text-white/50 text-xs font-medium">
+                {isProcessing ? "Processing..." : "Tap to capture"}
+            </p>
+          </div>
+      )}
     </div>,
     document.body
   );
