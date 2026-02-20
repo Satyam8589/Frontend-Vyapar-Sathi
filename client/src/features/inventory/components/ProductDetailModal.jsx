@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 
 /**
  * ProductDetailModal Component - Displays comprehensive information about a specific product.
+ * Renders as a React Portal directly to document.body.
  */
 const ProductDetailModal = ({
   isOpen,
@@ -11,15 +13,21 @@ const ProductDetailModal = ({
   product,
   currencySymbol = "₹",
 }) => {
-  if (!isOpen || !product) return null;
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !isOpen || !product) return null;
 
   const lowStockThreshold = 10;
   const currentStock = product.quantity || product.qty || 0;
   const isLowStock = currentStock <= lowStockThreshold && currentStock > 0;
   const isOutOfStock = currentStock === 0;
 
-  return (
-    <div className="fixed top-24 inset-x-0 bottom-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
@@ -30,34 +38,50 @@ const ProductDetailModal = ({
       <div className="relative w-full max-w-xl bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden animate-scale-up">
         {/* Header */}
         <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold backdrop-blur-sm shadow-lg">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
-            </div>
-            <div>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Product Image Thumbnail in Header */}
+            {product.image && (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-24 w-24 rounded-lg object-cover border-2 border-white/30 bg-white/10 flex-shrink-0"
+                onError={e => { e.target.style.display = "none"; }}
+              />
+            )}
+            {!product.image && (
+              <div className="h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold backdrop-blur-sm shadow-lg flex-shrink-0">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  />
+                </svg>
+              </div>
+            )}
+            <div className="min-w-0">
               <span className="px-2.5 py-1 bg-white/20 text-white rounded-full text-xs font-bold mb-1.5 inline-block backdrop-blur-sm">
                 {product.category || "General"}
               </span>
-              <h2 className="text-xl font-black text-white tracking-tight">
+              <h2 className="text-xl font-black text-white tracking-tight truncate">
                 {product.name}
               </h2>
+              {product.brand && (
+                <p className="text-xs text-white/80 font-semibold truncate">
+                  by {product.brand}
+                </p>
+              )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-xl text-white transition-all border border-white/20"
+            className="p-2 hover:bg-white/20 rounded-xl text-white transition-all border border-white/20 flex-shrink-0 ml-3"
           >
             <svg
               className="h-5 w-5"
@@ -76,6 +100,61 @@ const ProductDetailModal = ({
         </div>
 
         <div className="p-6">
+          {/* Product Image & Metadata Section */}
+          {/* {product.image && (
+            <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl">
+              <div className="flex gap-4">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="h-24 w-24 object-contain rounded-xl border border-blue-300 bg-white flex-shrink-0"
+                  onError={e => { e.target.style.display = "none"; }}
+                />
+                <div className="flex flex-col justify-between flex-1 min-w-0">
+                  <div>
+                    {product.brand && (
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                        Brand
+                      </p>
+                    )}
+                    {product.brand && (
+                      <p className="text-sm font-bold text-slate-900 mb-2">
+                        {product.brand}
+                      </p>
+                    )}
+                    {product.source && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                          Source:
+                        </p>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-lg border border-blue-200 text-xs font-semibold text-blue-700">
+                          {product.source}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {product.confidence !== null && product.confidence !== undefined && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                        Confidence:
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 w-16 h-2 bg-white rounded-full border border-blue-300 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all"
+                            style={{ width: `${product.confidence * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 w-8 text-right">
+                          {(product.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )} */}
           {/* Core Stats Grid */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-slate-50/80 backdrop-blur-sm p-5 rounded-2xl border-2 border-slate-200 shadow-lg">
@@ -154,6 +233,32 @@ const ProductDetailModal = ({
               </code>
             </div>
 
+            <div className="flex justify-between items-center py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-slate-100 rounded-xl text-slate-600 border border-slate-200">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span className="text-sm font-bold text-slate-700">
+                  Resolver Source
+                </span>
+              </div>
+              <span className="text-sm font-medium text-slate-900">
+                {product.source || "Manual Entry"}
+              </span>
+            </div>
+
             <div className="flex justify-between items-center py-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-slate-100 rounded-xl text-slate-600 border border-slate-200">
@@ -196,7 +301,8 @@ const ProductDetailModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
