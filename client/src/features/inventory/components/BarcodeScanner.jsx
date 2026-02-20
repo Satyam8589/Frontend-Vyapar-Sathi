@@ -32,7 +32,7 @@ const vibrate = () => {
   }
 };
 
-const SCANNER_DIV_ID = "vyapar-barcode-reader";
+const SCANNER_DIV_ID = "vyapar-barcode-reader-clean";
 
 /**
  * BarcodeScanner
@@ -54,6 +54,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
 
   useEffect(() => {
     setMounted(true);
+    console.log("BarcodeScanner Mounted: " + SCANNER_DIV_ID);
   }, []);
 
   // Initialise scanner after mount - Preview Mode Only
@@ -68,24 +69,51 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         const html5QrCode = new Html5Qrcode(SCANNER_DIV_ID, { verbose: false });
         scannerRef.current = html5QrCode;
 
-        await html5QrCode.start(
-          { facingMode: "environment" }, 
-          {
+        // Configuration for the scanner
+        const config = {
             fps: 30, // High FPS for smooth preview
             qrbox: { width: 260, height: 120 },
             aspectRatio: 1.7,
-            // We are NOT passing a success callback that does anything, 
-            // effectively just using this for the camera preview.
             experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
             }
-          },
-          (decodedText) => {
-             // Intentionally ignoring real-time results
-             // We only care when user clicks Capture
-          },
-          () => {}
-        );
+        };
+
+        const successCallback = (decodedText) => {
+             // Preview Only Mode: We ignore real-time results.
+             // The user MUST press the Capture button to scan.
+             // If you enable Hybrid Auto-Scan later, uncomment below:
+             /*
+             playBeep();
+             vibrate();
+             onScan(decodedText);
+             */
+        };
+
+        try {
+            // Attempt 1: High Quality (1080p+)
+            // This is crucial for "Capture First" mode to get a clear image
+            await html5QrCode.start(
+                { 
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    focusMode: "continuous" 
+                }, 
+                config, 
+                successCallback, 
+                () => {}
+            );
+        } catch (widthError) {
+            console.warn("High-res camera failed, falling back to basic...", widthError);
+            // Attempt 2: Basic Constraints (Driver default)
+            await html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                successCallback, 
+                () => {}
+            );
+        }
 
         // Check torch
         try {
@@ -303,13 +331,13 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 
                 {/* HUD Overlay - simplified since we are not real-time detecting */}
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                    {/* Focus Brackets */}
-                    <div className="relative w-72 h-40 border-[2px] border-white/50 rounded-2xl">
+                    {/* Focus Brackets - Clean corners only */}
+                    <div className="relative w-80 h-48">
                         {/* Corner Accents */}
-                        <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
-                        <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg" />
-                        <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg" />
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg" />
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg shadow-sm" />
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg shadow-sm" />
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg shadow-sm" />
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg shadow-sm" />
                     </div>
                     <p className="mt-4 text-white/70 text-sm font-medium backdrop-blur-sm bg-black/20 px-3 py-1 rounded-full">
                         Position code within frame
