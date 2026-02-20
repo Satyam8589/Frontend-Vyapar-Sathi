@@ -51,8 +51,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const streamRef = useRef(null);
   const imageCapture = useRef(null);
   const scannerRef = useRef(null); // Html5Qrcode instance
-  const scanningIntervalRef = useRef(null);
   const lastScannedRef = useRef(null);
+  const isScanningRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -108,8 +108,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
           setTorchSupported(true);
         }
 
-        // Start auto-detection after camera is ready
-        startAutoScanning();
+        // Start continuous video stream scanning (lightweight)
+        startContinuousScanning();
       } catch (err) {
         console.error("Camera error:", err);
         if (
@@ -130,34 +130,48 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     startCamera();
 
     return () => {
+      stopScanning();
       stopCamera();
-      stopAutoScanning();
     };
   }, [mounted]);
 
-  const startAutoScanning = () => {
-    // Scan every 1000ms for smoother performance
-    scanningIntervalRef.current = setInterval(async () => {
-      await autoScanBarcode();
-    }, 1000);
-  };
+  // Continuous video stream scanning (lightweight, runs constantly)
+  const startContinuousScanning = async () => {
+    if (!scannerRef.current) return;
 
-  const stopAutoScanning = () => {
-    if (scanningIntervalRef.current) {
-      clearInterval(scanningIntervalRef.current);
-      scanningIntervalRef.current = null;
+    try {
+      // Start continuous scanning on video stream
+      await scannerRef.current.start(
+        { facingMode: "environment" },
+        {
+          fps: 10, // Scan 10 frames per second (smooth but efficient)
+          qrbox: { width: 250, height: 150 },
+        },
+        onBarcodeDetected, // Called when barcode found in stream
+        () => {}, // Error callback (silent)
+      );
+      console.log("Continuous barcode scanning started");
+    } catch (err) {
+      console.error("Failed to start continuous scanning:", err);
     }
   };
 
-  const autoScanBarcode = async () => {
-    if (isProcessing || !videoRef.current || !scannerRef.current) return;
+  // Called when barcode is detected in video stream
+  const onBarcodeDetected = async (decodedText) => {
+    // Prevent duplicate processing
+    if (isScanningRef.current || lastScannedRef.current === decodedText) {
+      return;
+    }
 
+    isScanningRef.current = true;
     setIsProcessing(true);
+    lastScannedRef.current = decodedText;
 
     try {
+      // Barcode detected! Now capture high-quality photo for verification
       let photoBlob;
 
-      // Use ImageCapture API for native-quality photo (if available)
+      // Use ImageCapture API for native-quality photo
       if (imageCapture.current) {
         try {
           photoBlob = await imageCapture.current.takePhoto();
@@ -179,46 +193,46 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         });
       }
 
-      if (!photoBlob) {
-        setIsProcessing(false);
-        return;
-      }
+      if (photoBlob) {
+        // Convert blob to file
+        const file = new File([photoBlob], "capture.jpg", {
+          type: "image/jpeg",
+        });
 
-      // Convert blob to file for barcode scanning
-      const file = new File([photoBlob], "capture.jpg", {
-        type: "image/jpeg",
-      });
+        // Verify barcode from high-quality photo
+        const results = await scannerRef.current.scanFileV2(file, true);
 
-      // Scan the high-quality photo for barcode
-      const results = await scannerRef.current.scanFileV2(file, true);
+        if (results?.decodedText) {
+          // Success! Auto-fill with high-quality verified barcode
+          playBeep();
+          vibrate();
+          showSuccess("Barcode detected!");
+          onScan(results.decodedText);
 
-      if (results?.decodedText) {
-        // Prevent duplicate scans of the same barcode
-        if (lastScannedRef.current === results.decodedText) {
-          setIsProcessing(false);
-          return;
+          // Stop scanning after successful detection
+          await stopScanning();
+
+          // Reset last scanned after 3 seconds to allow rescanning
+          setTimeout(() => {
+            lastScannedRef.current = null;
+          }, 3000);
         }
-
-        lastScannedRef.current = results.decodedText;
-
-        // Success! Auto-fill barcode
-        playBeep();
-        vibrate();
-        showSuccess("Barcode detected!");
-        onScan(results.decodedText);
-
-        // Stop scanning after successful detection
-        stopAutoScanning();
-
-        // Reset last scanned after 3 seconds to allow rescanning
-        setTimeout(() => {
-          lastScannedRef.current = null;
-        }, 3000);
       }
     } catch (err) {
-      // Silently continue scanning on error
+      console.error("Error processing barcode:", err);
     } finally {
+      isScanningRef.current = false;
       setIsProcessing(false);
+    }
+  };
+
+  const stopScanning = async () => {
+    try {
+      if (scannerRef.current?.isScanning) {
+        await scannerRef.current.stop();
+      }
+    } catch (err) {
+      console.error("Error stopping scanner:", err);
     }
   };
 
@@ -235,9 +249,9 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     } catch {}
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    await stopScanning();
     stopCamera();
-    stopAutoScanning();
     onClose();
   };
 
@@ -390,7 +404,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
           </div>
           <p className="mt-3 text-white text-sm font-medium flex items-center gap-2">
             <svg
-              className="h-4 w-4 animate-spin"
+              className={`h-4 w-4 ${isProcessing ? "animate-spin" : "animate-pulse"}`}
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -408,7 +422,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            Auto-scanning...
+            {isProcessing ? "Capturing..." : "Auto-scanning..."}
           </p>
           <p className="mt-1 text-white/30 text-[10px]">
             High-res capture • Auto-fills • No save
