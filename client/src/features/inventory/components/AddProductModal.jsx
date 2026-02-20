@@ -177,28 +177,6 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   };
 
   /**
-   * Parse a quantity string like "125ml", "500g", "1L", "2kg" into { qty, unit }.
-   * Returns the best-matching unit from the form's select options.
-   */
-  const parseQuantityString = (qtyStr) => {
-    if (!qtyStr) return { qty: "", unit: "Pieces" };
-    const match = String(qtyStr)
-      .trim()
-      .match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]*)/);
-    if (!match || !match[1]) return { qty: "", unit: "Pieces" };
-    const num = match[1];
-    const rawUnit = (match[2] || "").toLowerCase();
-    let unit = "Pieces";
-    if (/^ml$/.test(rawUnit)) unit = "ml";
-    else if (/^l$|^lt?r?s?$/.test(rawUnit)) unit = "Liters";
-    else if (/^g$|^gm$|^gram/.test(rawUnit)) unit = "g";
-    else if (/^kg$/.test(rawUnit)) unit = "kg";
-    else if (/^pack|^pkt/.test(rawUnit)) unit = "Packs";
-    else if (/^bottle/.test(rawUnit)) unit = "Bottles";
-    return { qty: num, unit };
-  };
-
-  /**
    * Map a free-text category from the API to one of our select options.
    * Handles Open*Facts taxonomy tags (e.g. "en:open-beauty-facts") and null values.
    * Falls back to "General" when nothing matches.
