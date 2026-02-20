@@ -38,7 +38,7 @@ const SCANNER_DIV_ID = "vyapar-barcode-reader-clean";
  * BarcodeScanner
  *
  * Uses MediaStream ImageCapture API for native-quality photos.
- * Captures high-res image, extracts barcode, auto-fills, NO gallery save.
+ * Auto-detects barcodes continuously, extracts and auto-fills, NO gallery save.
  */
 const BarcodeScanner = ({ onScan, onClose }) => {
   const [mounted, setMounted] = useState(false);
@@ -51,6 +51,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const streamRef = useRef(null);
   const imageCapture = useRef(null);
   const scannerRef = useRef(null); // Html5Qrcode instance
+  const scanningIntervalRef = useRef(null);
+  const lastScannedRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -105,6 +107,9 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         if (capabilities.torch) {
           setTorchSupported(true);
         }
+
+        // Start auto-detection after camera is ready
+        startAutoScanning();
       } catch (err) {
         console.error("Camera error:", err);
         if (
@@ -126,35 +131,28 @@ const BarcodeScanner = ({ onScan, onClose }) => {
 
     return () => {
       stopCamera();
+      stopAutoScanning();
     };
   }, [mounted]);
 
-  const stopCamera = () => {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-      imageCapture.current = null;
-    } catch {}
+  const startAutoScanning = () => {
+    // Scan every 1000ms for smoother performance
+    scanningIntervalRef.current = setInterval(async () => {
+      await autoScanBarcode();
+    }, 1000);
   };
 
-  const handleClose = () => {
-    stopCamera();
-    onClose();
+  const stopAutoScanning = () => {
+    if (scanningIntervalRef.current) {
+      clearInterval(scanningIntervalRef.current);
+      scanningIntervalRef.current = null;
+    }
   };
 
-  /**
-   * Capture HIGH-RESOLUTION photo using ImageCapture API
-   * Extract barcode, auto-fill, NO gallery save
-   */
-  const handleCapture = async () => {
-    if (isProcessing) return;
+  const autoScanBarcode = async () => {
+    if (isProcessing || !videoRef.current || !scannerRef.current) return;
+
     setIsProcessing(true);
-    vibrate();
 
     try {
       let photoBlob;
@@ -162,18 +160,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       // Use ImageCapture API for native-quality photo (if available)
       if (imageCapture.current) {
         try {
-          // takePhoto() captures at MAXIMUM resolution (native quality)
           photoBlob = await imageCapture.current.takePhoto();
-          console.log(
-            "Captured native-quality photo:",
-            photoBlob.size,
-            "bytes",
-          );
         } catch (imageCaptureError) {
-          console.warn(
-            "ImageCapture failed, using canvas fallback:",
-            imageCaptureError,
-          );
           photoBlob = null;
         }
       }
@@ -192,7 +180,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       }
 
       if (!photoBlob) {
-        throw new Error("Failed to capture photo");
+        setIsProcessing(false);
+        return;
       }
 
       // Convert blob to file for barcode scanning
@@ -204,21 +193,52 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       const results = await scannerRef.current.scanFileV2(file, true);
 
       if (results?.decodedText) {
+        // Prevent duplicate scans of the same barcode
+        if (lastScannedRef.current === results.decodedText) {
+          setIsProcessing(false);
+          return;
+        }
+
+        lastScannedRef.current = results.decodedText;
+
         // Success! Auto-fill barcode
         playBeep();
         vibrate();
         showSuccess("Barcode detected!");
         onScan(results.decodedText);
 
-        // Photo automatically removed from memory (garbage collected)
-      } else {
-        throw new Error("No barcode found");
+        // Stop scanning after successful detection
+        stopAutoScanning();
+
+        // Reset last scanned after 3 seconds to allow rescanning
+        setTimeout(() => {
+          lastScannedRef.current = null;
+        }, 3000);
       }
     } catch (err) {
-      console.warn("Scan failed:", err);
-      showError("No barcode detected. Please try again.");
+      // Silently continue scanning on error
+    } finally {
       setIsProcessing(false);
     }
+  };
+
+  const stopCamera = () => {
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      imageCapture.current = null;
+    } catch {}
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    stopAutoScanning();
+    onClose();
   };
 
   const handleTorchToggle = async () => {
@@ -356,32 +376,39 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         )}
       </div>
 
-      {/* Capture Button */}
+      {/* Auto-scanning Status Indicator */}
       {!error && (
-        <div className="absolute bottom-0 left-0 right-0 py-10 flex flex-col items-center justify-center pointer-events-auto bg-gradient-to-t from-black/80 to-transparent">
-          <button
-            onClick={handleCapture}
-            disabled={isProcessing}
-            className="group relative flex items-center justify-center active:scale-95 transition-transform"
-          >
-            {/* Outer Ring */}
-            <div
-              className={`h-20 w-20 rounded-full border-4 transition-all duration-200 ${
-                isProcessing ? "border-blue-500 animate-pulse" : "border-white"
-              }`}
-            />
-
-            {/* Inner Circle */}
-            <div
-              className={`absolute h-16 w-16 rounded-full transition-all duration-200 ${
-                isProcessing
-                  ? "bg-blue-500 scale-75"
-                  : "bg-white group-hover:bg-gray-100"
-              }`}
-            />
-          </button>
-          <p className="mt-3 text-white/50 text-xs font-medium">
-            {isProcessing ? "Scanning..." : "Tap to capture & scan"}
+        <div className="absolute bottom-0 left-0 right-0 py-10 flex flex-col items-center justify-center pointer-events-none bg-gradient-to-t from-black/80 to-transparent">
+          <div className="flex items-center justify-center">
+            {/* Scanning animation pulse */}
+            <div className="relative flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full border-4 border-blue-500 animate-pulse" />
+              <div className="absolute h-12 w-12 rounded-full bg-blue-500/50" />
+              {/* Radar scan line effect */}
+              <div className="absolute h-0.5 w-16 bg-gradient-to-r from-transparent via-white to-transparent animate-pulse" />
+            </div>
+          </div>
+          <p className="mt-3 text-white text-sm font-medium flex items-center gap-2">
+            <svg
+              className="h-4 w-4 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            Auto-scanning...
           </p>
           <p className="mt-1 text-white/30 text-[10px]">
             High-res capture • Auto-fills • No save
