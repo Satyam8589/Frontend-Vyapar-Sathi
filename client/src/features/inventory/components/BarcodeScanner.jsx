@@ -38,7 +38,8 @@ const SCANNER_DIV_ID = "vyapar-barcode-reader-clean";
  * BarcodeScanner
  *
  * Uses MediaStream ImageCapture API for native-quality photos.
- * Captures high-res image, extracts barcode, auto-fills, NO gallery save.
+ * Manual capture: User taps button to capture high-quality image and scan for barcode.
+ * NO gallery save - all processing in memory only.
  */
 const BarcodeScanner = ({ onScan, onClose }) => {
   const [mounted, setMounted] = useState(false);
@@ -129,6 +130,85 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     };
   }, [mounted]);
 
+  // Manual capture: Take high-quality photo and scan for barcode
+  const handleCapture = async () => {
+    if (isProcessing || !videoRef.current || !scannerRef.current) return;
+
+    setIsProcessing(true);
+    console.log("📸 Capturing high-quality photo...");
+
+    try {
+      let photoBlob;
+
+      // Use ImageCapture API for native-quality photo
+      if (imageCapture.current) {
+        try {
+          photoBlob = await imageCapture.current.takePhoto();
+          console.log("✅ Photo captured via ImageCapture API");
+        } catch (imageCaptureError) {
+          console.log("ImageCapture failed, using fallback");
+          photoBlob = null;
+        }
+      }
+
+      // Fallback: capture from video element
+      if (!photoBlob && videoRef.current) {
+        const canvas = document.createElement("canvas");
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+        photoBlob = await new Promise((resolve) => {
+          canvas.toBlob(resolve, "image/jpeg", 0.95);
+        });
+        console.log("✅ Photo captured from video element");
+      }
+
+      if (!photoBlob) {
+        showSuccess("Failed to capture image. Try again.");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Convert blob to file for barcode scanning
+      const file = new File([photoBlob], "capture.jpg", {
+        type: "image/jpeg",
+      });
+
+      console.log("🔍 Scanning for barcode...");
+      // Scan the high-quality photo for barcode
+      const results = await scannerRef.current.scanFileV2(file, true);
+
+      if (results?.decodedText) {
+        console.log("✅ Barcode detected:", results.decodedText);
+        // Success! Auto-fill barcode
+        playBeep();
+        vibrate();
+        showSuccess("Barcode detected!");
+        onScan(results.decodedText);
+      } else {
+        console.log("❌ No barcode found in image");
+        showSuccess(
+          "No barcode found. Position barcode clearly and try again.",
+        );
+      }
+    } catch (err) {
+      console.error("Error scanning barcode:", err);
+
+      // Check if it's a "no barcode found" error
+      if (err?.message?.includes("No MultiFormat Readers")) {
+        showSuccess(
+          "No barcode detected. Ensure barcode is clear, well-lit, and in focus.",
+        );
+      } else {
+        showSuccess("Scan failed. Please try again.");
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const stopCamera = () => {
     try {
       if (streamRef.current) {
@@ -145,80 +225,6 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const handleClose = () => {
     stopCamera();
     onClose();
-  };
-
-  /**
-   * Capture HIGH-RESOLUTION photo using ImageCapture API
-   * Extract barcode, auto-fill, NO gallery save
-   */
-  const handleCapture = async () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    vibrate();
-
-    try {
-      let photoBlob;
-
-      // Use ImageCapture API for native-quality photo (if available)
-      if (imageCapture.current) {
-        try {
-          // takePhoto() captures at MAXIMUM resolution (native quality)
-          photoBlob = await imageCapture.current.takePhoto();
-          console.log(
-            "Captured native-quality photo:",
-            photoBlob.size,
-            "bytes",
-          );
-        } catch (imageCaptureError) {
-          console.warn(
-            "ImageCapture failed, using canvas fallback:",
-            imageCaptureError,
-          );
-          photoBlob = null;
-        }
-      }
-
-      // Fallback: capture from video element
-      if (!photoBlob && videoRef.current) {
-        const canvas = document.createElement("canvas");
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-
-        photoBlob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, "image/jpeg", 0.95);
-        });
-      }
-
-      if (!photoBlob) {
-        throw new Error("Failed to capture photo");
-      }
-
-      // Convert blob to file for barcode scanning
-      const file = new File([photoBlob], "capture.jpg", {
-        type: "image/jpeg",
-      });
-
-      // Scan the high-quality photo for barcode
-      const results = await scannerRef.current.scanFileV2(file, true);
-
-      if (results?.decodedText) {
-        // Success! Auto-fill barcode
-        playBeep();
-        vibrate();
-        showSuccess("Barcode detected!");
-        onScan(results.decodedText);
-
-        // Photo automatically removed from memory (garbage collected)
-      } else {
-        throw new Error("No barcode found");
-      }
-    } catch (err) {
-      console.warn("Scan failed:", err);
-      showError("No barcode detected. Please try again.");
-      setIsProcessing(false);
-    }
   };
 
   const handleTorchToggle = async () => {
@@ -356,7 +362,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         )}
       </div>
 
-      {/* Capture Button */}
+      {/* Manual Capture Button */}
       {!error && (
         <div className="absolute bottom-0 left-0 right-0 py-10 flex flex-col items-center justify-center pointer-events-auto bg-gradient-to-t from-black/80 to-transparent">
           <button
