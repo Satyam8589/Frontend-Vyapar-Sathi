@@ -1,4 +1,4 @@
-import { apiPost, apiGet, apiPut, apiDelete } from '@/servies/api';
+import { apiPost, apiGet, apiPut, apiDelete } from "@/servies/api";
 
 /**
  * Inventory Service - Handles product and stock related API calls
@@ -8,7 +8,7 @@ import { apiPost, apiGet, apiPut, apiDelete } from '@/servies/api';
 export const addProduct = async (productData) => {
   try {
     // End point provided by user: /product/add_product
-    const response = await apiPost('/product/add_product', productData);
+    const response = await apiPost("/product/add_product", productData);
     return response.data;
   } catch (error) {
     throw error;
@@ -65,5 +65,25 @@ export const resolveProductByBarcode = async (barcode) => {
   } catch (error) {
     if (error?.status === 404) return null;
     throw error;
+  }
+};
+
+/**
+ * Lookup a barcode in the internal MasterProduct database.
+ * This is the fallback when external APIs return nothing.
+ * Returns the product object, or null if not found.
+ *
+ * @param {string} barcode
+ * @returns {Promise<object|null>}
+ */
+export const fetchFromMasterProduct = async (barcode) => {
+  try {
+    const response = await apiGet(`/products/master/${barcode}`);
+    return response?.data ?? null;
+  } catch (error) {
+    // 404 means not in master DB either — that's fine, return null
+    if (error?.status === 404 || error?.statusCode === 404) return null;
+    // Any other error — swallow and treat as not found so manual fill shows
+    return null;
   }
 };
