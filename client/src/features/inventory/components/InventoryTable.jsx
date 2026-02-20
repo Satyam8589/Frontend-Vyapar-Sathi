@@ -93,9 +93,17 @@ const InventoryTable = ({
                   onClick={() => onProductClick?.(item)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 text-xs flex-shrink-0 border border-slate-200 group-hover:border-blue-300 transition-colors">
-                      IMG
-                    </div>
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="h-12 w-12 rounded-xl object-cover border border-slate-200 group-hover:border-blue-300 transition-colors"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 text-xs flex-shrink-0 border border-slate-200 group-hover:border-blue-300 transition-colors">
+                        IMG
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
                         {item.name}
