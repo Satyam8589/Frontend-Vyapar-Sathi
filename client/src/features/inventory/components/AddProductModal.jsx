@@ -83,12 +83,6 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       return;
     }
 
-    // Validate barcode format (12-13 digits)
-    if (!/^\d{12,13}$/.test(barcode)) {
-      setResolveStatus("invalid_format");
-      return;
-    }
-
     setResolveStatus(null);
     setResolving(true);
 
@@ -154,9 +148,23 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     return "General";
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onAction?.({ ...formData, quantity: Number(formData.qty), price: Number(formData.price) });
+    if (onAction) {
+      const result = await onAction({ ...formData, quantity: Number(formData.qty), price: Number(formData.price) });
+      if (result?.success) {
+        setFormData({
+          name: "",
+          category: "General",
+          qty: "",
+          unit: "Pieces",
+          price: "",
+          expDate: "",
+          barcode: "",
+        });
+        setResolveStatus(null);
+      }
+    }
   };
 
   const handleChange = (e) => {
@@ -326,12 +334,11 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                       placeholder="Scan or enter barcode"
                       disabled={resolving}
                       className={`w-full pl-11 pr-4 py-3 border rounded-xl outline-none transition-all text-slate-900 font-semibold
-                        ${resolving
                           ? "bg-blue-50 border-blue-300 cursor-wait"
                           : resolveStatus === "found"
                             ? "bg-green-50 border-green-400 focus:ring-2 focus:ring-green-400"
-                            : resolveStatus === "not_found" || resolveStatus === "error" || resolveStatus === "invalid_format"
-                              ? "bg-red-50 border-red-300 focus:ring-2 focus:ring-red-400"
+                            : (resolveStatus === "not_found" || resolveStatus === "error")
+                              ? "bg-green-50 border-green-400 focus:ring-2 focus:ring-green-400"
                               : "bg-slate-50/50 border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         }`}
                     />
@@ -342,8 +349,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                     ) : (
                       <svg
                         className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 ${
-                          resolveStatus === "found" ? "text-green-500"
-                          : resolveStatus === "not_found" ? "text-red-400"
+                          (resolveStatus === "found" || resolveStatus === "not_found" || resolveStatus === "error") ? "text-green-500"
                           : "text-slate-400"
                         }`}
                         fill="none"
@@ -387,18 +393,13 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   </p>
                 )}
                 {resolveStatus === "not_found" && (
-                  <p className="text-xs text-amber-700 font-semibold flex items-center gap-1.5">
-                    ⚠ Product not found in database. Please enter details manually or upload an image.
-                  </p>
-                )}
-                {resolveStatus === "invalid_format" && (
-                  <p className="text-xs text-red-600 font-semibold flex items-center gap-1.5">
-                    ✕ Invalid barcode format. Must be 12–13 digits (EAN-13 or UPC-A).
+                  <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
+                    ✓ New product! Please fill in the details manually.
                   </p>
                 )}
                 {resolveStatus === "error" && (
-                  <p className="text-xs text-red-600 font-semibold flex items-center gap-1.5">
-                    ✕ Could not reach lookup service. Please enter details manually.
+                  <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
+                    ✓ Could not reach lookup service. Please enter details manually.
                   </p>
                 )}
               </div>
