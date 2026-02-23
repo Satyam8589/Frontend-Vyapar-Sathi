@@ -45,6 +45,47 @@ export const syncBillingSession = async (storeId, cartId, products = []) => {
 };
 
 /**
+ * Sync only barcode value (for phone to send barcode to laptop)
+ * @param {string} storeId - Store ID
+ * @param {string} cartId - Cart/Session ID
+ * @param {string} barcode - Scanned barcode value
+ */
+export const syncBarcodeValue = async (storeId, cartId, barcode) => {
+  if (!db) {
+    console.warn("Firestore not initialized");
+    return;
+  }
+
+  try {
+    const sessionRef = doc(db, "billingSessions", `${storeId}_${cartId}`);
+    const timestamp = new Date().toISOString();
+
+    console.log("📱 Syncing barcode to Firestore:", {
+      sessionId: `${storeId}_${cartId}`,
+      barcode,
+      timestamp,
+    });
+
+    await setDoc(
+      sessionRef,
+      {
+        storeId,
+        cartId,
+        lastScannedBarcode: barcode,
+        barcodeScannedAt: timestamp,
+        lastUpdated: serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    console.log("✅ Barcode synced to Firestore successfully!");
+  } catch (error) {
+    console.error("❌ Failed to sync barcode:", error);
+    throw error;
+  }
+};
+
+/**
  * Add a scanned product to the sync session
  * @param {string} storeId - Store ID
  * @param {string} cartId - Cart/Session ID
@@ -87,12 +128,14 @@ export const addScannedProduct = async (storeId, cartId, product) => {
  * @param {string} storeId - Store ID
  * @param {string} cartId - Cart/Session ID
  * @param {Function} onProductScanned - Callback when new product is scanned
+ * @param {Function} onBarcodeScanned - Callback when barcode value is received
  * @returns {Function} Unsubscribe function
  */
 export const subscribeToBillingSession = (
   storeId,
   cartId,
   onProductScanned,
+  onBarcodeScanned,
 ) => {
   if (!db) {
     console.warn("Firestore not initialized");
@@ -101,18 +144,41 @@ export const subscribeToBillingSession = (
 
   try {
     const sessionRef = doc(db, "billingSessions", `${storeId}_${cartId}`);
+    let lastProcessedBarcode = null;
 
     const unsubscribe = onSnapshot(
       sessionRef,
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
-          const lastProduct = data.lastScannedProduct;
+          console.log("📡 Firestore data received:", data);
 
-          if (lastProduct) {
+          // Handle barcode-only sync (phone sends barcode to laptop)
+          const scannedBarcode = data.lastScannedBarcode;
+          const barcodeTimestamp = data.barcodeScannedAt;
+
+          if (scannedBarcode) {
+            if (barcodeTimestamp !== lastProcessedBarcode) {
+              lastProcessedBarcode = barcodeTimestamp;
+              console.log("📱 Barcode received from sync:", scannedBarcode);
+              if (onBarcodeScanned) {
+                onBarcodeScanned(scannedBarcode);
+              } else {
+                console.warn("⚠️ No onBarcodeScanned callback provided");
+              }
+            } else {
+              console.log("⏭️ Skipping duplicate barcode (same timestamp)");
+            }
+          }
+
+          // Handle product sync (legacy - for full product sync)
+          const lastProduct = data.lastScannedProduct;
+          if (lastProduct && onProductScanned) {
             console.log("🔔 New product detected from sync:", lastProduct);
             onProductScanned(lastProduct);
           }
+        } else {
+          console.log("📭 No Firestore document exists yet");
         }
       },
       (error) => {

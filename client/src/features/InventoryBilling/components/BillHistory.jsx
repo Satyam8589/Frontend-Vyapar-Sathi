@@ -17,16 +17,16 @@ import {
   History,
 } from "lucide-react";
 
-export const BillHistory = () => {
+export const BillHistory = ({ isMobile = false }) => {
   const params = useParams();
   const storeId = params.storeId;
 
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false); // Collapsible state
+  const [isOpen, setIsOpen] = useState(isMobile); // Auto-open on mobile
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: isMobile ? 1 : 10, // Only 1 bill on mobile
     total: 0,
     totalPages: 0,
   });
@@ -53,6 +53,13 @@ export const BillHistory = () => {
     }
   }, [storeId, isOpen]);
 
+  // Auto-fetch on mobile when storeId changes
+  useEffect(() => {
+    if (isMobile && storeId) {
+      fetchBills(1);
+    }
+  }, [isMobile, storeId]);
+
   const toggleBillExpansion = (billId) => {
     setExpandedBill(expandedBill === billId ? null : billId);
   };
@@ -74,35 +81,54 @@ export const BillHistory = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-md mt-6 md:mt-8">
-      {/* Collapsible Header */}
-      <button
-        onClick={toggleHistorySection}
-        className="w-full px-4 md:px-6 py-3 md:py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200"
-      >
-        <div className="flex items-center gap-2 md:gap-3">
-          <History
-            size={20}
-            className="md:w-6 md:h-6 text-blue-600 flex-shrink-0"
-          />
-          <div className="text-left">
-            <h2 className="text-base md:text-xl font-semibold text-gray-800">
-              Bill History
-            </h2>
-            <p className="text-xs md:text-sm text-gray-500">
-              {isOpen && !loading
-                ? `${pagination.total || 0} total bills`
-                : "Click to view past bills"}
-            </p>
+      {/* Collapsible Header (Hidden on Mobile) */}
+      {!isMobile && (
+        <button
+          onClick={toggleHistorySection}
+          className="w-full px-4 md:px-6 py-3 md:py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200"
+        >
+          <div className="flex items-center gap-2 md:gap-3">
+            <History
+              size={20}
+              className="md:w-6 md:h-6 text-blue-600 flex-shrink-0"
+            />
+            <div className="text-left">
+              <h2 className="text-base md:text-xl font-semibold text-gray-800">
+                Bill History
+              </h2>
+              <p className="text-xs md:text-sm text-gray-500">
+                {isOpen && !loading
+                  ? `${pagination.total || 0} total bills`
+                  : "Click to view past bills"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isOpen ? (
+              <ChevronUp size={20} className="md:w-6 md:h-6 text-gray-600" />
+            ) : (
+              <ChevronDown size={20} className="md:w-6 md:h-6 text-gray-600" />
+            )}
+          </div>
+        </button>
+      )}
+
+      {/* Mobile Header (Always Visible) */}
+      {isMobile && (
+        <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+          <div className="flex items-center gap-2">
+            <History size={20} className="text-blue-600 flex-shrink-0" />
+            <div>
+              <h2 className="text-base font-semibold text-gray-800">
+                Latest Bill
+              </h2>
+              <p className="text-xs text-gray-500">
+                Most recent completed purchase
+              </p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isOpen ? (
-            <ChevronUp size={20} className="md:w-6 md:h-6 text-gray-600" />
-          ) : (
-            <ChevronDown size={20} className="md:w-6 md:h-6 text-gray-600" />
-          )}
-        </div>
-      </button>
+      )}
 
       {/* Collapsible Content */}
       {isOpen && (
@@ -305,8 +331,8 @@ export const BillHistory = () => {
                   </div>
                 </div>
 
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
+                {/* Pagination (Hidden on Mobile) */}
+                {!isMobile && pagination.totalPages > 1 && (
                   <div className="border-t border-gray-200 px-3 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="text-xs md:text-sm text-gray-600">
                       Page {pagination.page} of {pagination.totalPages}
