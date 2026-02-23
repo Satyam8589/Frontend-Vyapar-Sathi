@@ -161,91 +161,97 @@ export const BillingProvider = ({ children }) => {
   }, [fetchStoreDetails, fetchStoreProducts]);
 
   // Add product by barcode
-  const addProductByBarcode = async (barcode) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const addProductByBarcode = useCallback(
+    async (barcode) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const product = await billingService.getProductByBarcode(
-        barcode,
-        storeId,
-      );
+        const product = await billingService.getProductByBarcode(
+          barcode,
+          storeId,
+        );
 
-      if (!product) {
-        showError("Product not found with this barcode");
-        return false;
-      }
-
-      // SECURITY: Verify product belongs to current store
-      if (
-        product.store &&
-        product.store !== storeId &&
-        product.store._id !== storeId
-      ) {
-        showError("This product does not belong to this store");
-        console.error("STORE_MISMATCH:", {
-          productStore: product.store,
-          currentStore: storeId,
-        });
-        return false;
-      }
-
-      // Check if product already exists in bill
-      const existingIndex = billedProducts.findIndex(
-        (p) => p._id === product._id,
-      );
-
-      if (existingIndex >= 0) {
-        // Increment quantity
-        const updatedProducts = [...billedProducts];
-        const currentQty = updatedProducts[existingIndex].billedQuantity || 1;
-        const availableQty = product.quantity || product.qty || 0;
-
-        if (currentQty >= availableQty) {
-          showError("Cannot add more. Stock limit reached.");
+        if (!product) {
+          showError("Product not found with this barcode");
+          setLoading(false);
           return false;
         }
 
-        updatedProducts[existingIndex] = {
-          ...updatedProducts[existingIndex],
-          billedQuantity: currentQty + 1,
-        };
-        setBilledProducts(updatedProducts);
-      } else {
-        // Add new product
-        setBilledProducts((prev) => [
-          ...prev,
-          {
-            ...product,
-            billedQuantity: 1,
-          },
-        ]);
-      }
-
-      showSuccess("Product added to bill");
-
-      // Sync to Firestore if in mobile mode and sync is enabled
-      if (isMobile && syncEnabled && sessionId) {
-        try {
-          await addScannedProduct(storeId, sessionId, product);
-          console.log("✅ Product synced to Firestore");
-        } catch (syncError) {
-          console.error("Failed to sync product:", syncError);
-          // Don't show error to user, product is still added locally
+        // SECURITY: Verify product belongs to current store
+        if (
+          product.store &&
+          product.store !== storeId &&
+          product.store._id !== storeId
+        ) {
+          showError("This product does not belong to this store");
+          console.error("STORE_MISMATCH:", {
+            productStore: product.store,
+            currentStore: storeId,
+          });
+          setLoading(false);
+          return false;
         }
-      }
 
-      return true;
-    } catch (err) {
-      const msg = err?.message || err?.error || "Failed to fetch product";
-      setError(msg);
-      showError(msg);
-      console.error("BARCODE_SCAN_ERROR:", err);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Check if product already exists in bill
+        const existingIndex = billedProducts.findIndex(
+          (p) => p._id === product._id,
+        );
+
+        if (existingIndex >= 0) {
+          // Increment quantity
+          const updatedProducts = [...billedProducts];
+          const currentQty = updatedProducts[existingIndex].billedQuantity || 1;
+          const availableQty = product.quantity || product.qty || 0;
+
+          if (currentQty >= availableQty) {
+            showError("Cannot add more. Stock limit reached.");
+            setLoading(false);
+            return false;
+          }
+
+          updatedProducts[existingIndex] = {
+            ...updatedProducts[existingIndex],
+            billedQuantity: currentQty + 1,
+          };
+          setBilledProducts(updatedProducts);
+        } else {
+          // Add new product
+          setBilledProducts((prev) => [
+            ...prev,
+            {
+              ...product,
+              billedQuantity: 1,
+            },
+          ]);
+        }
+
+        showSuccess("Product added to bill");
+
+        // Sync to Firestore if in mobile mode and sync is enabled
+        if (isMobile && syncEnabled && sessionId) {
+          try {
+            await addScannedProduct(storeId, sessionId, product);
+            console.log("✅ Product synced to Firestore");
+          } catch (syncError) {
+            console.error("Failed to sync product:", syncError);
+            // Don't show error to user, product is still added locally
+          }
+        }
+
+        return true;
+      } catch (err) {
+        const msg = err?.message || err?.error || "Failed to fetch product";
+        setError(msg);
+        showError(msg);
+        console.error("BARCODE_SCAN_ERROR:", err);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [storeId, billedProducts, isMobile, syncEnabled, sessionId],
+  );
 
   // Add product manually
   const addProductManually = useCallback(
