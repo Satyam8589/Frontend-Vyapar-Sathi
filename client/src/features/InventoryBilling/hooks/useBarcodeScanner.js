@@ -14,13 +14,19 @@ export const useBarcodeScanner = () => {
       if (!barcode || barcode.trim() === "") return;
 
       setIsScanning(true);
-      const success = await addProductByBarcode(barcode.trim());
 
-      if (success) {
-        setScannedBarcode("");
+      try {
+        const success = await addProductByBarcode(barcode.trim());
+
+        if (success) {
+          setScannedBarcode("");
+        }
+      } catch (error) {
+        console.error("Barcode scan error:", error);
+        // Error already handled by addProductByBarcode
+      } finally {
+        setIsScanning(false);
       }
-
-      setIsScanning(false);
     },
     [addProductByBarcode, setScannedBarcode],
   );

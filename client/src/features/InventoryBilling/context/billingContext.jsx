@@ -62,6 +62,12 @@ export const BillingProvider = ({ children }) => {
     return `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   }, []);
 
+  // Ref to store the latest callback handlers to avoid stale closures
+  const handlersRef = useRef({
+    addProductByBarcode: null,
+    addProductManually: null,
+  });
+
   // Start real-time sync
   const startSync = useCallback(() => {
     if (!storeId) return;
@@ -86,11 +92,11 @@ export const BillingProvider = ({ children }) => {
         lastProcessedProductRef.current = productKey;
         setSyncStatus("syncing");
 
-        // Add product to bill
+        // Add product to bill using latest handlers from ref
         if (scannedProduct.barcode) {
-          addProductByBarcode(scannedProduct.barcode);
+          handlersRef.current.addProductByBarcode?.(scannedProduct.barcode);
         } else {
-          addProductManually(scannedProduct, 1);
+          handlersRef.current.addProductManually?.(scannedProduct, 1);
         }
 
         // Reset status after a delay
@@ -302,8 +308,16 @@ export const BillingProvider = ({ children }) => {
       showSuccess("Product added to bill");
       return true;
     },
-    [billedProducts],
+    [billedProducts, storeId],
   );
+
+  // Update handlers ref to avoid stale closures in real-time sync
+  useEffect(() => {
+    handlersRef.current = {
+      addProductByBarcode,
+      addProductManually,
+    };
+  }, [addProductByBarcode, addProductManually]);
 
   // Remove product from bill
   const removeProduct = useCallback((productId) => {
