@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
   const router = useRouter();
@@ -8,7 +8,7 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
       <div className="flex items-center justify-between gap-2 sm:gap-3 bg-white/70 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-lg border border-white/20">
         {/* Back Button - Left */}
         <button
-          onClick={() => router.push('/storeDashboard')}
+          onClick={() => router.push("/storeDashboard")}
           className="flex-shrink-0 p-2 sm:px-4 sm:py-2.5 bg-slate-100/80 border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-200/80 transition-all shadow-sm flex items-center gap-2"
         >
           <svg
@@ -45,31 +45,55 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
             </svg>
           </div>
           <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 truncate tracking-tight">
-            {storeName || 'Stock Control'}
+            {storeName || "Stock Control"}
           </h1>
         </div>
 
-        {/* Add Product Button - Right */}
-        <button
-          onClick={onAddProductClick}
-          className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold"
-        >
-          <svg
-            className="h-4 w-4 sm:h-5 sm:w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {/* Action Buttons - Right */}
+        <div className="flex items-center gap-2">
+          {/* Billing Button */}
+          <button
+            onClick={() => router.push(`/storeDashboard/${storeId}/billing`)}
+            className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold transition-all"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          <span className="sm:hidden">Add</span>
-          <span className="hidden sm:inline">Add Product</span>
-        </button>
+            <svg
+              className="h-4 w-4 sm:h-5 sm:w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            <span className="hidden sm:inline">Billing</span>
+          </button>
+
+          {/* Add Product Button */}
+          <button
+            onClick={onAddProductClick}
+            className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold"
+          >
+            <svg
+              className="h-4 w-4 sm:h-5 sm:w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            <span className="sm:hidden">Add</span>
+            <span className="hidden sm:inline">Add Product</span>
+          </button>
+        </div>
       </div>
     </section>
   );
