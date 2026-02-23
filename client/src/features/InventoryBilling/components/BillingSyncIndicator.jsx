@@ -81,14 +81,9 @@ export const BillingSyncIndicator = () => {
     }
   };
 
-  // Don't show on mobile scanning mode
-  if (isMobile) {
-    return (
-      <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
-        <Smartphone size={20} />
-        <span className="font-medium">Mobile Scanning Mode</span>
-      </div>
-    );
+  // Don't show sync controls on mobile, only show if enabled
+  if (isMobile && !syncEnabled) {
+    return null;
   }
 
   return (

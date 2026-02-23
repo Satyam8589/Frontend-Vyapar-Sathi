@@ -28,11 +28,17 @@ const BillingContent = () => {
   return (
     <div className="min-h-screen p-3 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <BillingHeader storeId={storeId} storeName={currentStore?.name} />
+        {/* Header - Hidden on Mobile */}
+        {!isMobile && (
+          <BillingHeader
+            storeId={storeId}
+            storeName={currentStore?.name}
+            isMobile={isMobile}
+          />
+        )}
 
-        {/* Real-Time Sync Indicator */}
-        <BillingSyncIndicator />
+        {/* Real-Time Sync Indicator - Hidden on Mobile */}
+        {!isMobile && <BillingSyncIndicator />}
 
         {/* Error Alert */}
         {error && (
@@ -48,24 +54,28 @@ const BillingContent = () => {
             {/* Barcode Scanner Input */}
             <BarcodeInput />
 
-            {/* Billed Products List */}
-            <BilledProductsList />
+            {/* Billed Products List - Hidden on Mobile */}
+            {!isMobile && <BilledProductsList />}
           </div>
 
-          {/* Right Column - Actions & Total */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <BillingActions />
+          {/* Right Column - Actions & Total (Hidden on Mobile) */}
+          {!isMobile && (
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <BillingActions />
 
-            {/* Billing Total & Payment */}
-            <BillingTotal />
+              {/* Billing Total & Payment */}
+              <BillingTotal />
+            </div>
+          )}
+        </div>
+
+        {/* Bill History Section - Hidden on Mobile */}
+        {!isMobile && (
+          <div className="mt-8">
+            <BillHistory isMobile={isMobile} />
           </div>
-        </div>
-
-        {/* Bill History Section */}
-        <div className="mt-8">
-          <BillHistory />
-        </div>
+        )}
 
         {/* Modals */}
         <ManualProductModal />

@@ -16,7 +16,8 @@ import { fetchStoreById } from "@/features/storeDashboard/services/storeDashboar
 import { showSuccess, showError } from "@/utils/toast";
 import {
   subscribeToBillingSession,
-  addScannedProduct,
+  syncBillingSession,
+  syncBarcodeValue,
   isMobileMode,
   getSessionIdFromURL,
   generateMobileScanURL,
@@ -57,6 +58,25 @@ export const BillingProvider = ({ children }) => {
     }
   }, []);
 
+  // Reset all state on page refresh/mount
+  useEffect(() => {
+    // Clear all billing data on fresh page load
+    setBilledProducts([]);
+    setScannedBarcode("");
+    setError(null);
+    setLastBillData(null);
+
+    console.log("🔄 Billing page reset - all data cleared");
+
+    // Cleanup sync on unmount
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, []);
+
   // Generate unique session ID
   const generateSessionId = useCallback(() => {
     return `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
@@ -66,10 +86,11 @@ export const BillingProvider = ({ children }) => {
   const handlersRef = useRef({
     addProductByBarcode: null,
     addProductManually: null,
+    setScannedBarcode: null,
   });
 
   // Start real-time sync
-  const startSync = useCallback(() => {
+  const startSync = useCallback(async () => {
     if (!storeId) return;
 
     const newSessionId = sessionId || generateSessionId();
@@ -77,12 +98,26 @@ export const BillingProvider = ({ children }) => {
     setSyncEnabled(true);
     setSyncStatus("connecting");
 
+    console.log("🚀 Starting real-time sync with session:", newSessionId);
+    console.log(
+      "🔧 Sync mode:",
+      isMobile ? "MOBILE (sending only)" : "DESKTOP (receiving)",
+    );
+
+    // Create initial session document in Firestore
+    try {
+      await syncBillingSession(storeId, newSessionId, []);
+      console.log("✅ Session document created in Firestore");
+    } catch (error) {
+      console.error("❌ Failed to create session document:", error);
+    }
+
     // Subscribe to changes
     const unsubscribe = subscribeToBillingSession(
       storeId,
       newSessionId,
       (scannedProduct) => {
-        // Prevent duplicate processing
+        // Handle full product sync (legacy)
         const productKey = `${scannedProduct._id}_${scannedProduct.scannedAt}`;
         if (lastProcessedProductRef.current === productKey) {
           console.log("Skipping duplicate product:", productKey);
@@ -102,6 +137,23 @@ export const BillingProvider = ({ children }) => {
         // Reset status after a delay
         setTimeout(() => setSyncStatus("connected"), 1000);
       },
+      (barcode) => {
+        // Handle barcode-only sync (mobile sends barcode → laptop receives)
+        console.log("💻 Laptop received barcode, auto-filling input:", barcode);
+        setSyncStatus("syncing");
+
+        // Auto-fill the barcode input field
+        handlersRef.current.setScannedBarcode?.(barcode);
+
+        // Auto-trigger product search
+        setTimeout(() => {
+          console.log("🔍 Auto-triggering product search for:", barcode);
+          handlersRef.current.addProductByBarcode?.(barcode);
+        }, 100);
+
+        // Reset status after a delay
+        setTimeout(() => setSyncStatus("connected"), 1000);
+      },
     );
 
     unsubscribeRef.current = unsubscribe;
@@ -109,7 +161,7 @@ export const BillingProvider = ({ children }) => {
 
     showSuccess("Real-time sync enabled! Scan on any device.");
     return newSessionId;
-  }, [storeId, sessionId, generateSessionId]);
+  }, [storeId, sessionId, generateSessionId, isMobile]);
 
   // Stop real-time sync
   const stopSync = useCallback(() => {
@@ -120,15 +172,6 @@ export const BillingProvider = ({ children }) => {
     setSyncEnabled(false);
     setSyncStatus("disconnected");
     showSuccess("Real-time sync disabled");
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
-    };
   }, []);
 
   // Generate QR code/link for mobile scanning
@@ -173,6 +216,23 @@ export const BillingProvider = ({ children }) => {
         setLoading(true);
         setError(null);
 
+        // If in mobile mode with sync enabled, just send barcode to laptop
+        if (isMobile && syncEnabled && sessionId) {
+          try {
+            await syncBarcodeValue(storeId, sessionId, barcode);
+            console.log("📱 Barcode sent to laptop:", barcode);
+            showSuccess(`Barcode sent: ${barcode}`);
+            setLoading(false);
+            return true;
+          } catch (syncError) {
+            console.error("Failed to sync barcode:", syncError);
+            showError("Failed to send barcode to laptop");
+            setLoading(false);
+            return false;
+          }
+        }
+
+        // Normal mode (laptop) - fetch product and add to cart
         const product = await billingService.getProductByBarcode(
           barcode,
           storeId,
@@ -233,18 +293,6 @@ export const BillingProvider = ({ children }) => {
         }
 
         showSuccess("Product added to bill");
-
-        // Sync to Firestore if in mobile mode and sync is enabled
-        if (isMobile && syncEnabled && sessionId) {
-          try {
-            await addScannedProduct(storeId, sessionId, product);
-            console.log("✅ Product synced to Firestore");
-          } catch (syncError) {
-            console.error("Failed to sync product:", syncError);
-            // Don't show error to user, product is still added locally
-          }
-        }
-
         return true;
       } catch (err) {
         const msg = err?.message || err?.error || "Failed to fetch product";
@@ -316,8 +364,9 @@ export const BillingProvider = ({ children }) => {
     handlersRef.current = {
       addProductByBarcode,
       addProductManually,
+      setScannedBarcode,
     };
-  }, [addProductByBarcode, addProductManually]);
+  }, [addProductByBarcode, addProductManually, setScannedBarcode]);
 
   // Remove product from bill
   const removeProduct = useCallback((productId) => {
