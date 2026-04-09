@@ -23,7 +23,8 @@ import {
 const BillingContent = () => {
   const params = useParams();
   const storeId = params.storeId;
-  const { currentStore, loading, error, isMobile } = useBillingContext();
+  const { currentStore, loading, error, isMobile, billedProducts } =
+    useBillingContext();
 
   return (
     <div className="min-h-screen p-3 md:p-6">
@@ -54,8 +55,18 @@ const BillingContent = () => {
             {/* Barcode Scanner Input */}
             <BarcodeInput />
 
-            {/* Billed Products List - Hidden on Mobile */}
-            {!isMobile && <BilledProductsList />}
+            {/* Billed Products List - Now visible on Mobile as well for feedback */}
+            {(!isMobile || (isMobile && billedProducts.length > 0)) && (
+              <div className={isMobile ? "mt-2" : ""}>
+                {isMobile && (
+                  <h3 className="text-lg font-bold text-gray-800 mb-3 px-1 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-600" />
+                    Recent Scans
+                  </h3>
+                )}
+                <BilledProductsList />
+              </div>
+            )}
           </div>
 
           {/* Right Column - Actions & Total (Hidden on Mobile) */}

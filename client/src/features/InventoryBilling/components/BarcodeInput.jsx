@@ -19,13 +19,28 @@ export const BarcodeInput = () => {
     handleKeyPress,
     isScanning,
   } = useBarcodeScanner();
-  const { loading, isMobile } = useBillingContext();
+  const { loading, isMobile, syncEnabled, sessionId } = useBillingContext();
   const [scannerOpen, setScannerOpen] = useState(false);
+  const inputRef = useState(null);
+
+  const refocusInput = () => {
+    // Small delay to ensure keyboard can re-appear if needed
+    setTimeout(() => {
+      const el = document.getElementById("barcode-input-field");
+      if (el) el.focus();
+    }, 100);
+  };
 
   const handleScanComplete = async (barcode) => {
     setScannerOpen(false);
     setScannedBarcode(barcode);
     await handleBarcodeInput(barcode);
+    refocusInput();
+  };
+
+  const handleManualAdd = async () => {
+    await handleBarcodeInput(scannedBarcode);
+    refocusInput();
   };
 
   // Mobile Scanning Mode - Beautiful Responsive Centered Design
@@ -61,13 +76,18 @@ export const BarcodeInput = () => {
           {/* Input Card */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 border border-gray-100">
             <input
+              id="barcode-input-field"
               type="text"
+              inputMode="numeric"
               value={scannedBarcode}
               onChange={(e) => setScannedBarcode(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Scan or type barcode..."
               className="w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl border-2 border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-center font-mono tracking-wider"
               disabled={loading || isScanning}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
               autoFocus
             />
 
@@ -101,7 +121,7 @@ export const BarcodeInput = () => {
               </button>
 
               <button
-                onClick={() => handleBarcodeInput(scannedBarcode)}
+                onClick={handleManualAdd}
                 disabled={loading || isScanning || !scannedBarcode}
                 className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 md:py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl active:scale-95 sm:transform sm:hover:-translate-y-0.5 font-semibold text-sm sm:text-base md:text-lg"
               >
@@ -117,10 +137,16 @@ export const BarcodeInput = () => {
               </button>
             </div>
 
-            <div className="mt-3 sm:mt-4 md:mt-5 pt-3 sm:pt-4 border-t border-gray-100">
+            <div className="mt-3 sm:mt-4 md:mt-5 pt-3 sm:pt-4 border-t border-gray-100 flex flex-col gap-2">
               <p className="text-xs sm:text-sm md:text-base text-center text-gray-500">
                 💡 Scan barcode with device or tap Camera to use phone camera
               </p>
+              {syncEnabled && (
+                <div className="flex items-center justify-center gap-1.5 text-green-600 font-medium text-xs sm:text-sm bg-green-50 py-1.5 rounded-full">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  Connected to Laptop Sync
+                </div>
+              )}
             </div>
           </div>
 
@@ -145,6 +171,7 @@ export const BarcodeInput = () => {
 
       <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
         <input
+          id="desktop-barcode-input"
           type="text"
           value={scannedBarcode}
           onChange={(e) => setScannedBarcode(e.target.value)}

@@ -55,8 +55,10 @@ export const BillingProvider = ({ children }) => {
     if (urlSessionId) {
       setSessionId(urlSessionId);
       setSyncEnabled(true);
+      // Auto-start sync for mobile scanning links
+      startSync(urlSessionId);
     }
-  }, []);
+  }, [storeId, startSync]);
 
   // Reset all state on page refresh/mount
   useEffect(() => {
@@ -90,11 +92,12 @@ export const BillingProvider = ({ children }) => {
   });
 
   // Start real-time sync
-  const startSync = useCallback(async () => {
-    if (!storeId) return;
+  const startSync = useCallback(
+    async (forcedSessionId = null) => {
+      if (!storeId) return;
 
-    const newSessionId = sessionId || generateSessionId();
-    setSessionId(newSessionId);
+      const newSessionId = forcedSessionId || sessionId || generateSessionId();
+      setSessionId(newSessionId);
     setSyncEnabled(true);
     setSyncStatus("connecting");
 

@@ -4,10 +4,6 @@ import React from "react";
 import { CreateStoreProvider } from "@/features/createStore/context/CreateStoreContext";
 import StoreForm from "@/features/createStore/components/StoreForm";
 
-/**
- * Create Store Page
- * Main page for creating a new store
- */
 function CreateStorePage() {
   return (
     <div className="min-h-screen py-8">
