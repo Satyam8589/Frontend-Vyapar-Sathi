@@ -72,6 +72,13 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
             <span className="hidden sm:inline">Billing</span>
           </button>
 
+          <button
+            onClick={() => router.push(`/storeDashboard/${storeId}/ai-dashboard`)}
+            className="flex-shrink-0 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-indigo-700 transition-colors hover:bg-indigo-100 sm:px-4 sm:py-2.5"
+          >
+            AI
+          </button>
+
           {/* Add Product Button */}
           <button
             onClick={onAddProductClick}

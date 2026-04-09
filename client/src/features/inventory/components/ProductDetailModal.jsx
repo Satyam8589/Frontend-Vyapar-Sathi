@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { useParams } from "next/navigation";
+import { fetchProductInsight } from "@/features/aiDashboard/services/aiDashboardService";
 
 /**
  * ProductDetailModal Component - Displays comprehensive information about a specific product.
@@ -14,10 +16,49 @@ const ProductDetailModal = ({
   currencySymbol = "₹",
 }) => {
   const [mounted, setMounted] = useState(false);
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const params = useParams();
+  const storeId = params.storeId;
   
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadInsight = async () => {
+      if (!isOpen || !product?._id || !storeId) {
+        return;
+      }
+
+      try {
+        setInsightLoading(true);
+        const data = await fetchProductInsight(storeId, product._id);
+        if (isMounted) {
+          setInsight(data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setInsight(null);
+        }
+      } finally {
+        if (isMounted) {
+          setInsightLoading(false);
+        }
+      }
+    };
+
+    if (isOpen) {
+      setInsight(null);
+      loadInsight();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, product?._id, storeId]);
 
   if (!mounted || !isOpen || !product) return null;
 
@@ -205,6 +246,63 @@ const ProductDetailModal = ({
             </div>
           </div>
 
+          <div className="mb-6 rounded-2xl border-2 border-indigo-100 bg-indigo-50/70 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-indigo-600">
+                  AI Insight
+                </p>
+                <h3 className="mt-2 text-xl font-black text-slate-900">
+                  Demand and Restock Guidance
+                </h3>
+              </div>
+              {insight?.forecast?.basis && (
+                <span className="rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700">
+                  {insight.forecast.basis}
+                </span>
+              )}
+            </div>
+
+            {insightLoading ? (
+              <p className="mt-4 text-sm font-semibold text-slate-600">
+                Generating product-level forecast and explanation...
+              </p>
+            ) : insight ? (
+              <>
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <MetricCard
+                    label="Demand 7d"
+                    value={`${Number(insight.forecast?.predictedDemand7d || 0).toFixed(1)}`}
+                  />
+                  <MetricCard
+                    label="Days To Stockout"
+                    value={
+                      insight.forecast?.daysToStockout !== null &&
+                      insight.forecast?.daysToStockout !== undefined
+                        ? `${insight.forecast.daysToStockout}`
+                        : "Stable"
+                    }
+                  />
+                  <MetricCard
+                    label="Reorder Qty"
+                    value={`${insight.restock?.recommendedQty || 0}`}
+                  />
+                </div>
+
+                <p className="mt-4 text-sm font-semibold leading-relaxed text-slate-700">
+                  {insight.explanation?.summary}
+                </p>
+                <p className="mt-2 text-sm font-bold text-indigo-700">
+                  {insight.explanation?.recommendation}
+                </p>
+              </>
+            ) : (
+              <p className="mt-4 text-sm font-semibold text-slate-500">
+                Product insight will appear once demand analytics are available for this store.
+              </p>
+            )}
+          </div>
+
           {/* Details List */}
           <div className="space-y-3">
             <div className="flex justify-between items-center py-3 border-b border-slate-100">
@@ -305,5 +403,14 @@ const ProductDetailModal = ({
     document.body
   );
 };
+
+const MetricCard = ({ label, value }) => (
+  <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
+    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+      {label}
+    </p>
+    <p className="mt-1 text-lg font-black text-slate-900">{value}</p>
+  </div>
+);
 
 export default ProductDetailModal;

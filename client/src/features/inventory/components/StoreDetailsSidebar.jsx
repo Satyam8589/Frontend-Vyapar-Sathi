@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
 import StoreSettingsModal from "./StoreSettingsModal";
 
@@ -9,6 +10,7 @@ import StoreSettingsModal from "./StoreSettingsModal";
  */
 const StoreDetailsSidebar = ({ isOpen, onClose, store, onStoreUpdated }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const router = useRouter();
 
   if (!store) return null;
 
@@ -229,6 +231,13 @@ const StoreDetailsSidebar = ({ isOpen, onClose, store, onStoreUpdated }) => {
                 </button>
               )}
             </div>
+
+            <button
+              onClick={() => router.push(`/storeDashboard/${store._id}/ai-dashboard`)}
+              className="mt-3 w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-black text-indigo-700 transition-colors hover:bg-indigo-100"
+            >
+              Open AI Dashboard
+            </button>
           </div>
         </div>
 
