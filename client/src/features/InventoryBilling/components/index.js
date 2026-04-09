@@ -7,3 +7,4 @@ export { BillingHeader } from "./BillingHeader";
 export { BillingActions } from "./BillingActions";
 export { BillHistory } from "./BillHistory";
 export { BillingSyncIndicator } from "./BillingSyncIndicator";
+export { default as UpiQrModal } from "./UpiQrModal";

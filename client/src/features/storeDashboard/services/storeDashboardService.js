@@ -1,4 +1,4 @@
-import { apiGet, apiDelete } from '@/servies/api';
+import { apiGet, apiDelete, apiPut } from '@/servies/api';
 
 /**
  * Store Dashboard Service - Handles store fetching and management API calls
@@ -39,3 +39,16 @@ export const deleteStore = async (storeId) => {
     throw error;
   }
 };
+
+/**
+ * Update store settings (e.g., UPI QR code, thresholds)
+ */
+export const updateStoreSettings = async (storeId, data) => {
+  try {
+    const response = await apiPut(`/store/${storeId}`, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
