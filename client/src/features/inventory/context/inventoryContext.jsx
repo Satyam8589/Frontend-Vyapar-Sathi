@@ -155,6 +155,7 @@ export const InventoryProvider = ({ children }) => {
   const value = {
     products,
     currentStore,
+    setCurrentStore,
     loading,
     error,
     storeId,

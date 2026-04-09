@@ -28,7 +28,7 @@ const InventoryContent = () => {
   const storeId = params.storeId;
 
   // Get store and products data from context
-  const { currentStore, loading, error } = useInventoryContext();
+  const { currentStore, loading, error, setCurrentStore } = useInventoryContext();
 
   // Use custom hooks for page logic
   const pageLogic = useInventoryPageLogic();
@@ -102,6 +102,7 @@ const InventoryContent = () => {
         isOpen={pageLogic.isSidebarOpen}
         onClose={pageLogic.handleCloseSidebar}
         store={currentStore}
+        onStoreUpdated={(updatedStore) => setCurrentStore(updatedStore)}
       />
     </InventoryPageWrapper>
   );
