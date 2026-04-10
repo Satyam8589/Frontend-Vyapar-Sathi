@@ -58,28 +58,28 @@ const InventoryTable = ({
         Scroll right to see more details
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-max">
+        <table className="w-full sm:w-auto text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-sm border-b border-slate-200">
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 sticky left-0 bg-slate-50/80">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 sticky left-0 bg-slate-50/80 z-10">
                 Product
               </th>
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
                 Category
               </th>
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
                 Stock
               </th>
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
                 Price
               </th>
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
                 Exp. Date
               </th>
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
                 Barcode
               </th>
-              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 text-right">
+              <th className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 text-right whitespace-nowrap">
                 Actions
               </th>
             </tr>
@@ -91,7 +91,7 @@ const InventoryTable = ({
                 className="hover:bg-slate-50/50 transition-colors group"
               >
                 <td
-                  className="px-4 sm:px-6 py-3 sm:py-4 cursor-pointer sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors z-10"
+                  className="px-4 sm:px-6 py-3 sm:py-4 cursor-pointer sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors z-10 max-w-xs sm:max-w-sm"
                   onClick={() => onProductClick?.(item)}
                 >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
