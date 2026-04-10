@@ -54,30 +54,35 @@ const InventoryTable = ({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-sm border-b border-slate-200">
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Product
               </th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              {/* Category - Hidden on smaller mobile */}
+              <th className="hidden sm:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Category
               </th>
-              {/* Mobile Actions Column - Hidden on Desktop */}
-              <th className="md:hidden px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600 text-center">
-                Actions
-              </th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              {/* Stock Column */}
+              <th className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Stock
               </th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              {/* Price - Hidden on small mobile */}
+              <th className="hidden md:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Price
               </th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              {/* Exp. Date - Hidden on mobile */}
+              <th className="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Exp. Date
               </th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600">
+              {/* Barcode - Hidden on mobile */}
+              <th className="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Barcode
               </th>
-              {/* Desktop Actions Column - Hidden on Mobile */}
-              <th className="hidden md:table-cell px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-600 text-right">
+              {/* Mobile Actions Column - Shown on small screens */}
+              <th className="md:hidden px-3 sm:px-4 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 text-center">
+                Actions
+              </th>
+              {/* Desktop Actions Column - Hidden on mobile */}
+              <th className="hidden md:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 text-right">
                 Actions
               </th>
             </tr>
@@ -89,50 +94,44 @@ const InventoryTable = ({
                 className="hover:bg-slate-50/50 transition-colors group"
               >
                 <td
-                  className="px-6 py-4 cursor-pointer"
+                  className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 cursor-pointer"
                   onClick={() => onProductClick?.(item)}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     {item.image ? (
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="h-12 w-12 rounded-xl object-cover border border-slate-200 group-hover:border-blue-300 transition-colors"
+                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl object-cover border border-slate-200 group-hover:border-blue-300 transition-colors flex-shrink-0"
                       />
                     ) : (
-                      <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 text-xs flex-shrink-0 border border-slate-200 group-hover:border-blue-300 transition-colors">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 text-[9px] sm:text-xs flex-shrink-0 border border-slate-200 group-hover:border-blue-300 transition-colors">
                         IMG
                       </div>
                     )}
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-slate-900 text-xs sm:text-sm truncate group-hover:text-blue-600 transition-colors">
                         {item.name}
                       </p>
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">
+                      <p className="text-[8px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wide truncate">
                         View Details
                       </p>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <span className="px-3 py-1 bg-slate-100/80 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
+                {/* Category - Hidden on smaller mobile */}
+                <td className="hidden sm:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                  <span className="px-2.5 sm:px-3 py-1 bg-slate-100/80 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200 truncate inline-block">
                     {item.category}
                   </span>
                 </td>
-                {/* Mobile Actions - Shown after Category */}
-                <td className="md:hidden px-6 py-4">
-                  <ProductActionMenu
-                    onEdit={() => onEdit?.(item)}
-                    onDelete={() => onDelete?.(item)}
-                  />
-                </td>
-                <td className="px-6 py-4">
+                <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                   <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-lg">
+                    <span className="font-black text-slate-900 text-sm sm:text-lg">
                       {item.quantity || item.qty || 0}
                     </span>
                     <span
-                      className={`text-[10px] font-bold uppercase italic mt-0.5 ${
+                      className={`text-[8px] sm:text-[10px] font-bold uppercase italic mt-0.5 ${
                         (item.quantity || item.qty) > lowStockThreshold
                           ? "text-emerald-600"
                           : (item.quantity || item.qty) > 0
@@ -141,42 +140,51 @@ const InventoryTable = ({
                       }`}
                     >
                       {(item.quantity || item.qty) > lowStockThreshold
-                        ? "In Stock"
+                        ? "In"
                         : (item.quantity || item.qty) > 0
-                          ? "Low Stock"
-                          : "Out"}{" "}
-                      ({item.unit || "pcs"})
+                          ? "Low"
+                          : "Out"}
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <p className="font-black text-slate-900">
+                {/* Price - Hidden on small mobile */}
+                <td className="hidden md:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                  <p className="font-black text-slate-900 text-sm">
                     {currencySymbol}
                     {(item.price || 0).toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-slate-500 font-semibold">
+                  <p className="text-[8px] sm:text-[10px] text-slate-500 font-semibold">
                     per {(item.unit || "unit").toLowerCase()}
                   </p>
                 </td>
-                <td className="px-6 py-4">
+                {/* Exp. Date - Hidden on mobile */}
+                <td className="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                   <div className="flex items-center gap-2">
                     <span
                       className={`h-2 w-2 rounded-full flex-shrink-0 ${item.expDate ? (new Date(item.expDate) < new Date("2026-03-01") ? "bg-amber-500 animate-pulse" : "bg-emerald-400") : "bg-slate-300"}`}
                     ></span>
-                    <span className="font-bold text-slate-700 text-sm">
+                    <span className="font-bold text-slate-700 text-xs sm:text-sm truncate">
                       {item.expDate
                         ? new Date(item.expDate).toLocaleDateString()
                         : "-"}
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <code className="text-[11px] font-bold bg-slate-50 px-2 py-1 rounded-md text-slate-700 border border-slate-200">
+                {/* Barcode - Hidden on mobile */}
+                <td className="hidden lg:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                  <code className="text-[9px] sm:text-[11px] font-bold bg-slate-50 px-2 py-1 rounded-md text-slate-700 border border-slate-200 truncate block">
                     {item.barcode}
                   </code>
                 </td>
-                {/* Desktop Actions - Hidden on Mobile */}
-                <td className="hidden md:table-cell px-6 py-4 text-right">
+                {/* Mobile Actions - Shown on small screens */}
+                <td className="md:hidden px-3 sm:px-4 py-3 sm:py-4">
+                  <ProductActionMenu
+                    onEdit={() => onEdit?.(item)}
+                    onDelete={() => onDelete?.(item)}
+                  />
+                </td>
+                {/* Desktop Actions - Hidden on mobile */}
+                <td className="hidden md:table-cell px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-right">
                   <ProductActionMenu
                     onEdit={() => onEdit?.(item)}
                     onDelete={() => onDelete?.(item)}
@@ -188,20 +196,19 @@ const InventoryTable = ({
         </table>
       </div>
       {inventory.length > 0 && (
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 backdrop-blur-sm flex items-center justify-between">
-          <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">
-            Showing {inventory.length} product
-            {inventory.length !== 1 ? "s" : ""}
+        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-slate-200 bg-slate-50/80 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          <p className="text-[8px] sm:text-[10px] text-slate-600 font-black uppercase tracking-widest">
+            Showing {inventory.length} product{inventory.length !== 1 ? "s" : ""}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
-              className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-slate-300 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               disabled
             >
-              Previous
+              Prev
             </button>
             <button
-              className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-slate-300 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               disabled
             >
               Next

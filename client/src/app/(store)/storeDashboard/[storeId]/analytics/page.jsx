@@ -1,7 +1,12 @@
-'use client';
+"use client";
 
-import { useRouter, useParams } from 'next/navigation';
-import { AnalyticsDashboardContent, AnalyticsFilters, AnalyticsHeader, useAnalyticsDashboard } from '@/features/analyticsDashboard';
+import { useRouter, useParams } from "next/navigation";
+import {
+  AnalyticsDashboardContent,
+  AnalyticsFilters,
+  AnalyticsHeader,
+  useAnalyticsDashboard,
+} from "@/features/analyticsDashboard";
 
 const AnalyticsPage = () => {
   const params = useParams();
@@ -16,9 +21,15 @@ const AnalyticsPage = () => {
         <AnalyticsHeader
           store={analytics.store}
           onBack={() => router.push(`/storeDashboard/${storeId}`)}
-          onAiDashboard={() => router.push(`/storeDashboard/${storeId}/ai-dashboard`)}
+          onAiDashboard={() =>
+            router.push(`/storeDashboard/${storeId}/ai-dashboard`)
+          }
           onRefresh={analytics.refresh}
-          refreshing={analytics.loading.store || analytics.loading.summary || analytics.loading.trend}
+          refreshing={
+            analytics.loading.store ||
+            analytics.loading.summary ||
+            analytics.loading.trend
+          }
         />
 
         <AnalyticsFilters

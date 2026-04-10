@@ -1,10 +1,10 @@
-import AnalyticsSummaryGrid from './AnalyticsSummaryGrid';
-import CategorySection from './sections/CategorySection';
-import EmptyState from './EmptyState';
-import ProductOverviewSection from './sections/ProductOverviewSection';
-import SlowMovingSection from './sections/SlowMovingSection';
-import TopProductsSection from './sections/TopProductsSection';
-import TrendSection from './sections/TrendSection';
+import AnalyticsSummaryGrid from "./AnalyticsSummaryGrid";
+import CategorySection from "./sections/CategorySection";
+import EmptyState from "./EmptyState";
+import ProductOverviewSection from "./sections/ProductOverviewSection";
+import SlowMovingSection from "./sections/SlowMovingSection";
+import TopProductsSection from "./sections/TopProductsSection";
+import TrendSection from "./sections/TrendSection";
 
 const AnalyticsDashboardContent = ({
   store,
