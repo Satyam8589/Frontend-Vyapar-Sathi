@@ -246,7 +246,7 @@ export default function StoreSidebarDrawer() {
       <div
         style={{
           position: "fixed",
-          top: 0,
+          top: "80px",
           left: 0,
           right: 0,
           bottom: 0,
@@ -260,10 +260,10 @@ export default function StoreSidebarDrawer() {
       <div
         style={{
           position: "fixed",
-          top: 0,
+          top: "80px",
           left: 0,
           width: 250,
-          height: "100vh",
+          height: "calc(100vh - 80px)",
           background: "#1b2a42",
           zIndex: 100,
           padding: "20px 12px 14px 12px",
