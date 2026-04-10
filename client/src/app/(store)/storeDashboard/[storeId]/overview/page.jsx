@@ -90,7 +90,7 @@ const OverviewPage = () => {
         {/* Quick Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Sales Card */}
-          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
+          <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -121,7 +121,7 @@ const OverviewPage = () => {
           </div>
 
           {/* Total Orders Card */}
-          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
+          <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -154,7 +154,7 @@ const OverviewPage = () => {
           </div>
 
           {/* Avg Order Value Card */}
-          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
+          <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -186,7 +186,7 @@ const OverviewPage = () => {
           </div>
 
           {/* Top Product Card */}
-          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
+          <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -222,7 +222,7 @@ const OverviewPage = () => {
           {/* Left Column - Sales Cards */}
           <div className="space-y-6">
             {/* Daily Sales */}
-            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 overflow-hidden">
+            <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -273,7 +273,7 @@ const OverviewPage = () => {
             </div>
 
             {/* Weekly Sales */}
-            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
+            <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -328,7 +328,7 @@ const OverviewPage = () => {
           {/* Right Column - Monthly & Yearly */}
           <div className="space-y-6">
             {/* Monthly Sales */}
-            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
+            <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -399,7 +399,7 @@ const OverviewPage = () => {
             </div>
 
             {/* Yearly Sales */}
-            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
+            <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
