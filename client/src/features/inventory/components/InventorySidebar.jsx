@@ -428,67 +428,7 @@ export default function VyaparSathiSidebar({
   );
 
   if (isResponsive) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        <button
-          onClick={() => {
-            if (isStorePage) {
-              toggleStoreSidebar();
-            } else {
-              setIsMobileOpen(!isMobileOpen);
-            }
-          }}
-          style={{
-            padding: "8px 12px",
-            background: "#1b2a42",
-            border: "1px solid #243454",
-            borderRadius: 10,
-            color: "#7a97be",
-            cursor: "pointer",
-            marginBottom: 12,
-            fontSize: 13.5,
-            fontWeight: 600,
-            fontFamily: "'Segoe UI', sans-serif",
-          }}
-        >
-          {isMobileOpen ? "✕ Close Menu" : "☰ Menu"}
-        </button>
-
-        {isMobileOpen && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.5)",
-              zIndex: 99,
-            }}
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: 250,
-                height: "100vh",
-                background: "#1b2a42",
-                zIndex: 100,
-                padding: "15px 12px 14px 12px",
-                display: "flex",
-                flexDirection: "column",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <SidebarContent />
-            </div>
-          </div>
-        )}
-      </div>
-    );
+    return null; // Don't render sidebar on mobile, only drawer controlled by context
   }
 
   return (

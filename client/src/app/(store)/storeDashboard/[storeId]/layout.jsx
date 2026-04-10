@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar";
+import StoreSidebarDrawer from "@/features/store/components/StoreSidebarDrawer";
 import {
   useStorePageContext,
 } from "@/features/store/context/storePageContext";
 
 /**
  * Store Dashboard Layout - Conditional sidebar
- * Sidebar visible on: inventory, staff, ai-dashboard
- * Sidebar hidden on: billing
+ * Desktop: Fixed sidebar + content
+ * Mobile: Content full-width + drawer controlled by hamburger
  */
 export default function StoreLayout({ children }) {
   const pathname = usePathname();
@@ -44,12 +45,24 @@ export default function StoreLayout({ children }) {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      {/* Sidebar Navigation */}
-      <VyaparSathiSidebar isResponsive={isResponsive} />
+    <>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
+        {/* Desktop Sidebar - Hidden on mobile */}
+        {!isResponsive && <VyaparSathiSidebar />}
 
-      {/* Main Content Area */}
-      <main style={{ flex: 1, padding: "15px 20px 20px 0px" }}>{children}</main>
-    </div>
+        {/* Main Content Area */}
+        <main
+          style={{
+            flex: 1,
+            padding: isResponsive ? "15px 16px 20px 16px" : "15px 20px 20px 0px",
+          }}
+        >
+          {children}
+        </main>
+      </div>
+
+      {/* Mobile Sidebar Drawer - Only on mobile */}
+      {isResponsive && <StoreSidebarDrawer />}
+    </>
   );
 }
