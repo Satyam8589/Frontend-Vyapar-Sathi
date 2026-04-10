@@ -21,12 +21,12 @@ const SummaryCard = ({ label, value, hint, tone = 'slate' }) => {
   };
 
   return (
-    <article className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
-      <div className={`inline-flex rounded-2xl bg-gradient-to-r ${tones[tone] || tones.slate} px-3 py-1 text-[10px] font-black uppercase tracking-[0.35em] text-white`}>
+    <article className="rounded-[1.75rem] border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
+      <div className={`inline-flex rounded-2xl bg-gradient-to-r ${tones[tone] || tones.slate} px-3 py-1 text-[8px] font-black uppercase tracking-[0.35em] text-white sm:text-[10px]`}>
         {label}
       </div>
-      <p className="mt-4 text-3xl font-black tracking-tight text-slate-900">{value}</p>
-      <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-500">{hint}</p>
+      <p className="mt-3 text-lg font-black tracking-tight text-slate-900 sm:mt-4 sm:text-2xl md:text-3xl">{value}</p>
+      <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500 sm:mt-2 sm:text-sm">{hint}</p>
     </article>
   );
 };
@@ -90,12 +90,12 @@ const AnalyticsSummaryGrid = ({ summary, store }) => {
     <section>
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-indigo-600">Snapshot</p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">Store performance at a glance</h2>
+          <p className="text-[9px] font-black uppercase tracking-[0.35em] text-indigo-600 md:text-[10px]">Snapshot</p>
+          <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl md:text-3xl">Store performance</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <SummaryCard key={item.label} {...item} />
         ))}

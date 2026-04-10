@@ -22,18 +22,18 @@ const SlowMovingSection = ({ slowMoving, loading, error }) => {
   }
 
   return (
-    <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.35em] text-rose-600">Attention list</p>
-        <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Slow-moving products</h3>
+        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-rose-600 sm:text-[10px]">Attention</p>
+        <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl\">Slow-moving products</h3>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-slate-200">
-        <table className="w-full border-collapse text-left">
+      <div className="mt-5 overflow-x-auto rounded-[1.75rem] border border-slate-200">
+        <table className="w-full border-collapse text-left min-w-max">
           <thead className="bg-slate-50">
             <tr>
-              {['Product', 'Category', 'Days Since Sale', 'Stock', 'Urgency'].map((label) => (
-                <th key={label} className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-slate-500">
+              {['Product', 'Days Since Sale', 'Urgency'].map((label) => (
+                <th key={label} className="px-3 py-3 text-[9px] font-black uppercase tracking-wider text-slate-500 sm:px-4 sm:text-[10px]">
                   {label}
                 </th>
               ))}
@@ -41,13 +41,11 @@ const SlowMovingSection = ({ slowMoving, loading, error }) => {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.productId} className="border-t border-slate-100">
-                <td className="px-4 py-4 text-sm font-black text-slate-900">{row.productName}</td>
-                <td className="px-4 py-4 text-sm font-semibold text-slate-600">{row.category}</td>
-                <td className="px-4 py-4 text-sm font-semibold text-slate-600">{Number(row.daysSinceLastSale || 0).toLocaleString('en-IN')}</td>
-                <td className="px-4 py-4 text-sm font-semibold text-slate-600">{Number(row.currentStock || 0).toLocaleString('en-IN')}</td>
-                <td className="px-4 py-4 text-sm">
-                  <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] ${URGENCY_STYLE[row.urgency] || URGENCY_STYLE.low}`}>
+              <tr key={row.productId} className="border-t border-slate-100 hover:bg-slate-50">
+                <td className="px-3 py-3 text-xs font-black text-slate-900 sm:px-4 sm:py-4 sm:text-sm">{row.productName}</td>
+                <td className="px-3 py-3 text-xs font-semibold text-slate-600 sm:px-4 sm:py-4 sm:text-sm">{Number(row.daysSinceLastSale || 0)}</td>
+                <td className="px-3 py-3 text-xs sm:px-4 sm:py-4 sm:text-sm">
+                  <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] sm:px-3 sm:text-[10px] ${URGENCY_STYLE[row.urgency] || URGENCY_STYLE.low}`}>
                     {row.urgency}
                   </span>
                 </td>

@@ -11,8 +11,8 @@ const AnalyticsPage = () => {
   const analytics = useAnalyticsDashboard(storeId);
 
   return (
-    <main className="min-h-screen px-4 py-6 md:px-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+    <main className="min-h-screen px-3 py-4 sm:px-4 md:px-6\">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:gap-6">
         <AnalyticsHeader
           store={analytics.store}
           onBack={() => router.push(`/storeDashboard/${storeId}`)}
