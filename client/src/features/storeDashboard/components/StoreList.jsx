@@ -7,7 +7,7 @@ import StoreCard from './StoreCard';
 /**
  * StoreList Component - Display grid or list of stores
  */
-const StoreList = ({ stores, loading, error, onStoreClick, viewMode = 'grid' }) => {
+const StoreList = ({ stores, loading, error, onStoreClick, onDelete, viewMode = 'grid' }) => {
   // Loading state
   if (loading) {
     return (
@@ -69,6 +69,7 @@ const StoreList = ({ stores, loading, error, onStoreClick, viewMode = 'grid' }) 
             store={store}
             index={index}
             onClick={onStoreClick}
+            onDelete={onDelete}
           />
         ))}
       </div>

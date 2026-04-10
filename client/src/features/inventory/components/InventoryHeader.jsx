@@ -1,7 +1,12 @@
 import { useRouter } from "next/navigation";
+import { useInventoryContext } from "../context/inventoryContext";
 
 const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
   const router = useRouter();
+  const { hasPermission } = useInventoryContext();
+
+  const canAddProduct = hasPermission('inventory:add');
+  const canAccessBilling = hasPermission('billing:create');
 
   return (
     <section className="mb-4 animate-fade-in-up">
@@ -52,25 +57,27 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
         {/* Action Buttons - Right */}
         <div className="flex items-center gap-2">
           {/* Billing Button */}
-          <button
-            onClick={() => router.push(`/storeDashboard/${storeId}/billing`)}
-            className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold transition-all"
-          >
-            <svg
-              className="h-4 w-4 sm:h-5 sm:w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {canAccessBilling && (
+            <button
+              onClick={() => router.push(`/storeDashboard/${storeId}/billing`)}
+              className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold transition-all"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <span className="hidden sm:inline">Billing</span>
-          </button>
+              <svg
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <span className="hidden sm:inline">Billing</span>
+            </button>
+          )}
 
           <button
             onClick={() => router.push(`/storeDashboard/${storeId}/ai-dashboard`)}
@@ -80,26 +87,28 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
           </button>
 
           {/* Add Product Button */}
-          <button
-            onClick={onAddProductClick}
-            className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold"
-          >
-            <svg
-              className="h-4 w-4 sm:h-5 sm:w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {canAddProduct && (
+            <button
+              onClick={onAddProductClick}
+              className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            <span className="sm:hidden">Add</span>
-            <span className="hidden sm:inline">Add Product</span>
-          </button>
+              <svg
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span className="sm:hidden">Add</span>
+              <span className="hidden sm:inline">Add Product</span>
+            </button>
+          )}
         </div>
       </div>
     </section>

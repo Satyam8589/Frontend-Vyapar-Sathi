@@ -39,7 +39,7 @@ export const STORE_COLORS = [
 
 // Dashboard Stats Configuration
 export const STATS_CONFIG = [
-  { label: 'Total Stores', key: 'total' },
+  { label: 'Inventory', key: 'total' }, // Represents total number of shops/stores
   { label: 'Active', key: 'active' },
   { label: 'Retail', key: 'retail' },
   { label: 'Wholesale', key: 'wholesale' },
