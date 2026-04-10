@@ -38,39 +38,48 @@ const InventoryContent = () => {
   const { stats, threshold, currencySymbol } = useInventoryStats();
 
   return (
-    <>
-      {/* Header Section */}
-      <InventoryHeader
-        storeId={storeId}
-        storeName={currentStore?.name}
-        onAddProductClick={() => pageLogic.setIsAddModalOpen(true)}
-      />
+    <div className="min-h-screen bg-gradient-to-b from-blue-50/40 to-blue-50/20 pb-8 sm:pb-12">
+      <div className="px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <InventoryHeader
+          storeId={storeId}
+          storeName={currentStore?.name}
+          onAddProductClick={() => pageLogic.setIsAddModalOpen(true)}
+        />
 
-      {/* Error Alert */}
-      <InventoryErrorAlert error={error} />
+        {/* Error Alert */}
+        <InventoryErrorAlert error={error} />
 
-      {/* Inventory Stats Summary */}
-      <InventoryStats stats={stats} />
+        {/* Inventory Stats Summary */}
+        <InventoryStats stats={stats} />
 
-      {/* Search and Filters Bar */}
-      <InventoryFilters
-        searchTerm={pageLogic.searchTerm}
-        setSearchTerm={pageLogic.setSearchTerm}
-        onMenuClick={pageLogic.handleOpenSidebar}
-      />
+        {/* Search and Filters Bar */}
+        <InventoryFilters
+          searchTerm={pageLogic.searchTerm}
+          setSearchTerm={pageLogic.setSearchTerm}
+          onMenuClick={pageLogic.handleOpenSidebar}
+        />
 
-      {/* Inventory Table Area */}
-      <InventoryTable
-        inventory={pageLogic.filteredProducts}
-        loading={loading}
-        onEdit={pageLogic.handleEdit}
-        onDelete={pageLogic.handleDelete}
-        onProductClick={pageLogic.handleProductClick}
-        lowStockThreshold={threshold}
-        currencySymbol={currencySymbol}
-      />
+        {/* Inventory Table Area */}
+        <InventoryTable
+          inventory={pageLogic.filteredProducts}
+          loading={loading}
+          onEdit={pageLogic.handleEdit}
+          onDelete={pageLogic.handleDelete}
+          onProductClick={pageLogic.handleProductClick}
+          lowStockThreshold={threshold}
+          currencySymbol={currencySymbol}
+        />
 
-      {/* Modals */}
+        <StoreDetailsSidebar
+          isOpen={pageLogic.isSidebarOpen}
+          onClose={pageLogic.handleCloseSidebar}
+          store={currentStore}
+          onStoreUpdated={(updatedStore) => setCurrentStore(updatedStore)}
+        />
+      </div>
+
+      {/* Modals - Outside container for proper positioning */}
       <AddProductModal
         isOpen={pageLogic.isAddModalOpen}
         onClose={() => pageLogic.setIsAddModalOpen(false)}
@@ -100,14 +109,7 @@ const InventoryContent = () => {
         product={pageLogic.selectedProduct}
         currencySymbol={currencySymbol}
       />
-
-      <StoreDetailsSidebar
-        isOpen={pageLogic.isSidebarOpen}
-        onClose={pageLogic.handleCloseSidebar}
-        store={currentStore}
-        onStoreUpdated={(updatedStore) => setCurrentStore(updatedStore)}
-      />
-    </>
+    </div>
   );
 };
 

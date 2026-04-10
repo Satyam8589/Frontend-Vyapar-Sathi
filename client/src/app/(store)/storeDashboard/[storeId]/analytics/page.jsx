@@ -1,7 +1,12 @@
-'use client';
+"use client";
 
-import { useRouter, useParams } from 'next/navigation';
-import { AnalyticsDashboardContent, AnalyticsFilters, AnalyticsHeader, useAnalyticsDashboard } from '@/features/analyticsDashboard';
+import { useRouter, useParams } from "next/navigation";
+import {
+  AnalyticsDashboardContent,
+  AnalyticsFilters,
+  AnalyticsHeader,
+  useAnalyticsDashboard,
+} from "@/features/analyticsDashboard";
 
 const AnalyticsPage = () => {
   const params = useParams();
@@ -11,14 +16,20 @@ const AnalyticsPage = () => {
   const analytics = useAnalyticsDashboard(storeId);
 
   return (
-    <main className="min-h-screen px-4 py-6 md:px-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+    <main className="min-h-screen px-2 py-3 sm:px-3 md:px-4 lg:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:gap-4 md:gap-6">
         <AnalyticsHeader
           store={analytics.store}
           onBack={() => router.push(`/storeDashboard/${storeId}`)}
-          onAiDashboard={() => router.push(`/storeDashboard/${storeId}/ai-dashboard`)}
+          onAiDashboard={() =>
+            router.push(`/storeDashboard/${storeId}/ai-dashboard`)
+          }
           onRefresh={analytics.refresh}
-          refreshing={analytics.loading.store || analytics.loading.summary || analytics.loading.trend}
+          refreshing={
+            analytics.loading.store ||
+            analytics.loading.summary ||
+            analytics.loading.trend
+          }
         />
 
         <AnalyticsFilters
