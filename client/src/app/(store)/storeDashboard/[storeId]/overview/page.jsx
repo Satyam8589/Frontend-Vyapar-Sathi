@@ -74,7 +74,7 @@ const OverviewPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4 rounded-3xl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -90,17 +90,17 @@ const OverviewPage = () => {
         {/* Quick Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Sales Card */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">
                   Total Sales
                 </p>
                 <h3 className="text-2xl font-bold text-gray-900">
                   {formatCurrency(salesData.totalSales)}
                 </h3>
               </div>
-              <div className="p-2 bg-blue-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg">
                 <svg
                   width="24"
                   height="24"
@@ -121,17 +121,17 @@ const OverviewPage = () => {
           </div>
 
           {/* Total Orders Card */}
-          <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">
                   Total Orders
                 </p>
                 <h3 className="text-2xl font-bold text-gray-900">
                   {salesData.totalOrders.toLocaleString()}
                 </h3>
               </div>
-              <div className="p-2 bg-amber-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg">
                 <svg
                   width="24"
                   height="24"
@@ -154,17 +154,17 @@ const OverviewPage = () => {
           </div>
 
           {/* Avg Order Value Card */}
-          <div className="bg-red-50 border border-red-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">
                   Avg Order Value
                 </p>
                 <h3 className="text-2xl font-bold text-gray-900">
                   {formatCurrency(salesData.averageOrderValue)}
                 </h3>
               </div>
-              <div className="p-2 bg-red-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-lg">
                 <svg
                   width="24"
                   height="24"
@@ -186,17 +186,17 @@ const OverviewPage = () => {
           </div>
 
           {/* Top Product Card */}
-          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">
                   Top Product
                 </p>
                 <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
                   {salesData.topProduct}
                 </h3>
               </div>
-              <div className="p-2 bg-emerald-100 rounded-lg">
+              <div className="p-3 bg-gradient-to-br from-pink-500/20 to-pink-600/20 rounded-lg">
                 <svg
                   width="24"
                   height="24"
@@ -222,10 +222,10 @@ const OverviewPage = () => {
           {/* Left Column - Sales Cards */}
           <div className="space-y-6">
             {/* Daily Sales */}
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all overflow-hidden">
+            <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     Today's Sales
                   </p>
                   <h2 className="text-3xl font-bold text-gray-900">
@@ -273,23 +273,23 @@ const OverviewPage = () => {
             </div>
 
             {/* Weekly Sales */}
-            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     This Week
                   </p>
                   <h2 className="text-3xl font-bold text-gray-900">
                     {formatCurrency(salesData.weeklySales)}
                   </h2>
                 </div>
-                <div className="p-2 bg-emerald-100 rounded-lg">
+                <div className="p-3 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg">
                   <svg
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#059669"
+                    stroke="#16a34a"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -328,23 +328,23 @@ const OverviewPage = () => {
           {/* Right Column - Monthly & Yearly */}
           <div className="space-y-6">
             {/* Monthly Sales */}
-            <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     This Month
                   </p>
                   <h2 className="text-3xl font-bold text-gray-900">
                     {formatCurrency(salesData.monthlySales)}
                   </h2>
                 </div>
-                <div className="p-2 bg-amber-100 rounded-lg">
+                <div className="p-3 bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 rounded-lg">
                   <svg
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#d97706"
+                    stroke="#4f46e5"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -399,23 +399,23 @@ const OverviewPage = () => {
             </div>
 
             {/* Yearly Sales */}
-            <div className="bg-red-50 border border-red-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-all">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">
                     This Year
                   </p>
                   <h2 className="text-3xl font-bold text-gray-900">
                     {formatCurrency(salesData.yearlySales)}
                   </h2>
                 </div>
-                <div className="p-2 bg-red-100 rounded-lg">
+                <div className="p-3 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-lg">
                   <svg
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#dc2626"
+                    stroke="#e11d48"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
