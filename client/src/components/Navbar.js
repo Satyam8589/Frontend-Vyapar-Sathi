@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useStorePageContext } from '@/features/store/context/storePageContext';
 import PageLoader from '@/components/PageLoader';
 
 const NAV_ITEMS = [
@@ -26,8 +27,18 @@ export default function Navbar() {
   const [loaderMessage, setLoaderMessage] = useState('');
   const loaderTimerRef = useRef(null);
   const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
+  const { isStorePage, toggleStoreSidebar } = useStorePageContext();
 
   const close = () => setMobileMenuOpen(false);
+
+  // Handle hamburger click - toggle store sidebar if in store, otherwise toggle global menu
+  const handleHamburgerClick = () => {
+    if (isStorePage) {
+      toggleStoreSidebar();
+    } else {
+      setMobileMenuOpen(!mobileMenuOpen);
+    }
+  };
 
   // Handle logout with delayed loader
   const handleLogout = async () => {
@@ -152,7 +163,7 @@ export default function Navbar() {
           {/* ── Hamburger button (mobile) ── */}
           <button
             className="md:hidden relative w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 transition-all duration-200 focus:outline-none"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={handleHamburgerClick}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {/* Three animated bars → X */}
@@ -167,11 +178,14 @@ export default function Navbar() {
       </nav>
 
       {/* ── Mobile Sidebar Drawer ── */}
-      {/* Backdrop */}
-      <div
-        onClick={close}
-        className={`md:hidden fixed inset-0 z-[55] bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-      />
+      {/* Only show global drawer when NOT in store page */}
+      {!isStorePage && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={close}
+            className={`md:hidden fixed inset-0 z-[55] bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+          />
 
       {/* Slide-in panel from right */}
       <div
@@ -298,6 +312,8 @@ export default function Navbar() {
 
         </div>
       </div>
+        </>
+      )}
     </>
   );
 }
