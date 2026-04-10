@@ -12,13 +12,15 @@ import {
   StoreDetailsSidebar,
   InventoryHeader,
   InventoryErrorAlert,
-  InventoryPageWrapper,
 } from "@/features/inventory/components";
 import {
   InventoryProvider,
   useInventoryContext,
 } from "@/features/inventory/context/inventoryContext";
-import { useInventoryPageLogic, useInventoryStats } from "@/features/inventory/hooks";
+import {
+  useInventoryPageLogic,
+  useInventoryStats,
+} from "@/features/inventory/hooks";
 
 /**
  * Inventory Page Content - Uses hooks for logic separation
@@ -28,14 +30,15 @@ const InventoryContent = () => {
   const storeId = params.storeId;
 
   // Get store and products data from context
-  const { currentStore, loading, error, setCurrentStore } = useInventoryContext();
+  const { currentStore, loading, error, setCurrentStore } =
+    useInventoryContext();
 
   // Use custom hooks for page logic
   const pageLogic = useInventoryPageLogic();
   const { stats, threshold, currencySymbol } = useInventoryStats();
 
   return (
-    <InventoryPageWrapper>
+    <>
       {/* Header Section */}
       <InventoryHeader
         storeId={storeId}
@@ -104,7 +107,7 @@ const InventoryContent = () => {
         store={currentStore}
         onStoreUpdated={(updatedStore) => setCurrentStore(updatedStore)}
       />
-    </InventoryPageWrapper>
+    </>
   );
 };
 
