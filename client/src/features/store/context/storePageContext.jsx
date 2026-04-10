@@ -7,16 +7,18 @@ const StorePageContext = createContext();
 export const StorePageProvider = ({ children }) => {
   const [isStorePage, setIsStorePage] = useState(false);
   const [storeSidebarOpen, setStoreSidebarOpen] = useState(false);
+  const [hasAutoOpenedOnMobile, setHasAutoOpenedOnMobile] = useState(false);
 
   const enterStorePage = useCallback(() => {
     setIsStorePage(true);
-    // Auto-open store sidebar on mobile when entering store
-    setStoreSidebarOpen(true);
+    // Don't auto-open - let user control sidebar via hamburger
+    // This prevents sidebar from opening on every page refresh
   }, []);
 
   const exitStorePage = useCallback(() => {
     setIsStorePage(false);
     setStoreSidebarOpen(false);
+    setHasAutoOpenedOnMobile(false);
   }, []);
 
   const toggleStoreSidebar = useCallback(() => {
