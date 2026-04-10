@@ -6,7 +6,9 @@ import { apiGet } from "@/servies/api";
 
 export const fetchSalesOverview = async (storeId) => {
   try {
-    const response = await apiGet(`/cart/store/${storeId}/history?limit=1000&page=1`);
+    const response = await apiGet(
+      `/cart/store/${storeId}/history?limit=1000&page=1`,
+    );
     return response.data || { bills: [], pagination: {} };
   } catch (error) {
     console.error("Failed to fetch sales data:", error);
@@ -80,7 +82,7 @@ export const calculateSalesMetrics = (bills = []) => {
 
   const topProduct = Object.entries(productMap).reduce(
     (max, [name, qty]) => (qty > max.qty ? { name, qty } : max),
-    { name: "N/A", qty: 0 }
+    { name: "N/A", qty: 0 },
   );
 
   const averageOrderValue = totalOrders > 0 ? yearlySales / totalOrders : 0;

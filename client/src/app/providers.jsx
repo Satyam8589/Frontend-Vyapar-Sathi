@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Background from "@/components/Background";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
+import { StorePageProvider } from "@/features/store/context/storePageContext";
 import SwipeToCloseToast from "@/components/SwipeToCloseToast";
 
 export default function Providers({ children }) {
@@ -14,23 +15,24 @@ export default function Providers({ children }) {
 
   return (
     <AuthProvider>
-      <Background />
-      {!isAuthPage && !isBillingPage && <Navbar />}
-      <div
-        className={`relative min-h-screen ${!isAuthPage && !isBillingPage ? "pt-20" : ""}`}
-        style={
-          !isAuthPage && !isBillingPage
-            ? {
-                WebkitMaskImage:
-                  "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
-                maskImage:
-                  "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
-              }
-            : {}
-        }
-      >
-        {children}
-      </div>
+      <StorePageProvider>
+        <Background />
+        {!isAuthPage && !isBillingPage && <Navbar />}
+        <div
+          className={`relative min-h-screen ${!isAuthPage && !isBillingPage ? "pt-20" : ""}`}
+          style={
+            !isAuthPage && !isBillingPage
+              ? {
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
+                  maskImage:
+                    "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
+                }
+              : {}
+          }
+        >
+          {children}
+        </div>
       {/* Toast Notifications */}
       <Toaster
         position="bottom-right"
@@ -63,6 +65,7 @@ export default function Providers({ children }) {
           </SwipeToCloseToast>
         )}
       </Toaster>
+      </StorePageProvider>
     </AuthProvider>
   );
 }

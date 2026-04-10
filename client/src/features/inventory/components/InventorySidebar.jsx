@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useStorePageContext } from "@/features/store/context/storePageContext";
 
 const icons = {
   Inventory: (
@@ -88,6 +89,21 @@ const icons = {
       <line x1="6" y1="20" x2="6" y2="14" />
     </svg>
   ),
+  Overview: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  ),
   Settings: (
     <svg
       width="16"
@@ -170,9 +186,28 @@ export default function VyaparSathiSidebar({
   const { user } = useAuth();
   const storeId = params?.storeId;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { isStorePage, storeSidebarOpen, toggleStoreSidebar } = useStorePageContext();
+
+  // Auto-close sidebar on mobile after navigation
+  const handleNavClick = () => {
+    if (onNavClick) onNavClick();
+    setIsMobileOpen(false);
+  };
+
+  // Sync store sidebar state with mobile open state
+  useEffect(() => {
+    if (isStorePage) {
+      setIsMobileOpen(storeSidebarOpen);
+    }
+  }, [isStorePage, storeSidebarOpen]);
 
   const navItems = useMemo(
     () => [
+      {
+        label: "Overview",
+        href: `/storeDashboard/${storeId}/overview`,
+        key: "overview",
+      },
       {
         label: "Inventory",
         href: `/storeDashboard/${storeId}`,
@@ -203,6 +238,7 @@ export default function VyaparSathiSidebar({
   );
 
   const getActiveNav = () => {
+    if (pathname.includes("/overview")) return "overview";
     if (pathname.includes("/billing")) return "billing";
     if (pathname.includes("/staff")) return "staff";
     if (pathname.includes("/analytics")) return "analytics";
@@ -400,7 +436,13 @@ export default function VyaparSathiSidebar({
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <button
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          onClick={() => {
+            if (isStorePage) {
+              toggleStoreSidebar();
+            } else {
+              setIsMobileOpen(!isMobileOpen);
+            }
+          }}
           style={{
             padding: "8px 12px",
             background: "#1b2a42",

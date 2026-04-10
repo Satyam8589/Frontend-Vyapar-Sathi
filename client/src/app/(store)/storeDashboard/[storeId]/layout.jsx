@@ -1,7 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar";
+import {
+  useStorePageContext,
+} from "@/features/store/context/storePageContext";
 
 /**
  * Store Dashboard Layout - Conditional sidebar
@@ -11,6 +15,17 @@ import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar
 export default function StoreLayout({ children }) {
   const pathname = usePathname();
   const isBillingPage = pathname.includes("/billing");
+  const { enterStorePage, exitStorePage } = useStorePageContext();
+
+  useEffect(() => {
+    // When entering store dashboard, set store page context
+    enterStorePage();
+
+    return () => {
+      // When leaving store dashboard, clear store page context
+      exitStorePage();
+    };
+  }, [enterStorePage, exitStorePage]);
 
   if (isBillingPage) {
     return <>{children}</>;
