@@ -248,11 +248,6 @@ export default function VyaparSathiSidebar({
 
   const activeNav = getActiveNav();
 
-  const handleNavClick = () => {
-    if (onNavClick) onNavClick();
-    setIsMobileOpen(false);
-  };
-
   const SidebarContent = () => (
     <>
       {/* Logo */}
