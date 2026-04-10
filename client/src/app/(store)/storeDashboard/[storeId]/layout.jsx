@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar";
 import StoreSidebarDrawer from "@/features/store/components/StoreSidebarDrawer";
-import {
-  useStorePageContext,
-} from "@/features/store/context/storePageContext";
+import { useStorePageContext } from "@/features/store/context/storePageContext";
 
 /**
  * Store Dashboard Layout - Conditional sidebar
@@ -54,7 +52,9 @@ export default function StoreLayout({ children }) {
         <main
           style={{
             flex: 1,
-            padding: isResponsive ? "15px 16px 20px 16px" : "15px 20px 20px 0px",
+            padding: isResponsive
+              ? "15px 16px 20px 16px"
+              : "15px 20px 20px 0px",
           }}
         >
           {children}

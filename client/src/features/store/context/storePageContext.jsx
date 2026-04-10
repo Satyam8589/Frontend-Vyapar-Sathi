@@ -43,7 +43,7 @@ export const useStorePageContext = () => {
   const context = useContext(StorePageContext);
   if (!context) {
     throw new Error(
-      "useStorePageContext must be used within StorePageProvider"
+      "useStorePageContext must be used within StorePageProvider",
     );
   }
   return context;

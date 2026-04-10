@@ -186,7 +186,8 @@ export default function VyaparSathiSidebar({
   const { user } = useAuth();
   const storeId = params?.storeId;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { isStorePage, storeSidebarOpen, toggleStoreSidebar } = useStorePageContext();
+  const { isStorePage, storeSidebarOpen, toggleStoreSidebar } =
+    useStorePageContext();
 
   // Auto-close sidebar on mobile after navigation
   const handleNavClick = () => {

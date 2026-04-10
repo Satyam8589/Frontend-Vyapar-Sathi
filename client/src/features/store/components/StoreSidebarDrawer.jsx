@@ -266,11 +266,12 @@ export default function StoreSidebarDrawer() {
           height: "100vh",
           background: "#1b2a42",
           zIndex: 100,
-          padding: "15px 12px 14px 12px",
+          padding: "20px 12px 14px 12px",
           display: "flex",
           flexDirection: "column",
           boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
           overflowY: "auto",
+          borderRadius: "0 24px 24px 0",
         }}
         onClick={(e) => e.stopPropagation()}
       >
