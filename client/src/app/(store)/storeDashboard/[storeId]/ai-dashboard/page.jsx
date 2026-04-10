@@ -6,9 +6,23 @@ import { AIDashboardContent } from "@/features/aiDashboard/components";
 import {
   fetchForecast,
   fetchInsights,
+  fetchSummary,
   fetchRestockPlan,
 } from "@/features/aiDashboard/services/aiDashboardService";
 import { fetchStoreById } from "@/features/storeDashboard/services/storeDashboardService";
+
+const getErrorMessage = (error, fallback) => {
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  if (error?.error) {
+    return error.error;
+  }
+  return fallback;
+};
 
 const AIDashboardPage = () => {
   const params = useParams();
@@ -19,44 +33,125 @@ const AIDashboardPage = () => {
   const [forecast, setForecast] = useState([]);
   const [restock, setRestock] = useState([]);
   const [insights, setInsights] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [loadingState, setLoadingState] = useState({
+    store: true,
+    forecast: true,
+    restock: true,
+    insights: true,
+    summary: true,
+  });
+  const [errorState, setErrorState] = useState({
+    store: "",
+    forecast: "",
+    restock: "",
+    insights: "",
+    summary: "",
+  });
 
   useEffect(() => {
     let isMounted = true;
 
     const loadDashboard = async () => {
-      try {
-        setLoading(true);
-        setError("");
+      setLoadingState({
+        store: true,
+        forecast: true,
+        restock: true,
+        insights: true,
+        summary: true,
+      });
+      setErrorState({
+        store: "",
+        forecast: "",
+        restock: "",
+        insights: "",
+        summary: "",
+      });
 
-        const [storeResponse, forecastData, restockData, insightsData] =
-          await Promise.all([
-            fetchStoreById(storeId),
-            fetchForecast(storeId),
-            fetchRestockPlan(storeId),
-            fetchInsights(storeId),
-          ]);
+      fetchStoreById(storeId)
+        .then((result) => {
+          if (!isMounted) return;
+          setStore(result?.data || null);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          setErrorState((prev) => ({
+            ...prev,
+            store: getErrorMessage(error, "Failed to load store details"),
+          }));
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setLoadingState((prev) => ({ ...prev, store: false }));
+        });
 
-        if (!isMounted) {
-          return;
-        }
+      fetchForecast(storeId)
+        .then((result) => {
+          if (!isMounted) return;
+          setForecast(result || []);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          setErrorState((prev) => ({
+            ...prev,
+            forecast: getErrorMessage(error, "Failed to load forecast"),
+          }));
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setLoadingState((prev) => ({ ...prev, forecast: false }));
+        });
 
-        setStore(storeResponse?.data || null);
-        setForecast(forecastData);
-        setRestock(restockData);
-        setInsights(insightsData);
-      } catch (err) {
-        if (!isMounted) {
-          return;
-        }
+      fetchRestockPlan(storeId)
+        .then((result) => {
+          if (!isMounted) return;
+          setRestock(result || []);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          setErrorState((prev) => ({
+            ...prev,
+            restock: getErrorMessage(error, "Failed to load restock plan"),
+          }));
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setLoadingState((prev) => ({ ...prev, restock: false }));
+        });
 
-        setError(err?.message || "Failed to load AI dashboard");
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+      fetchInsights(storeId)
+        .then((result) => {
+          if (!isMounted) return;
+          setInsights(result || []);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          setErrorState((prev) => ({
+            ...prev,
+            insights: getErrorMessage(error, "Failed to load insights"),
+          }));
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setLoadingState((prev) => ({ ...prev, insights: false }));
+        });
+
+      fetchSummary(storeId)
+        .then((result) => {
+          if (!isMounted) return;
+          setSummary(result || null);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          setErrorState((prev) => ({
+            ...prev,
+            summary: getErrorMessage(error, "Summary unavailable"),
+          }));
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setLoadingState((prev) => ({ ...prev, summary: false }));
+        });
     };
 
     if (storeId) {
@@ -99,8 +194,9 @@ const AIDashboardPage = () => {
           forecast={forecast}
           restock={restock}
           insights={insights}
-          loading={loading}
-          error={error}
+          summary={summary}
+          loadingState={loadingState}
+          errorState={errorState}
         />
       </div>
     </main>

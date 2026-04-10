@@ -15,6 +15,11 @@ export const fetchInsights = async (storeId) => {
   return response?.data || [];
 };
 
+export const fetchSummary = async (storeId) => {
+  const response = await apiGet(`/ai/${storeId}/summary`, { timeout: 45000 });
+  return response?.data || null;
+};
+
 export const fetchProductInsight = async (storeId, productId) => {
   const response = await apiGet(`/ai/${storeId}/product/${productId}`);
   return response?.data || null;
