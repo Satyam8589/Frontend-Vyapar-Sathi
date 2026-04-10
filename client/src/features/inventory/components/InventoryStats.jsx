@@ -6,7 +6,7 @@ import { useInventoryContext } from "../context/inventoryContext";
 const InventoryStats = ({ stats }) => {
   const [isStatsVisible, setIsStatsVisible] = useState(false);
   const { userContext } = useInventoryContext();
-  const isEmployee = userContext?.role !== 'Owner';
+  const isEmployee = userContext?.role !== "Owner";
 
   const colorClasses = {
     blue: "bg-blue-50 border-blue-100 text-blue-600",
@@ -16,10 +16,10 @@ const InventoryStats = ({ stats }) => {
   };
 
   // Filter out valuation/financial totals if user is an employee
-  const filteredStats = isEmployee 
-    ? stats.filter(stat => {
-        const label = stat.label?.toLowerCase() || '';
-        return !label.includes('valuation') && !label.includes('total value');
+  const filteredStats = isEmployee
+    ? stats.filter((stat) => {
+        const label = stat.label?.toLowerCase() || "";
+        return !label.includes("valuation") && !label.includes("total value");
       })
     : stats;
 
@@ -55,8 +55,8 @@ const InventoryStats = ({ stats }) => {
 
       {/* Stats Grid - Hidden on Mobile by Default, Always Visible on Desktop */}
       <div
-        className={`grid grid-cols-2 ${filteredStats.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-3 animate-fade-in-up [animation-delay:100ms] ${
-          isStatsVisible ? '' : 'hidden md:grid'
+        className={`grid grid-cols-2 ${filteredStats.length === 3 ? "md:grid-cols-3" : "md:grid-cols-4"} gap-3 animate-fade-in-up [animation-delay:100ms] ${
+          isStatsVisible ? "" : "hidden md:grid"
         }`}
       >
         {filteredStats.map((stat, i) => {
@@ -66,12 +66,14 @@ const InventoryStats = ({ stats }) => {
           return (
             <div
               key={i}
-              className={`${colorClass} rounded-lg p-4 border shadow-sm hover:shadow-md transition-all`}
+              className={`${colorClass} rounded-lg p-3 sm:p-4 border shadow-sm hover:shadow-md transition-all`}
             >
-              <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
+              <p className="text-[7px] sm:text-[10px] font-semibold uppercase tracking-wide opacity-70 mb-1">
                 {stat.label}
               </p>
-              <p className="text-2xl font-bold truncate">{stat.value}</p>
+              <p className="text-lg sm:text-2xl font-bold truncate">
+                {stat.value}
+              </p>
             </div>
           );
         })}
