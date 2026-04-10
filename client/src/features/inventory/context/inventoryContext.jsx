@@ -16,6 +16,7 @@ export const InventoryProvider = ({ children }) => {
 
   const [products, setProducts] = useState([]);
   const [currentStore, setCurrentStore] = useState(null);
+  const [userContext, setUserContext] = useState({ role: null, permissions: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,8 +25,10 @@ export const InventoryProvider = ({ children }) => {
     if (!storeId) return;
     try {
       const response = await fetchStoreById(storeId);
-      // Backend returns ApiResponse { data: store, ... }
-      setCurrentStore(response.data);
+      // Backend returns ApiResponse { data: { ...store, userContext: { role, permissions } }, ... }
+      const { userContext: context, ...storeData } = response.data;
+      setCurrentStore(storeData);
+      setUserContext(context || { role: null, permissions: [] });
     } catch (err) {
       console.error('STORE_FETCH_ERROR:', err);
     }
@@ -152,9 +155,18 @@ export const InventoryProvider = ({ children }) => {
     }
   };
 
+  // Check if current user has a specific permission
+  const hasPermission = useCallback((permissionKey) => {
+    if (!userContext?.role) return false;
+    if (userContext.role === 'Owner') return true; // Owner always has all permissions
+    return userContext.permissions.includes(permissionKey);
+  }, [userContext]);
+
   const value = {
     products,
     currentStore,
+    userContext,
+    hasPermission,
     setCurrentStore,
     loading,
     error,

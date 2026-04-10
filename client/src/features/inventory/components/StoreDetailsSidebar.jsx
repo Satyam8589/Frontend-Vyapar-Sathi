@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
 import StoreSettingsModal from "./StoreSettingsModal";
+import { useInventoryContext } from "../context/inventoryContext";
 
 /**
  * StoreDetailsSidebar - Slide-over panel for store info + settings button.
@@ -11,6 +12,10 @@ import StoreSettingsModal from "./StoreSettingsModal";
 const StoreDetailsSidebar = ({ isOpen, onClose, store, onStoreUpdated }) => {
   const [showSettings, setShowSettings] = useState(false);
   const router = useRouter();
+  const { hasPermission } = useInventoryContext();
+
+  const canViewSettings = hasPermission('inventory:manage');
+  const canSetUpi = hasPermission('billing:create');
 
   if (!store) return null;
 
@@ -41,14 +46,16 @@ const StoreDetailsSidebar = ({ isOpen, onClose, store, onStoreUpdated }) => {
 
           <div className="flex items-center gap-2 relative z-10">
             {/* ── Settings Button ── */}
-            <button
-              onClick={() => setShowSettings(true)}
-              title="Store Settings"
-              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-xs font-semibold"
-            >
-              <Settings size={14} className="group-hover:rotate-45 transition-transform duration-300" />
-              Settings
-            </button>
+            {canViewSettings && (
+              <button
+                onClick={() => setShowSettings(true)}
+                title="Store Settings"
+                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-xs font-semibold"
+              >
+                <Settings size={14} className="group-hover:rotate-45 transition-transform duration-300" />
+                Settings
+              </button>
+            )}
 
             {/* Close */}
             <button
@@ -223,12 +230,14 @@ const StoreDetailsSidebar = ({ isOpen, onClose, store, onStoreUpdated }) => {
                   ✓ Active
                 </span>
               ) : (
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="text-xs font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
-                >
-                  + Set UPI ID
-                </button>
+                canSetUpi && (
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="text-xs font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
+                  >
+                    + Set UPI ID
+                  </button>
+                )
               )}
             </div>
 

@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import PageLoader from '@/components/PageLoader';
 
 export default function AuthForm({ mode = 'login' }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, isSubmitting, error, clearError, login, signup, loginWithGoogle } = useAuth();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect') || '/storeDashboard';
   const isSignup = mode === 'signup';
   const [formData, setFormData] = useState({
     name: '',
@@ -43,7 +45,7 @@ export default function AuthForm({ mode = 'login' }) {
         }, 1000);
 
         // Perform the redirect
-        router.replace('/storeDashboard');
+        router.replace(redirectPath);
 
         // If the loader was triggered, wait to ensure it's shown for 2 seconds
         if (loaderTriggered) {
@@ -72,7 +74,7 @@ export default function AuthForm({ mode = 'login' }) {
         loaderTimerRef.current = null;
       }
     };
-  }, [isAuthenticated, isSubmitting, router]);
+  }, [isAuthenticated, isSubmitting, router, redirectPath]);
 
   const onChange = (event) => {
     if (error) {
@@ -245,7 +247,7 @@ export default function AuthForm({ mode = 'login' }) {
           <p className="text-center text-[10px] font-bold text-slate-500 italic">
             {isSignup ? 'ALREADY HAVE AN ACCOUNT?' : "DON'T HAVE AN ACCOUNT?"}{' '}
             <Link
-              href={isSignup ? '/login' : '/signUp'}
+              href={isSignup ? `/login${redirectPath !== '/storeDashboard' ? `?redirect=${redirectPath}` : ''}` : `/signUp${redirectPath !== '/storeDashboard' ? `?redirect=${redirectPath}` : ''}`}
               className="font-black text-blue-600 transition-colors hover:text-blue-700 uppercase tracking-wider ml-1"
             >
               {isSignup ? 'Sign in' : 'Create account'}

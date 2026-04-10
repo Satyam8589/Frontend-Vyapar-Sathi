@@ -30,8 +30,6 @@ export const BillingProvider = ({ children }) => {
   const params = useParams();
   const storeId = params.storeId;
 
-  const [currentStore, setCurrentStore] = useState(null);
-  const [billedProducts, setBilledProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
@@ -180,12 +178,26 @@ export const BillingProvider = ({ children }) => {
     return generateMobileScanURL(storeId, sessionId);
   }, [storeId, sessionId]);
 
+  // Final state declarations (consolidated)
+  const [currentStore, setCurrentStore] = useState(null);
+  const [userContext, setUserContext] = useState({ role: null, permissions: [] });
+  const [billedProducts, setBilledProducts] = useState([]);
+
+  // Check if current user has a specific permission
+  const hasPermission = useCallback((permissionKey) => {
+    if (!userContext?.role) return false;
+    if (userContext.role === 'Owner') return true; 
+    return userContext.permissions.includes(permissionKey);
+  }, [userContext]);
+
   // Fetch store details
   const fetchStoreDetails = useCallback(async () => {
     if (!storeId) return;
     try {
       const response = await fetchStoreById(storeId);
-      setCurrentStore(response.data);
+      const { userContext: context, ...storeData } = response.data;
+      setCurrentStore(storeData);
+      setUserContext(context || { role: null, permissions: [] });
     } catch (err) {
       console.error("STORE_FETCH_ERROR:", err);
       showError("Failed to fetch store details");
@@ -472,6 +484,8 @@ export const BillingProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       currentStore,
+      userContext,
+      hasPermission,
       billedProducts,
       loading,
       error,
@@ -520,6 +534,8 @@ export const BillingProvider = ({ children }) => {
       startSync,
       stopSync,
       getMobileScanURL,
+      userContext,
+      hasPermission
     ],
   );
 

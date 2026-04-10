@@ -10,6 +10,7 @@ import {
   SearchFiltersSection,
   DashboardContent,
   MobileStorePanel,
+  DeleteStoreModal,
 } from '@/features/storeDashboard/components';
 import PageLoader from '@/components/PageLoader';
 
@@ -77,6 +78,29 @@ const StoreDashboard = () => {
     }
   };
 
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, store: null });
+
+  const handleDeleteStore = (store) => {
+    setDeleteModal({ isOpen: true, store });
+  };
+
+  const handleConfirmDelete = async () => {
+    const store = deleteModal.store;
+    if (!store) return;
+
+    try {
+      setLoaderMessage(`Deleting ${store.name}...`);
+      const { deleteStore } = await import('@/features/storeDashboard/services/storeDashboardService');
+      await deleteStore(store._id);
+      await refreshStores();
+      setDeleteModal({ isOpen: false, store: null });
+    } catch (err) {
+      alert(err.message || 'Failed to delete store');
+    } finally {
+      setLoaderMessage('');
+    }
+  };
+
 
   // Build stats array from config
   const stats = STATS_CONFIG.map((statConfig) => {
@@ -104,6 +128,8 @@ const StoreDashboard = () => {
     return { label: statConfig.label, value };
   });
 
+  const isOwner = stores.length === 0 || stores.some(s => !s.isEmployee);
+  
   return (
     <div className="flex flex-col relative selection:bg-blue-500/20 antialiased">
 
@@ -119,6 +145,7 @@ const StoreDashboard = () => {
           updateFilters={updateFilters}
           refreshStores={refreshStores}
           stats={stats}
+          isOwner={isOwner}
         />
 
         {/* ── Stats Bar — desktop only ── */}
@@ -137,6 +164,15 @@ const StoreDashboard = () => {
           loading={loading}
           error={error}
           onStoreClick={handleStoreClick}
+          onDelete={handleDeleteStore}
+        />
+
+        {/* ── Delete Confirmation Modal ── */}
+        <DeleteStoreModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, store: null })}
+          onConfirm={handleConfirmDelete}
+          storeName={deleteModal.store?.name}
         />
 
       </main>

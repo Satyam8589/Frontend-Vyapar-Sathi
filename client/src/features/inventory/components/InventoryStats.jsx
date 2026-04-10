@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import { useInventoryContext } from "../context/inventoryContext";
 
 const InventoryStats = ({ stats }) => {
   const [isStatsVisible, setIsStatsVisible] = useState(false);
+  const { userContext } = useInventoryContext();
+  const isEmployee = userContext?.role !== 'Owner';
 
   const colorClasses = {
     blue: "bg-blue-50 border-blue-100 text-blue-600",
@@ -11,6 +14,14 @@ const InventoryStats = ({ stats }) => {
     red: "bg-red-50 border-red-100 text-red-600",
     emerald: "bg-emerald-50 border-emerald-100 text-emerald-600",
   };
+
+  // Filter out valuation/financial totals if user is an employee
+  const filteredStats = isEmployee 
+    ? stats.filter(stat => {
+        const label = stat.label?.toLowerCase() || '';
+        return !label.includes('valuation') && !label.includes('total value');
+      })
+    : stats;
 
   return (
     <section className="mb-4">
@@ -44,11 +55,11 @@ const InventoryStats = ({ stats }) => {
 
       {/* Stats Grid - Hidden on Mobile by Default, Always Visible on Desktop */}
       <div
-        className={`grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in-up [animation-delay:100ms] ${
+        className={`grid grid-cols-2 ${filteredStats.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-3 animate-fade-in-up [animation-delay:100ms] ${
           isStatsVisible ? '' : 'hidden md:grid'
         }`}
       >
-        {stats.map((stat, i) => {
+        {filteredStats.map((stat, i) => {
           const colorClass =
             colorClasses[stat.color] ||
             "bg-gray-50 border-gray-100 text-gray-600";

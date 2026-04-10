@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStoreStaffContext } from '../context/StoreStaffContext';
+import EditEmployeeRoleModal from './EditEmployeeRoleModal';
 
 const STATUS_BADGE = {
   active:    { label: 'Active',    color: '#16a34a', bg: '#dcfce7' },
@@ -12,8 +13,15 @@ const STATUS_BADGE = {
 
 const EmployeeList = ({ onInvite }) => {
   const { employees, fetchEmployees, removeEmployee, loading } = useStoreStaffContext();
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
+
+  const handleEdit = (emp) => {
+    setEditingEmployee(emp);
+    setIsEditModalOpen(true);
+  };
 
   const handleRemove = async (employeeId, name) => {
     if (!confirm(`Remove ${name} from this store?`)) return;
@@ -89,12 +97,20 @@ const EmployeeList = ({ onInvite }) => {
                   </td>
                   {/* Actions */}
                   <td style={{ padding: '16px 24px' }}>
-                    <button
-                      onClick={() => handleRemove(emp._id, emp.user?.name)}
-                      style={{ padding: '6px 14px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      Remove
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => handleEdit(emp)}
+                        style={{ padding: '6px 14px', background: '#eef2ff', color: '#4f46e5', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Edit Role
+                      </button>
+                      <button
+                        onClick={() => handleRemove(emp._id, emp.user?.name)}
+                        style={{ padding: '6px 14px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -102,6 +118,13 @@ const EmployeeList = ({ onInvite }) => {
           </tbody>
         </table>
       )}
+
+      {/* Edit Role Modal */}
+      <EditEmployeeRoleModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        employee={editingEmployee}
+      />
     </div>
   );
 };

@@ -10,3 +10,4 @@ export { default as SearchFiltersSection } from './SearchFiltersSection';
 export { default as DashboardContent } from './DashboardContent';
 export { default as MobileStorePanel } from './MobileStorePanel';
 export { default as StoreModalContent } from './StoreModalContent';
+export { default as DeleteStoreModal } from './DeleteStoreModal';
