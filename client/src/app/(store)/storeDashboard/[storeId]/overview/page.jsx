@@ -90,7 +90,7 @@ const OverviewPage = () => {
         {/* Quick Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Sales Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
+          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -121,7 +121,7 @@ const OverviewPage = () => {
           </div>
 
           {/* Total Orders Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
+          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -154,7 +154,7 @@ const OverviewPage = () => {
           </div>
 
           {/* Avg Order Value Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
+          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -186,7 +186,7 @@ const OverviewPage = () => {
           </div>
 
           {/* Top Product Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white hover:shadow-xl transition-shadow">
+          <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">
@@ -222,7 +222,7 @@ const OverviewPage = () => {
           {/* Left Column - Sales Cards */}
           <div className="space-y-6">
             {/* Daily Sales */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -244,14 +244,16 @@ const OverviewPage = () => {
                     ? chartData.dailyBreakdown.map((value, idx) => {
                         const maxValue = Math.max(
                           ...chartData.dailyBreakdown,
-                          1
+                          1,
                         );
                         const heightPercent = (value / maxValue) * 100;
                         return (
                           <div
                             key={idx}
                             className="flex-1 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-sm"
-                            style={{ height: `${Math.max(heightPercent * 1.5, 20)}px` }}
+                            style={{
+                              height: `${Math.max(heightPercent * 1.5, 20)}px`,
+                            }}
                             title={`${formatCurrency(value)}`}
                           ></div>
                         );
@@ -271,7 +273,7 @@ const OverviewPage = () => {
             </div>
 
             {/* Weekly Sales */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white">
+            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -301,12 +303,8 @@ const OverviewPage = () => {
                 <div className="grid grid-cols-7 gap-2">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
                     (day, idx) => {
-                      const maxValue = Math.max(
-                        ...chartData.dailyBreakdown,
-                        1
-                      );
-                      const value =
-                        chartData.dailyBreakdown[idx] || 0;
+                      const maxValue = Math.max(...chartData.dailyBreakdown, 1);
+                      const value = chartData.dailyBreakdown[idx] || 0;
                       const heightPercent = (value / maxValue) * 100;
                       return (
                         <div key={idx} className="text-center">
@@ -320,7 +318,7 @@ const OverviewPage = () => {
                           <p className="text-xs text-gray-500">{day}</p>
                         </div>
                       );
-                    }
+                    },
                   )}
                 </div>
               </div>
@@ -330,7 +328,7 @@ const OverviewPage = () => {
           {/* Right Column - Monthly & Yearly */}
           <div className="space-y-6">
             {/* Monthly Sales */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white">
+            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -374,11 +372,9 @@ const OverviewPage = () => {
                     { label: "Week 4", idx: 3 },
                   ].map((week) => {
                     const value = chartData.weeklyBreakdown[week.idx] || 0;
-                    const maxValue = Math.max(
-                      ...chartData.weeklyBreakdown,
-                      1
-                    );
-                    const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+                    const maxValue = Math.max(...chartData.weeklyBreakdown, 1);
+                    const percentage =
+                      maxValue > 0 ? (value / maxValue) * 100 : 0;
                     return (
                       <div key={week.idx}>
                         <div className="flex justify-between items-center mb-1">
@@ -403,7 +399,7 @@ const OverviewPage = () => {
             </div>
 
             {/* Yearly Sales */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white">
+            <div className="bg-gradient-to-br from-slate-50/80 via-blue-50/80 to-indigo-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
@@ -437,10 +433,11 @@ const OverviewPage = () => {
                     { month: "Q3", idx: 2 },
                     { month: "Q4", idx: 3 },
                   ].map((quarter) => {
-                    const value = chartData.quarterlyBreakdown[quarter.idx] || 0;
+                    const value =
+                      chartData.quarterlyBreakdown[quarter.idx] || 0;
                     const maxValue = Math.max(
                       ...chartData.quarterlyBreakdown,
-                      1
+                      1,
                     );
                     const barHeight =
                       maxValue > 0 ? (value / maxValue) * 80 : 20;
