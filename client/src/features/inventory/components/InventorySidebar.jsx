@@ -54,7 +54,7 @@ export default function VyaparSathiSidebar() {
     <div style={{ padding: "16px 20px 20px 24px", minWidth: 258 }}>
       <div style={{
         width: 214,
-        minHeight: 655,
+        height: "calc(100vh - 125px)",
         background: "#1b2a42",
         borderRadius: 18,
         display: "flex",
@@ -81,7 +81,7 @@ export default function VyaparSathiSidebar() {
         </div>
 
         {/* Nav */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, overflowY: "auto" }} className="no-scrollbar">
           {navItems.map(label => (
             <NavBtn key={label} label={label} active={active === label} onClick={() => setActive(label)} />
           ))}
