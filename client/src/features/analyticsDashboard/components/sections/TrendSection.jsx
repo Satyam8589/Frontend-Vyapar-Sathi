@@ -41,18 +41,18 @@ const TrendSection = ({ trend, loading, error }) => {
   }
 
   return (
-    <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+    <section className="rounded-[2rem] border border-slate-200 bg-white p-3 sm:p-4 md:p-6 shadow-sm">
+      <div className="flex flex-col gap-2 sm:gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
         <div>
-          <p className="text-[9px] font-black uppercase tracking-[0.35em] text-blue-600 sm:text-[10px]">Sales trend</p>
-          <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl">Daily movement</h3>
+          <p className="text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-[0.35em] text-blue-600">Sales trend</p>
+          <h3 className="mt-0.5 text-base sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight text-slate-900 sm:mt-1 md:mt-2">Daily movement</h3>
         </div>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2">
           {datasets.map((dataset) => (
             <button
               key={dataset.key}
               onClick={() => setSelectedMetric(dataset.key)}
-              className={`rounded-2xl px-2.5 py-1 text-[11px] font-black transition sm:px-4 sm:py-2 sm:text-sm ${
+              className={`rounded-2xl px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-1 md:px-4 md:py-2 md:text-sm font-black transition ${
                 selectedMetric === dataset.key
                   ? 'bg-slate-900 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -64,15 +64,15 @@ const TrendSection = ({ trend, loading, error }) => {
         </div>
       </div>
 
-      <div className="mt-3 rounded-[1.75rem] bg-slate-50 p-2 sm:mt-5 sm:p-4">
+      <div className="mt-2.5 sm:mt-3.5 md:mt-5 rounded-[1.75rem] bg-slate-50 p-1.5 sm:p-2.5 md:p-4">
         <SvgLineChart labels={labels} values={activeDataset.data} color="#4f46e5" />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-4 sm:gap-3">
+      <div className="mt-2.5 sm:mt-3.5 md:mt-5 grid grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-2 md:gap-3">
         {datasets.map((dataset) => (
-          <div key={dataset.key} className="rounded-2xl bg-slate-50 p-2 sm:p-4">
-            <p className="text-[8px] font-black uppercase tracking-wider text-slate-500 sm:text-[10px]">{dataset.label}</p>
-            <p className="mt-1 text-sm font-black text-slate-900 sm:mt-2 sm:text-lg">
+          <div key={dataset.key} className="rounded-2xl bg-slate-50 p-1.5 sm:p-2.5 md:p-4">
+            <p className="text-[7px] sm:text-[8px] md:text-[10px] font-black uppercase tracking-wider text-slate-500">{dataset.label}</p>
+            <p className="mt-0.5 text-xs sm:text-sm md:text-lg font-black text-slate-900 sm:mt-1 md:mt-2">
               {formatMetricValue(dataset.key, dataset.data.reduce((sum, value) => sum + Number(value || 0), 0))}
             </p>
           </div>

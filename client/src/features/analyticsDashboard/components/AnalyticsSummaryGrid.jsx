@@ -88,14 +88,14 @@ const AnalyticsSummaryGrid = ({ summary, store }) => {
 
   return (
     <section>
-      <div className="mb-4 flex items-end justify-between gap-4">
+      <div className="mb-2.5 flex items-end justify-between gap-2.5 sm:gap-4">
         <div>
-          <p className="text-[9px] font-black uppercase tracking-[0.35em] text-indigo-600 md:text-[10px]">Snapshot</p>
-          <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900 sm:text-2xl md:text-3xl">Store performance</h2>
+          <p className="text-[8px] font-black uppercase tracking-[0.35em] text-indigo-600 sm:text-[9px] md:text-[10px]">Snapshot</p>
+          <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-xl md:text-3xl">Store performance</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <SummaryCard key={item.label} {...item} />
         ))}

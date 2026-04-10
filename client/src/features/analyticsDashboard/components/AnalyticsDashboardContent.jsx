@@ -24,7 +24,7 @@ const AnalyticsDashboardContent = ({
 
   if (primaryLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5 md:space-y-6">
         <EmptyState
           title="Loading analytics dashboard"
           description="Sales, category, and product analytics are being prepared for this store."
@@ -45,7 +45,7 @@ const AnalyticsDashboardContent = ({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       <AnalyticsSummaryGrid summary={summary} store={store} />
 
       <TrendSection trend={trend} loading={loading.trend} error={error.trend} />
@@ -57,7 +57,7 @@ const AnalyticsDashboardContent = ({
         store={store}
       />
 
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:gap-8 xl:grid-cols-2">
         <TopProductsSection
           topProducts={topProducts}
           loading={loading.topProducts}
