@@ -55,8 +55,9 @@ export const calculateSalesMetrics = (bills = []) => {
   const productMap = {};
 
   bills.forEach((bill) => {
-    const billDate = new Date(bill.updatedAt || bill.createdAt);
-    const billAmount = bill.totalAmount || 0;
+    // Handle both Cart and Sale model field names
+    const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
+    const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
 
     yearlySales += billAmount;
 
@@ -72,10 +73,11 @@ export const calculateSalesMetrics = (bills = []) => {
       dailySales += billAmount;
     }
 
-    // Track products for top product
-    bill.products?.forEach((item) => {
-      const productName = item.product?.name || item.productName || "Unknown";
-      const quantity = item.quantity || 0;
+    // Track products for top product - handle products (Cart) and items (Sale)
+    const items = bill.products || bill.items || [];
+    items.forEach((item) => {
+      const productName = item.product?.name || item.productName || item.nameSnapshot || "Unknown";
+      const quantity = Number(item.quantity || 0);
       productMap[productName] = (productMap[productName] || 0) + quantity;
     });
   });
@@ -117,11 +119,13 @@ export const generateChartData = (bills = []) => {
   }
 
   bills.forEach((bill) => {
-    const billDate = new Date(bill.updatedAt || bill.createdAt);
+    const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
+    const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
+
     if (billDate >= weekStart && billDate <= now) {
       const key = billDate.toISOString().split("T")[0];
       if (key in dailyData) {
-        dailyData[key] += bill.totalAmount || 0;
+        dailyData[key] += billAmount;
       }
     }
   });
@@ -136,7 +140,9 @@ export const generateChartData = (bills = []) => {
   };
 
   bills.forEach((bill) => {
-    const billDate = new Date(bill.updatedAt || bill.createdAt);
+    const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
+    const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
+
     if (billDate >= monthStart && billDate <= now) {
       const dayOfMonth = billDate.getDate();
       let week;
@@ -144,7 +150,7 @@ export const generateChartData = (bills = []) => {
       else if (dayOfMonth <= 14) week = "Week 2";
       else if (dayOfMonth <= 21) week = "Week 3";
       else week = "Week 4";
-      weeklyData[week] += bill.totalAmount || 0;
+      weeklyData[week] += billAmount;
     }
   });
 
@@ -158,12 +164,14 @@ export const generateChartData = (bills = []) => {
   };
 
   bills.forEach((bill) => {
-    const billDate = new Date(bill.updatedAt || bill.createdAt);
+    const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
+    const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
+
     if (billDate >= yearStart && billDate <= now) {
       const month = billDate.getMonth();
       const quarter = Math.floor(month / 3);
       const quarters = ["Q1", "Q2", "Q3", "Q4"];
-      quarterlyData[quarters[quarter]] += bill.totalAmount || 0;
+      quarterlyData[quarters[quarter]] += billAmount;
     }
   });
 

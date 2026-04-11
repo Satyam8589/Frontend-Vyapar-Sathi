@@ -52,13 +52,9 @@ export default function Navbar() {
 
   const close = () => setMobileMenuOpen(false);
 
-  // Handle hamburger click - toggle store sidebar if in store, otherwise toggle global menu
+  // Handle hamburger click - always toggle global menu as per user request
   const handleHamburgerClick = () => {
-    if (isStorePage) {
-      toggleStoreSidebar();
-    } else {
-      setMobileMenuOpen(!mobileMenuOpen);
-    }
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   // Handle logout with delayed loader
@@ -227,164 +223,84 @@ export default function Navbar() {
       </nav>
 
       {/* ── Mobile Sidebar Drawer ── */}
-      {/* Only show global drawer when NOT in store page */}
-      {!isStorePage && (
-        <>
-          {/* Backdrop */}
-          <div
-            onClick={close}
-            className={`md:hidden fixed inset-0 z-[55] bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
-          />
+      {/* Show global drawer everywhere as per user request */}
+      <>
+        {/* Backdrop */}
+        <div
+          onClick={close}
+          className={`md:hidden fixed inset-0 z-[55] bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        />
 
-          {/* Slide-in panel from right */}
-          <div
-            className={`md:hidden fixed top-0 right-0 h-full w-[80vw] max-w-xs z-[60]
+        {/* Slide-in panel from right */}
+        <div
+          className={`md:hidden fixed top-0 right-0 h-full w-[80vw] max-w-xs z-[60]
           bg-white
           shadow-2xl shadow-slate-900/20
           transition-transform duration-300 ease-in-out
           ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
-          >
-            {/* Decorative glow blobs */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-100/60 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-20 left-0 w-32 h-32 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
+        >
+          {/* Decorative glow blobs */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-blue-100/60 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-20 left-0 w-32 h-32 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative flex flex-col h-full px-6 py-8 overflow-y-auto">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg">
-                    V
-                  </div>
-                  <span className="text-lg font-black text-slate-900 tracking-tight">
-                    Vyapar<span className="text-amber-500">Sathi</span>
-                  </span>
+          <div className="relative flex flex-col h-full px-6 py-8 overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg">
+                  V
                 </div>
-
-                {/* Close button */}
-                <button
-                  onClick={close}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all duration-200"
-                  aria-label="Close menu"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+                <span className="text-lg font-black text-slate-900 tracking-tight">
+                  Vyapar<span className="text-amber-500">Sathi</span>
+                </span>
               </div>
 
-              {/* Divider */}
-              <div className="h-px bg-slate-100 mb-8" />
+              {/* Close button */}
+              <button
+                onClick={close}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all duration-200"
+                aria-label="Close menu"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
 
-              {/* Nav links */}
-              <nav className="flex flex-col gap-1 flex-1">
-                {NAV_ITEMS.map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/" && pathname.startsWith(item.href));
-                  return (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      onClick={close}
-                      className={`flex items-center gap-3.5 px-4 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-blue-50 text-blue-600 border border-blue-200"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                    >
-                      <span
-                        className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200
-                    ${isActive ? "bg-blue-100" : "bg-slate-100"}`}
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d={item.icon}
-                          />
-                        </svg>
-                      </span>
-                      <span className="tracking-wide uppercase text-xs font-black">
-                        {item.label}
-                      </span>
-                      {isActive && (
-                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
+            {/* Divider */}
+            <div className="h-px bg-slate-100 mb-8" />
 
-              {/* Bottom auth section */}
-              <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
-                {!isLoading && !isAuthenticated && (
-                  <>
-                    <Link
-                      href="/login"
-                      onClick={close}
-                      className="flex items-center justify-center w-full py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
-                    >
-                      Log In
-                    </Link>
-                    <Link
-                      href="/signUp"
-                      onClick={close}
-                      className="flex items-center justify-center w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-blue-600 text-white font-black text-sm shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
-                    >
-                      GET STARTED →
-                    </Link>
-                  </>
-                )}
-
-                {!isLoading && isAuthenticated && (
-                  <div className="space-y-3">
-                    {/* User card */}
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                      {user?.photoURL ? (
-                        <Image
-                          src={user.photoURL}
-                          alt={user.displayName || "User"}
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-200"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-blue-600 flex items-center justify-center text-sm font-black text-white flex-shrink-0">
-                          {getUserInitials(user?.displayName)}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-900 truncate">
-                          {user?.displayName || "User"}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {user?.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Logout */}
-                    <button
-                      onClick={handleLogout}
-                      disabled={isSubmitting}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all disabled:opacity-50"
+            {/* Nav links */}
+            <nav className="flex flex-col gap-1 flex-1">
+              {NAV_ITEMS.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={close}
+                    className={`flex items-center gap-3.5 px-4 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200
+                  ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 border border-blue-200"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                  >
+                    <span
+                      className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200
+                  ${isActive ? "bg-blue-100" : "bg-slate-100"}`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -396,18 +312,96 @@ export default function Navbar() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          d={item.icon}
                         />
                       </svg>
-                      {isSubmitting ? "Logging out..." : "Logout"}
-                    </button>
+                    </span>
+                    <span className="tracking-wide uppercase text-xs font-black">
+                      {item.label}
+                    </span>
+                    {isActive && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Bottom auth section */}
+            <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
+              {!isLoading && !isAuthenticated && (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={close}
+                    className="flex items-center justify-center w-full py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/signUp"
+                    onClick={close}
+                    className="flex items-center justify-center w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-blue-600 text-white font-black text-sm shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
+                  >
+                    GET STARTED →
+                  </Link>
+                </>
+              )}
+
+              {!isLoading && isAuthenticated && (
+                <div className="space-y-3">
+                  {/* User card */}
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    {user?.photoURL ? (
+                      <Image
+                        src={user.photoURL}
+                        alt={user.displayName || "User"}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-blue-600 flex items-center justify-center text-sm font-black text-white flex-shrink-0">
+                        {getUserInitials(user?.displayName)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-900 truncate">
+                        {user?.displayName || "User"}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Logout */}
+                  <button
+                    onClick={handleLogout}
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all disabled:opacity-50"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    {isSubmitting ? "Logging out..." : "Logout"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </>
     </>
   );
 }

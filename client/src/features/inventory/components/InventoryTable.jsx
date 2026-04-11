@@ -11,6 +11,9 @@ const InventoryTable = ({
   onProductClick,
   lowStockThreshold = 10,
   currencySymbol = "₹",
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
 }) => {
   if (loading && inventory.length === 0) {
     return (
@@ -191,22 +194,23 @@ const InventoryTable = ({
           </tbody>
         </table>
       </div>
-      {inventory.length > 0 && (
+      {inventory.length > 0 && totalPages > 1 && (
         <div className="px-3 sm:px-6 py-2 sm:py-4 border-t border-slate-200 bg-slate-50/80 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
           <p className="text-[8px] sm:text-[10px] text-slate-600 font-black uppercase tracking-widest">
-            Showing {inventory.length} product
-            {inventory.length !== 1 ? "s" : ""}
+            Page {currentPage} of {totalPages}
           </p>
           <div className="flex items-center gap-2">
             <button
               className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-slate-300 rounded-xl text-[8px] sm:text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              disabled
+              onClick={() => onPageChange?.(currentPage - 1)}
+              disabled={currentPage === 1}
             >
               Previous
             </button>
             <button
               className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-slate-300 rounded-xl text-[8px] sm:text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              disabled
+              onClick={() => onPageChange?.(currentPage + 1)}
+              disabled={currentPage === totalPages}
             >
               Next
             </button>

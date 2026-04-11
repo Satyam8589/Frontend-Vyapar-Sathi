@@ -8,7 +8,7 @@ import { useInventoryContext } from '@/features/inventory/context/inventoryConte
 export const useInventoryPageLogic = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useInventoryContext();
 
-  // Modal and UI state
+  // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -19,12 +19,28 @@ export const useInventoryPageLogic = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   // Filter products based on search term
   const filteredProducts = products?.filter(
     (item) =>
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.barcode?.includes(searchTerm)
   ) || [];
+
+  // Reset to first page when search changes
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Handle edit product
   const handleEdit = (item) => {
@@ -103,11 +119,14 @@ export const useInventoryPageLogic = () => {
     selectedProduct,
     isDetailModalOpen,
     isSidebarOpen,
-    filteredProducts,
+    filteredProducts: paginatedProducts,
+    currentPage,
+    totalPages,
 
     // Setters
     setSearchTerm,
     setIsAddModalOpen,
+    setCurrentPage,
 
     // Handlers
     handleEdit,
@@ -121,6 +140,7 @@ export const useInventoryPageLogic = () => {
     handleCloseDetailModal,
     handleOpenSidebar,
     handleCloseSidebar,
+    handleSearchChange,
   };
 };
 

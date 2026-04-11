@@ -38,7 +38,7 @@ const InventoryContent = () => {
   const { stats, threshold, currencySymbol } = useInventoryStats();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50/40 to-blue-50/20 pb-8 sm:pb-12">
+    <div className="min-h-screen pb-8 sm:pb-12">
       <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 max-w-7xl mx-auto">
         {/* Header Section */}
         <InventoryHeader
@@ -56,7 +56,7 @@ const InventoryContent = () => {
         {/* Search and Filters Bar */}
         <InventoryFilters
           searchTerm={pageLogic.searchTerm}
-          setSearchTerm={pageLogic.setSearchTerm}
+          onSearchChange={pageLogic.handleSearchChange}
           onMenuClick={pageLogic.handleOpenSidebar}
         />
 
@@ -69,6 +69,9 @@ const InventoryContent = () => {
           onProductClick={pageLogic.handleProductClick}
           lowStockThreshold={threshold}
           currencySymbol={currencySymbol}
+          currentPage={pageLogic.currentPage}
+          totalPages={pageLogic.totalPages}
+          onPageChange={pageLogic.setCurrentPage}
         />
 
         <StoreDetailsSidebar
