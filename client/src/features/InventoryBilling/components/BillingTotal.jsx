@@ -7,7 +7,7 @@ import { CreditCard, Banknote, Smartphone } from "lucide-react";
 import UpiQrModal from "./UpiQrModal";
 
 export const BillingTotal = () => {
-  const { billedProducts, clearBill, currentStore } = useBillingContext();
+  const { billedProducts, clearBill, currentStore, discount, setDiscount } = useBillingContext();
   const {
     paymentMethod,
     setPaymentMethod,
@@ -18,6 +18,17 @@ export const BillingTotal = () => {
   } = useBillPayment();
 
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [discountValue, setDiscountValue] = useState(discount.value || "");
+  const [localDiscountType, setLocalDiscountType] = useState(discount.type || "fixed");
+
+  const handleApplyDiscount = () => {
+    const val = parseFloat(discountValue);
+    if (!isNaN(val)) {
+      setDiscount({ type: localDiscountType, value: val });
+    } else {
+      setDiscount({ type: "fixed", value: 0 });
+    }
+  };
 
   const paymentMethods = [
     { id: "cash", label: "Cash", icon: Banknote },
@@ -48,11 +59,74 @@ export const BillingTotal = () => {
             </span>
             <span className="font-semibold text-gray-900">{itemCount}</span>
           </div>
-          <div className="flex justify-between items-center border-t border-blue-200 pt-2 md:pt-3 mt-2 md:mt-3">
-            <span className="text-base md:text-lg font-medium text-gray-700">
-              Total Amount:
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm md:text-base text-gray-600">
+              Subtotal:
             </span>
-            <span className="text-2xl md:text-3xl font-bold text-blue-600">
+            <span className="font-semibold text-gray-900">
+              ₹{billedProducts.reduce((sum, p) => sum + (p.price || p.sellingPrice || 0) * (p.billedQuantity || 1), 0).toFixed(2)}
+            </span>
+          </div>
+
+          {/* Discount Input Section */}
+          <div className="mt-4 pt-4 border-t border-blue-200">
+            <label className="block text-xs font-bold text-blue-800 uppercase tracking-widest mb-2">
+              Add Discount
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-3 pr-10 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center bg-blue-50 rounded border border-blue-100 p-0.5">
+                  <button
+                    onClick={() => setLocalDiscountType("percent")}
+                    className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
+                      localDiscountType === "percent"
+                        ? "bg-blue-600 text-white"
+                        : "text-blue-600 hover:bg-blue-100"
+                    }`}
+                  >
+                    %
+                  </button>
+                  <button
+                    onClick={() => setLocalDiscountType("fixed")}
+                    className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
+                      localDiscountType === "fixed"
+                        ? "bg-blue-600 text-white"
+                        : "text-blue-600 hover:bg-blue-100"
+                    }`}
+                  >
+                    ₹
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={handleApplyDiscount}
+                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold uppercase rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+            {discount.value > 0 && (
+              <div className="flex justify-between items-center mt-3 text-sm text-green-700 font-medium">
+                <span>Applied Discount:</span>
+                <span>
+                  -{discount.type === "percent" ? `${discount.value}%` : `₹${discount.value}`}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center border-t border-blue-200 pt-2 md:pt-4 mt-4 md:mt-5">
+            <span className="text-base md:text-lg font-bold text-gray-800">
+              Total Payable:
+            </span>
+            <span className="text-2xl md:text-3xl font-black text-blue-600">
               ₹{totalAmount.toFixed(2)}
             </span>
           </div>

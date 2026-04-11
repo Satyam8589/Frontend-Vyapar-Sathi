@@ -42,8 +42,8 @@ export const fetchTopProducts = async (storeId) => {
 export const calculateSalesMetrics = (bills = []) => {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay());
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 6);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearStart = new Date(now.getFullYear(), 0, 1);
 
@@ -55,7 +55,6 @@ export const calculateSalesMetrics = (bills = []) => {
   const productMap = {};
 
   bills.forEach((bill) => {
-    // Handle both Cart and Sale model field names
     const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
     const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
 
@@ -65,7 +64,7 @@ export const calculateSalesMetrics = (bills = []) => {
       monthlySales += billAmount;
     }
 
-    if (billDate >= weekStart) {
+    if (billDate >= sevenDaysAgo) {
       weeklySales += billAmount;
     }
 
@@ -73,10 +72,9 @@ export const calculateSalesMetrics = (bills = []) => {
       dailySales += billAmount;
     }
 
-    // Track products for top product - handle products (Cart) and items (Sale)
     const items = bill.products || bill.items || [];
     items.forEach((item) => {
-      const productName = item.product?.name || item.productName || item.nameSnapshot || "Unknown";
+      const productName = item.product?.name || item.nameSnapshot || "Unknown Product";
       const quantity = Number(item.quantity || 0);
       productMap[productName] = (productMap[productName] || 0) + quantity;
     });
@@ -87,8 +85,6 @@ export const calculateSalesMetrics = (bills = []) => {
     { name: "N/A", qty: 0 },
   );
 
-  const averageOrderValue = totalOrders > 0 ? yearlySales / totalOrders : 0;
-
   return {
     dailySales,
     weeklySales,
@@ -96,8 +92,9 @@ export const calculateSalesMetrics = (bills = []) => {
     yearlySales,
     totalSales: yearlySales,
     totalOrders,
-    averageOrderValue,
+    averageOrderValue: totalOrders > 0 ? yearlySales / totalOrders : 0,
     topProduct: topProduct.name,
+    topProductQty: topProduct.qty,
   };
 };
 
@@ -110,73 +107,61 @@ export const generateChartData = (bills = []) => {
   weekStart.setDate(now.getDate() - 6);
 
   // Daily breakdown for last 7 days
-  const dailyData = {};
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(weekStart);
-    date.setDate(date.getDate() + i);
-    const key = date.toISOString().split("T")[0];
-    dailyData[key] = 0;
-  }
-
-  bills.forEach((bill) => {
-    const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
-    const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
-
-    if (billDate >= weekStart && billDate <= now) {
-      const key = billDate.toISOString().split("T")[0];
-      if (key in dailyData) {
-        dailyData[key] += billAmount;
+  const dailyData = [];
+  
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
+    
+    const label = date.toLocaleDateString("en-IN", { weekday: "short" });
+    const startTime = date.getTime();
+    const endTime = startTime + 24 * 60 * 60 * 1000;
+    
+    const amount = bills.reduce((sum, bill) => {
+      const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt).getTime();
+      if (billDate >= startTime && billDate < endTime) {
+        return sum + Number(bill.totalAmount ?? bill.totalPrice ?? 0);
       }
-    }
-  });
+      return sum;
+    }, 0);
+    
+    dailyData.push({ label, amount });
+  }
 
   // Weekly data for current month
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const weeklyData = {
-    "Week 1": 0,
-    "Week 2": 0,
-    "Week 3": 0,
-    "Week 4": 0,
-  };
+  const weeklyData = { "Week 1": 0, "Week 2": 0, "Week 3": 0, "Week 4": 0 };
 
   bills.forEach((bill) => {
     const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
     const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
 
-    if (billDate >= monthStart && billDate <= now) {
+    if (billDate >= monthStart) {
       const dayOfMonth = billDate.getDate();
-      let week;
-      if (dayOfMonth <= 7) week = "Week 1";
-      else if (dayOfMonth <= 14) week = "Week 2";
-      else if (dayOfMonth <= 21) week = "Week 3";
-      else week = "Week 4";
+      let week = dayOfMonth <= 7 ? "Week 1" : dayOfMonth <= 14 ? "Week 2" : dayOfMonth <= 21 ? "Week 3" : "Week 4";
       weeklyData[week] += billAmount;
     }
   });
 
   // Quarterly data for current year
   const yearStart = new Date(now.getFullYear(), 0, 1);
-  const quarterlyData = {
-    Q1: 0,
-    Q2: 0,
-    Q3: 0,
-    Q4: 0,
-  };
+  const quarterlyData = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
 
   bills.forEach((bill) => {
     const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
     const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
 
-    if (billDate >= yearStart && billDate <= now) {
-      const month = billDate.getMonth();
-      const quarter = Math.floor(month / 3);
+    if (billDate >= yearStart) {
+      const quarter = Math.floor(billDate.getMonth() / 3);
       const quarters = ["Q1", "Q2", "Q3", "Q4"];
       quarterlyData[quarters[quarter]] += billAmount;
     }
   });
 
   return {
-    dailyBreakdown: Object.values(dailyData),
+    dailyBreakdown: dailyData.map(d => d.amount),
+    dailyLabels: dailyData.map(d => d.label),
     weeklyBreakdown: Object.values(weeklyData),
     quarterlyBreakdown: Object.values(quarterlyData),
   };

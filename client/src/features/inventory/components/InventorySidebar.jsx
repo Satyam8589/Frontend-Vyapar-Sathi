@@ -121,6 +121,21 @@ const icons = {
       <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
     </svg>
   ),
+  "Billing History": (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  ),
 };
 
 function NavLink({ label, href, icon, active, onClick }) {
@@ -234,6 +249,11 @@ export default function VyaparSathiSidebar({
         key: "billing",
       },
       {
+        label: "Billing History",
+        href: `/storeDashboard/${storeId}/billing-history`,
+        key: "billing-history",
+      },
+      {
         label: "Staff",
         href: `/storeDashboard/${storeId}/staff`,
         key: "staff",
@@ -254,6 +274,7 @@ export default function VyaparSathiSidebar({
 
   const getActiveNav = () => {
     if (pathname.includes("/overview")) return "overview";
+    if (pathname.includes("/billing-history")) return "billing-history";
     if (pathname.includes("/billing")) return "billing";
     if (pathname.includes("/staff")) return "staff";
     if (pathname.includes("/analytics")) return "analytics";
@@ -350,16 +371,71 @@ export default function VyaparSathiSidebar({
 
       {/* Nav */}
       <div style={{ flex: 1, overflowY: "auto" }} className="no-scrollbar">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.key}
-            label={item.label}
-            href={item.href}
-            icon={icons[item.label]}
-            active={activeNav === item.key}
-            onClick={handleNavClick}
-          />
-        ))}
+        {/* Main Dashboard Section */}
+        <div style={{ padding: "0 4px", marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>MAIN DASHBOARD</p>
+          {navItems.filter(i => ["overview", "inventory"].includes(i.key)).map((item) => (
+            <NavLink
+              key={item.key}
+              label={item.label}
+              href={item.href}
+              icon={icons[item.label]}
+              active={activeNav === item.key}
+              onClick={handleNavClick}
+            />
+          ))}
+        </div>
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 14px 8px" }}></div>
+
+        {/* Sales Section */}
+        <div style={{ padding: "0 4px", marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>SALES & BILLS</p>
+          {navItems.filter(i => ["billing", "billing-history"].includes(i.key)).map((item) => (
+            <NavLink
+              key={item.key}
+              label={item.label}
+              href={item.href}
+              icon={icons[item.label]}
+              active={activeNav === item.key}
+              onClick={handleNavClick}
+            />
+          ))}
+        </div>
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 14px 8px" }}></div>
+
+        {/* Management Section */}
+        <div style={{ padding: "0 4px", marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>MANAGEMENT</p>
+          {navItems.filter(i => ["staff", "analytics"].includes(i.key)).map((item) => (
+            <NavLink
+              key={item.key}
+              label={item.label}
+              href={item.href}
+              icon={icons[item.label]}
+              active={activeNav === item.key}
+              onClick={handleNavClick}
+            />
+          ))}
+        </div>
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 14px 8px" }}></div>
+
+        {/* Intelligence Section */}
+        <div style={{ padding: "0 4px", marginBottom: 14 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>INTELLIGENCE</p>
+          {navItems.filter(i => ["ai-dashboard"].includes(i.key)).map((item) => (
+            <NavLink
+              key={item.key}
+              label={item.label}
+              href={item.href}
+              icon={icons[item.label]}
+              active={activeNav === item.key}
+              onClick={handleNavClick}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Divider */}
