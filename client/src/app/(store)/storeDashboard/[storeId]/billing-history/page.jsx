@@ -11,11 +11,11 @@ export default function BillingHistoryPage() {
   const storeId = params.storeId;
 
   return (
-    <div className="min-h-screen p-3 md:p-6 pt-10 md:pt-14">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 mt-4">
-          <h1 className="text-3xl font-black tracking-tight text-gray-900">Billing History</h1>
-          <p className="text-gray-500 text-sm font-medium mt-1">View and manage all past customer bills</p>
+    <div className="min-h-screen p-2 md:p-4 pt-2 md:pt-6">
+      <div className="mx-auto">
+        <div className="mb-4 mt-1">
+          <h1 className="text-2xl font-black tracking-tight text-gray-900">Billing History</h1>
+          <p className="text-gray-500 text-xs font-medium mt-0.5">View and manage all past customer bills</p>
         </div>
         
         {/* Bill History Component */}
