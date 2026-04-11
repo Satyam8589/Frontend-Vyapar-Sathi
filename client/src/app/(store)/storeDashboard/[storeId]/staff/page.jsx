@@ -29,21 +29,20 @@ const StaffPageContent = () => {
     <div
       style={{
         minHeight: "100vh",
-        background: "#f8fafc",
-        padding: "32px 24px",
+        padding: "5px 5px",
         fontFamily: "Inter, sans-serif",
         borderRadius: "20px",
-        margin: "32px",
+        margin: "5px",
         overflow: "hidden",
       }}
     >
       <div
         style={{
-          maxWidth: 960,
+          maxWidth: 1060,
           margin: "0 auto",
           borderRadius: "40px",
-          padding: "32px",
           background: "white",
+          padding: "32px",
           overflow: "hidden",
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
         }}
