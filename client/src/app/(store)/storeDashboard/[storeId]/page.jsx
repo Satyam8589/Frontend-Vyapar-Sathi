@@ -117,14 +117,10 @@ const InventoryContent = () => {
 };
 
 /**
- * Inventory Page - Wrapped with context provider
+ * Inventory Page - Inherits context from root layout
  */
 const InventoryPage = () => {
-  return (
-    <InventoryProvider>
-      <InventoryContent />
-    </InventoryProvider>
-  );
+  return <InventoryContent />;
 };
 
 export default InventoryPage;

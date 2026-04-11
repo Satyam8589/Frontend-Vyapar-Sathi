@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { X } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
+import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 
 const icons = {
   Inventory: (
@@ -180,6 +181,18 @@ export default function StoreSidebarDrawer() {
   const { user } = useAuth();
   const storeId = params?.storeId;
   const { storeSidebarOpen, setStoreSidebarOpen } = useStorePageContext();
+  const { currentStore } = useInventoryContext();
+  const [showFullName, setShowFullName] = useState(false);
+
+  const getStoreInitials = (name) => {
+    if (!name) return "VS";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const handleNavClick = () => {
     setStoreSidebarOpen(false);
@@ -334,17 +347,26 @@ export default function StoreSidebarDrawer() {
               flexShrink: 0,
             }}
           >
-            VS
+            {getStoreInitials(currentStore?.name)}
           </div>
           <span
             style={{
               fontFamily: "'Segoe UI', sans-serif",
               fontSize: 15.5,
               fontWeight: 700,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: showFullName ? "normal" : "nowrap",
+              maxWidth: showFullName ? "100%" : 160,
+              cursor: "pointer",
+              wordBreak: "break-word",
             }}
+            onClick={() => setShowFullName(!showFullName)}
+            title={currentStore?.name || "VyaparSathi"}
           >
-            <span style={{ color: "#fff" }}>Vyapar</span>
-            <span style={{ color: "#f5a623" }}>Sathi</span>
+            <span style={{ color: "#fff" }}>
+              {currentStore?.name || "VyaparSathi"}
+            </span>
           </span>
         </div>
 
