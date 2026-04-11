@@ -115,18 +115,18 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
   const BillCard = ({ bill, isToday = false }) => (
     <div
       key={bill._id}
-      className={`group mb-4 rounded-xl border transition-all duration-300 ${
+      className={`group mb-3 rounded-xl border transition-all duration-300 ${
         expandedBill === bill._id
           ? "border-blue-200 bg-blue-50/30 ring-1 ring-blue-100"
           : "border-gray-100 bg-white hover:border-blue-200 hover:shadow-md"
       }`}
     >
       <div
-        className="cursor-pointer p-4 md:p-5"
+        className="cursor-pointer p-2.5 md:p-4"
         onClick={() => toggleBillExpansion(bill._id)}
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
               <Receipt size={22} />
             </div>
@@ -187,7 +187,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
 
       {expandedBill === bill._id && (
         <div className="border-t border-blue-100 px-5 py-4">
-          <div className="rounded-xl border border-blue-50 bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-blue-50 bg-white p-1 shadow-sm">
             <div className="mb-4 flex items-center justify-between border-b border-gray-50 pb-3">
               <h5 className="text-xs font-bold uppercase tracking-widest text-blue-600">Product Details</h5>
               <span className="text-xs text-gray-400">{bill.products.length} Items Total</span>
@@ -247,17 +247,17 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {/* Today's Section - Full List */}
       <section>
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50">
-              <TrendingUp size={20} />
+        <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50">
+              <TrendingUp size={18} />
             </div>
             <div>
-              <h2 className="text-xl font-black tracking-tight text-gray-900">Today's Sales</h2>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">Real-time tracking</p>
+              <h2 className="text-lg font-black tracking-tight text-gray-900">Today's Sales</h2>
+              <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest leading-none">Real-time tracking</p>
             </div>
           </div>
 
@@ -284,7 +284,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
             </div>
           </div>
         ) : todayBills.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-3 items-start">
             {todayBills.map((bill) => (
               <BillCard key={bill._id} bill={bill} isToday={true} />
             ))}
@@ -300,15 +300,15 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
       </section>
 
       {/* Older History Section - Paginated in 5s */}
-      <section className="pt-4 bg-gray-50/50 rounded-2xl p-4">
-        <div className="mb-6 flex items-center justify-between px-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white border border-gray-100 text-gray-400 shadow-sm">
-              <Clock size={20} />
+      <section className="pt-2 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+        <div className="mb-4 flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 shadow-sm">
+              <Clock size={18} />
             </div>
             <div>
-              <h2 className="text-xl font-black tracking-tight text-gray-900">Past History</h2>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-widest">Archived transactions</p>
+              <h2 className="text-lg font-black tracking-tight text-gray-900">Past History</h2>
+              <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest leading-none">Archived transactions</p>
             </div>
           </div>
         </div>
