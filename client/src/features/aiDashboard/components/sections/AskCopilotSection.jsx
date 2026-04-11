@@ -161,7 +161,7 @@ const AskCopilotSection = ({ storeId }) => {
   };
 
   return (
-    <section className="h-[760px] overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+    <section className="h-[700px] overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex h-full flex-col">
         <div className="flex-1 overflow-y-auto px-1">
           {!messages.length ? (
@@ -197,27 +197,17 @@ const AskCopilotSection = ({ storeId }) => {
                 </article>
               ))}
 
-              {message.trim() ? (
-                <article className="w-full">
-                  <div className="ml-auto w-fit">
-                    <pre className="whitespace-pre-wrap rounded-2xl bg-slate-900 px-4 py-3 font-sans text-sm leading-relaxed text-white text-end opacity-75">
-                      {message}
-                    </pre>
-                  </div>
-                </article>
-              ) : null}
-
               <div ref={endRef} />
             </div>
           )}
         </div>
 
-        <div className="mt-4 w-full">
+        <div className="mt-4 w-30% min-w-[100px] self-center">
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
             <div className="flex items-end gap-2">
               <button
                 type="button"
-                className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-semibold text-slate-500"
+                className="h-10 w-10 rounded-full border border-slate-200 bg-white text-lg font-semibold text-slate-500 cursor-pointer"
                 disabled
                 aria-label="More tools coming soon"
               >
@@ -241,7 +231,7 @@ const AskCopilotSection = ({ storeId }) => {
                 <button
                   type="button"
                   onClick={stopStreaming}
-                  className="h-10 rounded-full border border-slate-300 px-4 text-sm font-semibold text-slate-700"
+                  className="h-10 rounded-full border border-slate-300 px-4 text-sm font-semibold text-slate-700 cursor-pointer bg-white hover:bg-slate-100"
                 >
                   Stop
                 </button>
@@ -252,7 +242,7 @@ const AskCopilotSection = ({ storeId }) => {
                   onClick={() => askCopilot()}
                   className="h-10 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Send
+                 Send
                 </button>
               )}
             </div>
