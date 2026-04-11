@@ -6,6 +6,7 @@ import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar
 import StoreBreadcrumb from "@/features/store/components/StoreBreadcrumb";
 import StoreSidebarDrawer from "@/features/store/components/StoreSidebarDrawer";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
+import { InventoryProvider } from "@/features/inventory/context/inventoryContext";
 
 /**
  * Store Dashboard Layout - Conditional sidebar
@@ -44,7 +45,7 @@ export default function StoreLayout({ children }) {
   }
 
   return (
-    <>
+    <InventoryProvider>
       <div style={{ display: "flex", minHeight: "100vh" }}>
         {/* Desktop Sidebar - Hidden on mobile */}
         {!isResponsive && <VyaparSathiSidebar />}
@@ -55,9 +56,7 @@ export default function StoreLayout({ children }) {
             flex: 1,
             width: "100%",
             minWidth: 0,
-            padding: isResponsive
-              ? "15px 16px 20px 16px"
-              : "15px 20px 20px 0px",
+            padding: isResponsive ? "15px 16px 20px 16px" : "15px 20px 20px 0px",
           }}
         >
           <StoreBreadcrumb isResponsive={isResponsive} />
@@ -68,6 +67,6 @@ export default function StoreLayout({ children }) {
 
       {/* Mobile Sidebar Drawer - Only on mobile */}
       {isResponsive && <StoreSidebarDrawer />}
-    </>
+    </InventoryProvider>
   );
 }
