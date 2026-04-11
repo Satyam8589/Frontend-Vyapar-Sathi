@@ -15,7 +15,7 @@ import { InventoryProvider } from "@/features/inventory/context/inventoryContext
  */
 export default function StoreLayout({ children }) {
   const pathname = usePathname();
-  const isBillingPage = pathname.includes("/billing");
+  const isBillingPage = pathname.endsWith("/billing");
   const { enterStorePage, exitStorePage } = useStorePageContext();
   const [isResponsive, setIsResponsive] = useState(false);
 

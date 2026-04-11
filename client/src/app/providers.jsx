@@ -11,7 +11,7 @@ import SwipeToCloseToast from "@/components/SwipeToCloseToast";
 export default function Providers({ children }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signUp";
-  const isBillingPage = pathname?.includes("/billing");
+  const isBillingPage = pathname?.endsWith("/billing");
 
   return (
     <AuthProvider>

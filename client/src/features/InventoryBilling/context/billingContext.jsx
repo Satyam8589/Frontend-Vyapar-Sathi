@@ -182,6 +182,7 @@ export const BillingProvider = ({ children }) => {
   const [currentStore, setCurrentStore] = useState(null);
   const [userContext, setUserContext] = useState({ role: null, permissions: [] });
   const [billedProducts, setBilledProducts] = useState([]);
+  const [discount, setDiscount] = useState({ type: "fixed", value: 0 }); // { type: 'percent' | 'fixed', value: number }
 
   // Check if current user has a specific permission
   const hasPermission = useCallback((permissionKey) => {
@@ -413,12 +414,21 @@ export const BillingProvider = ({ children }) => {
 
   // Calculate total
   const calculateTotal = useCallback(() => {
-    return billedProducts.reduce((total, product) => {
+    const subtotal = billedProducts.reduce((total, product) => {
       const price = product.price || product.sellingPrice || 0;
       const quantity = product.billedQuantity || 1;
       return total + price * quantity;
     }, 0);
-  }, [billedProducts]);
+
+    let discountAmount = 0;
+    if (discount.type === "percent") {
+      discountAmount = (subtotal * discount.value) / 100;
+    } else {
+      discountAmount = discount.value;
+    }
+
+    return Math.max(0, subtotal - discountAmount);
+  }, [billedProducts, discount]);
 
   // Generate bill and update inventory
   const processBill = useCallback(
@@ -442,6 +452,15 @@ export const BillingProvider = ({ children }) => {
             price: p.price || p.sellingPrice || 0,
             total: (p.price || p.sellingPrice || 0) * p.billedQuantity,
           })),
+          subtotal: billedProducts.reduce((sum, p) => sum + (p.price || p.sellingPrice || 0) * p.billedQuantity, 0),
+          discount: {
+            type: discount.type,
+            value: discount.value,
+            amount:
+              discount.type === "percent"
+                ? (billedProducts.reduce((sum, p) => sum + (p.price || p.sellingPrice || 0) * p.billedQuantity, 0) * discount.value) / 100
+                : discount.value,
+          },
           totalAmount: calculateTotal(),
           paymentMethod,
           billedBy: user?.uid,
@@ -458,6 +477,7 @@ export const BillingProvider = ({ children }) => {
 
         // Clear the bill
         setBilledProducts([]);
+        setDiscount({ type: "fixed", value: 0 });
         showSuccess("Bill generated and inventory updated successfully!");
 
         return bill;
@@ -478,6 +498,7 @@ export const BillingProvider = ({ children }) => {
   const clearBill = useCallback(() => {
     setBilledProducts([]);
     setScannedBarcode("");
+    setDiscount({ type: "fixed", value: 0 });
     showSuccess("Bill cleared");
   }, []);
 
@@ -502,6 +523,8 @@ export const BillingProvider = ({ children }) => {
       addProductManually,
       removeProduct,
       updateProductQuantity,
+      discount,
+      setDiscount,
       calculateTotal,
       processBill,
       clearBill,
@@ -528,6 +551,7 @@ export const BillingProvider = ({ children }) => {
       removeProduct,
       updateProductQuantity,
       calculateTotal,
+      discount,
       processBill,
       clearBill,
       fetchStoreProducts,

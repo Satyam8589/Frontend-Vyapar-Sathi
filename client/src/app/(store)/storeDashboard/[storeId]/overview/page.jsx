@@ -22,6 +22,7 @@ const OverviewPage = () => {
   });
   const [chartData, setChartData] = useState({
     dailyBreakdown: [],
+    dailyLabels: [],
     weeklyBreakdown: [],
     quarterlyBreakdown: [],
   });
@@ -212,7 +213,7 @@ const OverviewPage = () => {
               </div>
             </div>
             <p className="text-xs text-green-600 font-medium">
-              245 units sold this month
+              {salesData.topProductQty} units sold this month
             </p>
           </div>
         </div>
@@ -221,53 +222,42 @@ const OverviewPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Sales Cards */}
           <div className="space-y-6">
-            {/* Daily Sales */}
-            <div className="bg-transparent backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/30 overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
+            {/* Daily Sales Card - Polished Light Version */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-7 shadow-lg border border-white relative overflow-hidden group">
+              <div className="flex justify-between items-start relative z-10">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">
-                    Today's Sales
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.15em] mb-2">
+                    Today's Revenue
                   </p>
-                  <h2 className="text-3xl font-bold text-gray-900">
+                  <h2 className="text-5xl font-black text-gray-900 tracking-tighter">
                     {formatCurrency(salesData.dailySales)}
                   </h2>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">
-                    {new Date().toLocaleDateString("en-IN")}
-                  </p>
+                <div className="bg-blue-500/10 p-3.5 rounded-2xl border border-blue-100 shadow-sm transform transition-transform group-hover:scale-110 group-hover:rotate-6">
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#2563eb"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
                 </div>
               </div>
-              <div className="pt-4 border-t border-gray-100">
-                <div className="flex items-end gap-1">
-                  {chartData.dailyBreakdown.length > 0
-                    ? chartData.dailyBreakdown.map((value, idx) => {
-                        const maxValue = Math.max(
-                          ...chartData.dailyBreakdown,
-                          1,
-                        );
-                        const heightPercent = (value / maxValue) * 100;
-                        return (
-                          <div
-                            key={idx}
-                            className="flex-1 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-sm"
-                            style={{
-                              height: `${Math.max(heightPercent * 1.5, 20)}px`,
-                            }}
-                            title={`${formatCurrency(value)}`}
-                          ></div>
-                        );
-                      })
-                    : [65, 40, 85, 45, 70, 55, 80].map((height, idx) => (
-                        <div
-                          key={idx}
-                          className="flex-1 bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-sm"
-                          style={{ height: `${height * 0.5}px` }}
-                        ></div>
-                      ))}
+
+              <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-5 relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+                  <span className="text-gray-600 text-[11px] font-semibold">
+                    {salesData.dailySales > 0 ? "Momentum is building!" : "Ready for the first sale?"}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Last 7 days
+                <p className="text-gray-400 text-[11px] font-medium">
+                  {new Date().toLocaleDateString("en-IN", { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
             </div>
@@ -301,27 +291,26 @@ const OverviewPage = () => {
               </div>
               <div className="pt-4 border-t border-gray-100">
                 <div className="grid grid-cols-7 gap-2">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-                    (day, idx) => {
-                      const maxValue = Math.max(...chartData.dailyBreakdown, 1);
-                      const value = chartData.dailyBreakdown[idx] || 0;
-                      const heightPercent = (value / maxValue) * 100;
-                      return (
-                        <div key={idx} className="flex flex-col items-center">
-                          <div className="h-24 w-full flex items-end mb-1">
-                            <div
-                              className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t"
-                              style={{
-                                height: `${Math.max(heightPercent, 5)}%`,
-                              }}
-                              title={`${formatCurrency(value)}`}
-                            ></div>
-                          </div>
-                          <p className="text-xs text-gray-500">{day}</p>
+                  {chartData.dailyLabels.map((day, idx) => {
+                    const value = chartData.dailyBreakdown[idx] || 0;
+                    const maxValue = Math.max(...chartData.dailyBreakdown, 1);
+                    const heightPercent = (value / maxValue) * 100;
+                    return (
+                      <div key={idx} className="flex flex-col items-center">
+                        <div className="h-24 w-full flex items-end mb-1">
+                          <div
+                            className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t"
+                            style={{
+                              height: value > 0 ? `${Math.max(heightPercent, 8)}%` : '2%',
+                              opacity: value > 0 ? 1 : 0.2
+                            }}
+                            title={`${formatCurrency(value)}`}
+                          ></div>
                         </div>
-                      );
-                    },
-                  )}
+                        <p className="text-[10px] font-medium text-gray-400 uppercase">{day}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

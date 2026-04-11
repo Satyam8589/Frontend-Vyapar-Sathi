@@ -49,9 +49,12 @@ export const addItemToBill = async (cartId, productId, quantity) => {
 };
 
 // Process payment (generates bill)
-export const processPayment = async (cartId, paymentMethod) => {
+export const processPayment = async (cartId, paymentMethod, subtotal, discount, totalPrice) => {
   const response = await apiPost(`/cart/${cartId}/payment`, {
     paymentId: `${paymentMethod}-${Date.now()}`,
+    subtotal,
+    discount,
+    totalPrice
   });
   return response.data;
 };
@@ -64,7 +67,7 @@ export const confirmPayment = async (cartId) => {
 
 // Complete billing flow (create cart, add items, process payment, confirm)
 export const generateBill = async (billData) => {
-  const { storeId, products, paymentMethod } = billData;
+  const { storeId, products, paymentMethod, subtotal, discount, totalAmount } = billData;
 
   // Step 1: Create cart
   const cart = await createBillingSession(storeId);
@@ -81,8 +84,8 @@ export const generateBill = async (billData) => {
     );
   }
 
-  // Step 4: Process payment
-  await processPayment(cart._id, paymentMethod);
+  // Step 4: Process payment (Now includes discount)
+  await processPayment(cart._id, paymentMethod, subtotal, discount, totalAmount);
 
   // Step 5: Confirm payment (automatically updates inventory)
   const finalCart = await confirmPayment(cart._id);

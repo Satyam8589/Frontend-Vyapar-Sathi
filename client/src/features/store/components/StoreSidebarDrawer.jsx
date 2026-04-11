@@ -129,6 +129,21 @@ const icons = {
       <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
     </svg>
   ),
+  "Billing History": (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  ),
 };
 
 function NavLink({ label, href, icon, active, onClick }) {
@@ -215,6 +230,11 @@ export default function StoreSidebarDrawer() {
       key: "billing",
     },
     {
+      label: "Billing History",
+      href: `/storeDashboard/${storeId}/billing-history`,
+      key: "billing-history",
+    },
+    {
       label: "Staff",
       href: `/storeDashboard/${storeId}/staff`,
       key: "staff",
@@ -233,6 +253,7 @@ export default function StoreSidebarDrawer() {
 
   const getActiveNav = () => {
     if (pathname.includes("/overview")) return "overview";
+    if (pathname.includes("/billing-history")) return "billing-history";
     if (pathname.includes("/billing")) return "billing";
     if (pathname.includes("/staff")) return "staff";
     if (pathname.includes("/analytics")) return "analytics";

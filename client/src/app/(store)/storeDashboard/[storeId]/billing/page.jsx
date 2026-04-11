@@ -70,12 +70,6 @@ const BillingContent = () => {
           )}
         </div>
 
-        {/* Bill History Section - Hidden on Mobile */}
-        {!isMobile && (
-          <div className="mt-8">
-            <BillHistory isMobile={isMobile} />
-          </div>
-        )}
 
         {/* Modals */}
         <ManualProductModal />
