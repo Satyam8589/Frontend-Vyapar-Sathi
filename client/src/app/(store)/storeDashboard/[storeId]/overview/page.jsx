@@ -307,14 +307,16 @@ const OverviewPage = () => {
                       const value = chartData.dailyBreakdown[idx] || 0;
                       const heightPercent = (value / maxValue) * 100;
                       return (
-                        <div key={idx} className="text-center">
-                          <div
-                            className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t mb-1"
-                            style={{
-                              height: `${Math.max(heightPercent * 1.2, 15)}px`,
-                            }}
-                            title={`${formatCurrency(value)}`}
-                          ></div>
+                        <div key={idx} className="flex flex-col items-center">
+                          <div className="h-24 w-full flex items-end mb-1">
+                            <div
+                              className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t"
+                              style={{
+                                height: `${Math.max(heightPercent, 5)}%`,
+                              }}
+                              title={`${formatCurrency(value)}`}
+                            ></div>
+                          </div>
                           <p className="text-xs text-gray-500">{day}</p>
                         </div>
                       );
@@ -439,21 +441,21 @@ const OverviewPage = () => {
                       ...chartData.quarterlyBreakdown,
                       1,
                     );
-                    const barHeight =
-                      maxValue > 0 ? (value / maxValue) * 80 : 20;
+                    const percentage = (value / maxValue) * 100;
                     return (
-                      <div key={quarter.idx} className="text-center">
+                      <div key={quarter.idx} className="flex flex-col items-center">
                         <p className="text-xs font-medium text-gray-600 mb-2">
                           {quarter.month}
                         </p>
-                        <div
-                          className="w-full bg-gradient-to-t from-rose-500 to-rose-400 rounded-t mx-auto"
-                          style={{
-                            height: `${Math.max(barHeight, 30)}px`,
-                            width: "100%",
-                          }}
-                        ></div>
-                        <p className="text-xs text-gray-600 mt-2">
+                        <div className="h-24 w-full flex items-end mb-2">
+                          <div
+                            className="w-full bg-gradient-to-t from-rose-500 to-rose-400 rounded-t mx-auto"
+                            style={{
+                              height: `${Math.max(percentage, 10)}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-gray-600">
                           {formatCurrency(value)}
                         </p>
                       </div>
