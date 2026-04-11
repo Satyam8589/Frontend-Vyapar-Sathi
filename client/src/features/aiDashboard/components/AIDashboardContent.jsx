@@ -1,6 +1,7 @@
 "use client";
 
 import EmptyState from "./sections/EmptyState";
+import AskCopilotSection from "./sections/AskCopilotSection";
 import ForecastSection from "./sections/ForecastSection";
 import InsightsSection from "./sections/InsightsSection";
 import RestockSection from "./sections/RestockSection";
@@ -11,6 +12,7 @@ const AIDashboardContent = ({
   restock = [],
   insights = [],
   summary = null,
+  storeId,
   loadingState = {},
   errorState = {},
 }) => {
@@ -45,6 +47,8 @@ const AIDashboardContent = ({
 
   return (
     <div className="space-y-8">
+      <AskCopilotSection storeId={storeId} />
+
       <SummarySection
         summary={summary}
         loading={loadingState.summary}

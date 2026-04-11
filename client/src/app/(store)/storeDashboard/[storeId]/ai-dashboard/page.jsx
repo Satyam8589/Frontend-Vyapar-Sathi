@@ -191,6 +191,7 @@ const AIDashboardPage = () => {
         </section>
 
         <AIDashboardContent
+          storeId={storeId}
           forecast={forecast}
           restock={restock}
           insights={insights}
