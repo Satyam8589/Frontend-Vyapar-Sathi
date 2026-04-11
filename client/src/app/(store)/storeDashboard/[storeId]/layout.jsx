@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar";
+import StoreBreadcrumb from "@/features/store/components/StoreBreadcrumb";
 import StoreSidebarDrawer from "@/features/store/components/StoreSidebarDrawer";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 
@@ -52,11 +53,15 @@ export default function StoreLayout({ children }) {
         <main
           style={{
             flex: 1,
+            width: "100%",
+            minWidth: 0,
             padding: isResponsive
               ? "15px 16px 20px 16px"
               : "15px 20px 20px 0px",
           }}
         >
+          <StoreBreadcrumb isResponsive={isResponsive} />
+
           {children}
         </main>
       </div>
