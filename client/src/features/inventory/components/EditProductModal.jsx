@@ -183,6 +183,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 <option>Dairy</option>
                 <option>Produce</option>
                 <option>Pantry</option>
+                <option>Snacks</option>
+                <option>Personal Care</option>
               </select>
             </div>
 

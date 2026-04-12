@@ -10,9 +10,9 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
 
   return (
     <section className="mb-4 animate-fade-in-up">
-      <div className="flex items-center justify-between gap-2 sm:gap-3 bg-white/70 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-lg border border-white/20">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 backdrop-blur-md rounded-2xl p-2 shadow-lg border border-white/20">
         {/* Back Button - Left */}
-        <button
+        {/* <button
           onClick={() => router.push("/storeDashboard")}
           className="flex-shrink-0 p-2 sm:px-4 sm:py-2.5 bg-slate-100/80 border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-200/80 transition-all shadow-sm flex items-center gap-2"
         >
@@ -30,11 +30,11 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick }) => {
             />
           </svg>
           <span className="hidden sm:inline text-sm">Back</span>
-        </button>
+        </button> */}
 
         {/* Store Info - Center */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
             <svg
               className="w-5 h-5 sm:w-6 sm:h-6 text-white"
               fill="none"
