@@ -161,7 +161,7 @@ const AskCopilotSection = ({ storeId }) => {
   };
 
   return (
-    <section className="h-[700px] overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+    <section className="h-[600px] overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex h-full flex-col">
         <div className="flex-1 overflow-y-auto px-1">
           {!messages.length ? (

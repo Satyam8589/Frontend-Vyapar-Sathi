@@ -14,7 +14,6 @@ import {
   InventoryErrorAlert,
 } from "@/features/inventory/components";
 import {
-  InventoryProvider,
   useInventoryContext,
 } from "@/features/inventory/context/inventoryContext";
 import {
@@ -58,6 +57,20 @@ const InventoryContent = () => {
           searchTerm={pageLogic.searchTerm}
           onSearchChange={pageLogic.handleSearchChange}
           onMenuClick={pageLogic.handleOpenSidebar}
+          selectedCategory={pageLogic.selectedCategory}
+          onCategoryChange={pageLogic.handleCategoryChange}
+          categoryOptions={pageLogic.categoryOptions}
+          categoryProductCounts={pageLogic.categoryProductCounts}
+          stockFilter={pageLogic.stockFilter}
+          onStockFilterChange={pageLogic.handleStockFilterChange}
+          stockCounts={pageLogic.stockCounts}
+          sortBy={pageLogic.sortBy}
+          onSortChange={pageLogic.handleSortChange}
+          itemsPerPage={pageLogic.itemsPerPage}
+          onItemsPerPageChange={pageLogic.handleItemsPerPageChange}
+          totalResults={pageLogic.totalFilteredCount}
+          activeFilterCount={pageLogic.activeFilterCount}
+          onResetFilters={pageLogic.handleResetFilters}
         />
 
         {/* Inventory Table Area */}
@@ -71,6 +84,9 @@ const InventoryContent = () => {
           currencySymbol={currencySymbol}
           currentPage={pageLogic.currentPage}
           totalPages={pageLogic.totalPages}
+          pageStart={pageLogic.pageStart}
+          pageEnd={pageLogic.pageEnd}
+          totalFilteredCount={pageLogic.totalFilteredCount}
           onPageChange={pageLogic.setCurrentPage}
         />
 

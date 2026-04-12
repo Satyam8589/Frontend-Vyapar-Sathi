@@ -3,6 +3,32 @@
 import React from "react";
 import ProductActionMenu from "./ProductActionMenu";
 
+const getExpiryMeta = (expDate) => {
+  if (!expDate) {
+    return { dot: "bg-slate-300", label: "-" };
+  }
+
+  const expiry = new Date(expDate);
+  if (Number.isNaN(expiry.getTime())) {
+    return { dot: "bg-slate-300", label: "-" };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const msDiff = expiry.getTime() - today.getTime();
+  const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) {
+    return { dot: "bg-red-500", label: expiry.toLocaleDateString() };
+  }
+
+  if (daysLeft <= 30) {
+    return { dot: "bg-amber-500 animate-pulse", label: expiry.toLocaleDateString() };
+  }
+
+  return { dot: "bg-emerald-400", label: expiry.toLocaleDateString() };
+};
+
 const InventoryTable = ({
   inventory,
   loading,
@@ -13,14 +39,17 @@ const InventoryTable = ({
   currencySymbol = "₹",
   currentPage = 1,
   totalPages = 1,
+  pageStart = 0,
+  pageEnd = 0,
+  totalFilteredCount = 0,
   onPageChange,
 }) => {
   if (loading && inventory.length === 0) {
     return (
       <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-slate-200 p-6 sm:p-12 flex flex-col items-center justify-center animate-pulse shadow-lg">
-        <div className="h-12 w-12 bg-slate-200 rounded-2xl mb-4"></div>
-        <div className="h-4 w-40 bg-slate-200 rounded-lg mb-2"></div>
-        <div className="h-3 w-32 bg-slate-100 rounded-lg"></div>
+        <div className="h-12 w-12 bg-slate-200 rounded-2xl mb-4" />
+        <div className="h-4 w-40 bg-slate-200 rounded-lg mb-2" />
+        <div className="h-3 w-32 bg-slate-100 rounded-lg" />
       </div>
     );
   }
@@ -43,11 +72,9 @@ const InventoryTable = ({
             />
           </svg>
         </div>
-        <h3 className="text-lg sm:text-xl font-black text-slate-900">
-          Empty Inventory
-        </h3>
+        <h3 className="text-lg sm:text-xl font-black text-slate-900">No Matching Products</h3>
         <p className="text-slate-500 text-xs sm:text-sm mt-1 sm:mt-2 font-semibold">
-          No products found. Start by adding a new product.
+          Try changing filters or search terms to find products.
         </p>
       </div>
     );
@@ -55,6 +82,15 @@ const InventoryTable = ({
 
   return (
     <section className="bg-white/70 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-fade-in-up [animation-delay:300ms]">
+      <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-2">
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-slate-600">
+          Showing {pageStart}-{pageEnd} of {totalFilteredCount}
+        </p>
+        <p className="text-[10px] sm:text-xs font-semibold text-slate-500">
+          Page {currentPage} of {totalPages}
+        </p>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -65,7 +101,6 @@ const InventoryTable = ({
               <th className="px-3 sm:px-6 py-2 sm:py-4 text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Category
               </th>
-              {/* Mobile Actions Column - Hidden on Desktop */}
               <th className="md:hidden px-3 sm:px-6 py-2 sm:py-4 text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 text-center">
                 Actions
               </th>
@@ -81,119 +116,118 @@ const InventoryTable = ({
               <th className="px-3 sm:px-6 py-2 sm:py-4 text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600">
                 Barcode
               </th>
-              {/* Desktop Actions Column - Hidden on Mobile */}
               <th className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 text-[8px] sm:text-[10px] font-black uppercase tracking-wider text-slate-600 text-right">
                 Actions
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-slate-100">
-            {inventory.map((item) => (
-              <tr
-                key={item._id || item.id}
-                className="hover:bg-slate-50/50 transition-colors group"
-              >
-                <td
-                  className="px-3 sm:px-6 py-2 sm:py-4 cursor-pointer"
-                  onClick={() => onProductClick?.(item)}
+            {inventory.map((item) => {
+              const qty = Number(item.quantity ?? item.qty ?? 0);
+              const category = item.category || "General";
+              const barcode = item.barcode || "-";
+              const expiry = getExpiryMeta(item.expDate);
+
+              return (
+                <tr
+                  key={item._id || item.id}
+                  className="hover:bg-slate-50/50 transition-colors group"
                 >
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover border border-slate-200 group-hover:border-blue-300 transition-colors"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 text-[8px] sm:text-xs flex-shrink-0 border border-slate-200 group-hover:border-blue-300 transition-colors">
-                        IMG
+                  <td
+                    className="px-3 sm:px-6 py-2 sm:py-4 cursor-pointer"
+                    onClick={() => onProductClick?.(item)}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover border border-slate-200 group-hover:border-blue-300 transition-colors"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 text-[8px] sm:text-xs flex-shrink-0 border border-slate-200 group-hover:border-blue-300 transition-colors">
+                          IMG
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm">
+                          {item.name}
+                        </p>
+                        <p className="text-[8px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wide">
+                          View Details
+                        </p>
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm">
-                        {item.name}
-                      </p>
-                      <p className="text-[8px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wide">
-                        View Details
-                      </p>
                     </div>
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-2 sm:py-4">
-                  <span className="px-2 sm:px-3 py-1 bg-slate-100/80 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
-                    {item.category}
-                  </span>
-                </td>
-                {/* Mobile Actions - Shown after Category */}
-                <td className="md:hidden px-3 sm:px-6 py-2 sm:py-4">
-                  <ProductActionMenu
-                    onEdit={() => onEdit?.(item)}
-                    onDelete={() => onDelete?.(item)}
-                  />
-                </td>
-                <td className="px-3 sm:px-6 py-2 sm:py-4">
-                  <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-xs sm:text-lg">
-                      {item.quantity || item.qty || 0}
+                  </td>
+
+                  <td className="px-3 sm:px-6 py-2 sm:py-4">
+                    <span className="px-2 sm:px-3 py-1 bg-slate-100/80 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
+                      {category}
                     </span>
-                    <span
-                      className={`text-[8px] sm:text-[10px] font-bold uppercase italic mt-0.5 ${
-                        (item.quantity || item.qty) > lowStockThreshold
-                          ? "text-emerald-600"
-                          : (item.quantity || item.qty) > 0
-                            ? "text-amber-600"
-                            : "text-red-600"
-                      }`}
-                    >
-                      {(item.quantity || item.qty) > lowStockThreshold
-                        ? "In"
-                        : (item.quantity || item.qty) > 0
-                          ? "Low"
-                          : "Out"}{" "}
-                      <span className="hidden sm:inline">
-                        ({item.unit || "pcs"})
+                  </td>
+
+                  <td className="md:hidden px-3 sm:px-6 py-2 sm:py-4">
+                    <ProductActionMenu
+                      onEdit={() => onEdit?.(item)}
+                      onDelete={() => onDelete?.(item)}
+                    />
+                  </td>
+
+                  <td className="px-3 sm:px-6 py-2 sm:py-4">
+                    <div className="flex flex-col">
+                      <span className="font-black text-slate-900 text-xs sm:text-lg">{qty}</span>
+                      <span
+                        className={`text-[8px] sm:text-[10px] font-bold uppercase italic mt-0.5 ${
+                          qty > lowStockThreshold
+                            ? "text-emerald-600"
+                            : qty > 0
+                              ? "text-amber-600"
+                              : "text-red-600"
+                        }`}
+                      >
+                        {qty > lowStockThreshold ? "In" : qty > 0 ? "Low" : "Out"}{" "}
+                        <span className="hidden sm:inline">({item.unit || "pcs"})</span>
                       </span>
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-2 sm:py-4">
-                  <p className="font-black text-slate-900 text-xs sm:text-base">
-                    {currencySymbol}
-                    {(item.price || 0).toFixed(2)}
-                  </p>
-                  <p className="text-[8px] sm:text-[10px] text-slate-500 font-semibold">
-                    per {(item.unit || "unit").toLowerCase()}
-                  </p>
-                </td>
-                <td className="px-3 sm:px-6 py-2 sm:py-4">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`h-2 w-2 rounded-full flex-shrink-0 ${item.expDate ? (new Date(item.expDate) < new Date("2026-03-01") ? "bg-amber-500 animate-pulse" : "bg-emerald-400") : "bg-slate-300"}`}
-                    ></span>
-                    <span className="font-bold text-slate-700 text-xs sm:text-sm">
-                      {item.expDate
-                        ? new Date(item.expDate).toLocaleDateString()
-                        : "-"}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-2 sm:py-4">
-                  <code className="text-[8px] sm:text-[11px] font-bold bg-slate-50 px-2 py-1 rounded-md text-slate-700 border border-slate-200 break-all sm:break-normal">
-                    {item.barcode}
-                  </code>
-                </td>
-                {/* Desktop Actions - Hidden on Mobile */}
-                <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 text-right">
-                  <ProductActionMenu
-                    onEdit={() => onEdit?.(item)}
-                    onDelete={() => onDelete?.(item)}
-                  />
-                </td>
-              </tr>
-            ))}
+                    </div>
+                  </td>
+
+                  <td className="px-3 sm:px-6 py-2 sm:py-4">
+                    <p className="font-black text-slate-900 text-xs sm:text-base">
+                      {currencySymbol}
+                      {Number(item.price || 0).toFixed(2)}
+                    </p>
+                    <p className="text-[8px] sm:text-[10px] text-slate-500 font-semibold">
+                      per {(item.unit || "unit").toLowerCase()}
+                    </p>
+                  </td>
+
+                  <td className="px-3 sm:px-6 py-2 sm:py-4">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full flex-shrink-0 ${expiry.dot}`} />
+                      <span className="font-bold text-slate-700 text-xs sm:text-sm">{expiry.label}</span>
+                    </div>
+                  </td>
+
+                  <td className="px-3 sm:px-6 py-2 sm:py-4">
+                    <code className="text-[8px] sm:text-[11px] font-bold bg-slate-50 px-2 py-1 rounded-md text-slate-700 border border-slate-200 break-all sm:break-normal">
+                      {barcode}
+                    </code>
+                  </td>
+
+                  <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 text-right">
+                    <ProductActionMenu
+                      onEdit={() => onEdit?.(item)}
+                      onDelete={() => onDelete?.(item)}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
       {inventory.length > 0 && totalPages > 1 && (
         <div className="px-3 sm:px-6 py-2 sm:py-4 border-t border-slate-200 bg-slate-50/80 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
           <p className="text-[8px] sm:text-[10px] text-slate-600 font-black uppercase tracking-widest">

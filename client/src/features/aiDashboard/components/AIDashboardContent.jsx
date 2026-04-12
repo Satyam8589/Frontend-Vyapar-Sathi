@@ -50,6 +50,7 @@ const AIDashboardContent = ({
       <AskCopilotSection storeId={storeId} />
 
       <SummarySection
+        storeId={storeId}
         summary={summary}
         loading={loadingState.summary}
         error={errorState.summary}
