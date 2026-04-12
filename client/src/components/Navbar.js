@@ -45,6 +45,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [emailExpanded, setEmailExpanded] = useState(false);
   const [loaderMessage, setLoaderMessage] = useState("");
   const loaderTimerRef = useRef(null);
   const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
@@ -161,7 +162,10 @@ export default function Navbar() {
             {!isLoading && isAuthenticated && (
               <div className="relative">
                 <button
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  onClick={() => {
+                    setProfileMenuOpen(!profileMenuOpen);
+                    setEmailExpanded(false);
+                  }}
                   className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors"
                 >
                   {user?.photoURL ? (
@@ -180,12 +184,18 @@ export default function Navbar() {
                 </button>
 
                 {profileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50">
+                  <div className={`absolute right-0 mt-2 ${emailExpanded ? "w-64" : "w-48"} bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 transition-all duration-300`}>
                     <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
                         {user?.displayName || "User"}
                       </p>
-                      <p className="text-xs text-slate-500">{user?.email}</p>
+                      <button 
+                        onClick={() => setEmailExpanded(!emailExpanded)}
+                        className={`text-xs text-slate-500 text-left block w-full transition-all ${emailExpanded ? "whitespace-normal break-all" : "truncate"}`}
+                        title={emailExpanded ? "Click to hide" : "Click to show full email"}
+                      >
+                        {user?.email}
+                      </button>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -366,12 +376,16 @@ export default function Navbar() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">
+                      <p className="text-sm font-bold text-slate-900 truncate" title={user?.displayName || "User"}>
                         {user?.displayName || "User"}
                       </p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <button 
+                        onClick={() => setEmailExpanded(!emailExpanded)}
+                        className={`text-xs text-slate-500 text-left block w-full transition-all ${emailExpanded ? "whitespace-normal break-all font-medium" : "truncate"}`}
+                        title={emailExpanded ? "Click to hide" : "Click to show full email"}
+                      >
                         {user?.email}
-                      </p>
+                      </button>
                     </div>
                   </div>
 

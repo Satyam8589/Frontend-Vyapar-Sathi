@@ -147,7 +147,7 @@ function NavLink({ label, href, icon, active, onClick }) {
           display: "flex",
           alignItems: "center",
           gap: 10,
-          padding: "9px 11px",
+          padding: "6.5px 11px",
           borderRadius: 10,
           border: "none",
           background: active ? "#2563eb" : "transparent",
@@ -158,7 +158,7 @@ function NavLink({ label, href, icon, active, onClick }) {
           cursor: "pointer",
           textAlign: "left",
           transition: "background 0.13s, color 0.13s",
-          marginBottom: 1,
+          marginBottom: 0.5,
         }}
         onMouseEnter={(e) => {
           if (!active) {
@@ -372,8 +372,8 @@ export default function VyaparSathiSidebar({
       {/* Nav */}
       <div style={{ flex: 1, overflowY: "auto" }} className="no-scrollbar">
         {/* Main Dashboard Section */}
-        <div style={{ padding: "0 4px", marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>MAIN DASHBOARD</p>
+        <div style={{ padding: "0 4px", marginBottom: 6 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>MAIN DASHBOARD</p>
           {navItems.filter(i => ["overview", "inventory"].includes(i.key)).map((item) => (
             <NavLink
               key={item.key}
@@ -386,11 +386,11 @@ export default function VyaparSathiSidebar({
           ))}
         </div>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 14px 8px" }}></div>
+        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
 
         {/* Sales Section */}
-        <div style={{ padding: "0 4px", marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>SALES & BILLS</p>
+        <div style={{ padding: "0 4px", marginBottom: 6 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>SALES & BILLS</p>
           {navItems.filter(i => ["billing", "billing-history"].includes(i.key)).map((item) => (
             <NavLink
               key={item.key}
@@ -403,11 +403,11 @@ export default function VyaparSathiSidebar({
           ))}
         </div>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 14px 8px" }}></div>
+        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
 
         {/* Management Section */}
-        <div style={{ padding: "0 4px", marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>MANAGEMENT</p>
+        <div style={{ padding: "0 4px", marginBottom: 6 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>MANAGEMENT</p>
           {navItems.filter(i => ["staff", "analytics"].includes(i.key)).map((item) => (
             <NavLink
               key={item.key}
@@ -420,11 +420,11 @@ export default function VyaparSathiSidebar({
           ))}
         </div>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 14px 8px" }}></div>
+        <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
 
         {/* Intelligence Section */}
-        <div style={{ padding: "0 4px", marginBottom: 14 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 8, paddingLeft: 8 }}>INTELLIGENCE</p>
+        <div style={{ padding: "0 4px", marginBottom: 6 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>INTELLIGENCE</p>
           {navItems.filter(i => ["ai-dashboard"].includes(i.key)).map((item) => (
             <NavLink
               key={item.key}
@@ -443,7 +443,7 @@ export default function VyaparSathiSidebar({
         style={{
           border: "none",
           borderTop: "1px solid #243454",
-          margin: "10px 4px 12px 4px",
+          margin: "8px 4px 10px 4px",
         }}
       />
 
@@ -531,7 +531,7 @@ export default function VyaparSathiSidebar({
             display: "flex",
             alignItems: "center",
             gap: 10,
-            padding: "9px 11px",
+            padding: "6.5px 11px",
             borderRadius: 10,
             border: "none",
             background: "transparent",
@@ -542,7 +542,7 @@ export default function VyaparSathiSidebar({
             cursor: "pointer",
             textAlign: "left",
             transition: "background 0.13s, color 0.13s",
-            marginTop: 8,
+            marginTop: 4,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "#223350";

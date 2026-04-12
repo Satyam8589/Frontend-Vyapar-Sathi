@@ -155,7 +155,7 @@ function NavLink({ label, href, icon, active, onClick }) {
           display: "flex",
           alignItems: "center",
           gap: 10,
-          padding: "9px 11px",
+          padding: "6.5px 11px",
           borderRadius: 10,
           border: "none",
           background: active ? "#2563eb" : "transparent",
@@ -166,7 +166,7 @@ function NavLink({ label, href, icon, active, onClick }) {
           cursor: "pointer",
           textAlign: "left",
           transition: "background 0.13s, color 0.13s",
-          marginBottom: 1,
+          marginBottom: 0.5,
         }}
         onMouseEnter={(e) => {
           if (!active) {
@@ -301,7 +301,7 @@ export default function StoreSidebarDrawer() {
           height: "calc(100vh - 80px)",
           background: "#1b2a42",
           zIndex: 100,
-          padding: "20px 12px 14px 12px",
+          padding: "16px 12px 12px 12px",
           display: "flex",
           flexDirection: "column",
           boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
@@ -349,7 +349,7 @@ export default function StoreSidebarDrawer() {
             display: "flex",
             alignItems: "center",
             gap: 10,
-            marginBottom: 18,
+            marginBottom: 12,
           }}
         >
           <div
@@ -393,16 +393,71 @@ export default function StoreSidebarDrawer() {
 
         {/* Nav */}
         <div style={{ flex: 1, overflowY: "auto" }} className="no-scrollbar">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.key}
-              label={item.label}
-              href={item.href}
-              icon={icons[item.label]}
-              active={activeNav === item.key}
-              onClick={handleNavClick}
-            />
-          ))}
+          {/* Main Dashboard Section */}
+          <div style={{ padding: "0 4px", marginBottom: 6 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>MAIN DASHBOARD</p>
+            {navItems.filter(i => ["overview", "inventory"].includes(i.key)).map((item) => (
+              <NavLink
+                key={item.key}
+                label={item.label}
+                href={item.href}
+                icon={icons[item.label]}
+                active={activeNav === item.key}
+                onClick={handleNavClick}
+              />
+            ))}
+          </div>
+
+          <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
+
+          {/* Sales Section */}
+          <div style={{ padding: "0 4px", marginBottom: 6 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>SALES & BILLS</p>
+            {navItems.filter(i => ["billing", "billing-history"].includes(i.key)).map((item) => (
+              <NavLink
+                key={item.key}
+                label={item.label}
+                href={item.href}
+                icon={icons[item.label]}
+                active={activeNav === item.key}
+                onClick={handleNavClick}
+              />
+            ))}
+          </div>
+
+          <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
+
+          {/* Management Section */}
+          <div style={{ padding: "0 4px", marginBottom: 6 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>MANAGEMENT</p>
+            {navItems.filter(i => ["staff", "analytics"].includes(i.key)).map((item) => (
+              <NavLink
+                key={item.key}
+                label={item.label}
+                href={item.href}
+                icon={icons[item.label]}
+                active={activeNav === item.key}
+                onClick={handleNavClick}
+              />
+            ))}
+          </div>
+
+          <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
+
+          {/* Intelligence Section */}
+          <div style={{ padding: "0 4px", marginBottom: 6 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>INTELLIGENCE</p>
+            {navItems.filter(i => ["ai-dashboard"].includes(i.key)).map((item) => (
+              <NavLink
+                key={item.key}
+                label={item.label}
+                href={item.href}
+                icon={icons[item.label]}
+                active={activeNav === item.key}
+                onClick={handleNavClick}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Divider */}
@@ -410,7 +465,7 @@ export default function StoreSidebarDrawer() {
           style={{
             border: "none",
             borderTop: "1px solid #243454",
-            margin: "10px 4px 12px 4px",
+            margin: "8px 4px 10px 4px",
           }}
         />
 
@@ -498,7 +553,7 @@ export default function StoreSidebarDrawer() {
               display: "flex",
               alignItems: "center",
               gap: 10,
-              padding: "9px 11px",
+              padding: "6.5px 11px",
               borderRadius: 10,
               border: "none",
               background: "transparent",
@@ -509,7 +564,7 @@ export default function StoreSidebarDrawer() {
               cursor: "pointer",
               textAlign: "left",
               transition: "background 0.13s, color 0.13s",
-              marginTop: 8,
+              marginTop: 4,
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#223350";
