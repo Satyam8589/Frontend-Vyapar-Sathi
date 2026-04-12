@@ -94,9 +94,14 @@ export const generateBill = async (billData) => {
 };
 
 // Get bill history for a store
-export const getBillHistory = async (storeId, limit = 50, page = 1) => {
-  const response = await apiGet(
-    `/cart/store/${storeId}/history?limit=${limit}&page=${page}`,
-  );
+export const getBillHistory = async (storeId, limit = 50, page = 1, filters = {}) => {
+  const { date, month, year } = filters;
+  let url = `/cart/store/${storeId}/history?limit=${limit}&page=${page}`;
+  
+  if (date) url += `&date=${date}`;
+  if (month) url += `&month=${month}`;
+  if (year) url += `&year=${year}`;
+
+  const response = await apiGet(url);
   return response.data;
 };
