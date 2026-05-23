@@ -10,6 +10,8 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [inviteToken, setInviteToken] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -18,10 +20,21 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
       setRoleId('');
       setError('');
       setSuccess(false);
+      setInviteToken('');
+      setCopied(false);
     }
   }, [isOpen, fetchRoles]);
 
   if (!isOpen) return null;
+
+  const handleCopy = () => {
+    if (inviteToken) {
+      const inviteUrl = `${window.location.origin}/invite/${inviteToken}`;
+      navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,9 +45,11 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
     try {
       setLoading(true);
       setError('');
-      await inviteEmployee({ email, roleId });
+      const res = await inviteEmployee({ email, roleId });
+      if (res?.data?.inviteToken) {
+        setInviteToken(res.data.inviteToken);
+      }
       setSuccess(true);
-      setTimeout(onClose, 1500);
     } catch (err) {
       setError(err?.message || 'Failed to send invite.');
     } finally {
@@ -69,10 +84,82 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
         </div>
 
         {success ? (
-          <div style={{ textAlign: 'center', padding: '32px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <p style={{ fontWeight: 600, color: '#16a34a', fontSize: 16 }}>Invitation Sent!</p>
-            <p style={{ color: '#6b7280', fontSize: 13 }}>They will appear as "Invited" until they accept.</p>
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <div style={{ fontSize: 54, marginBottom: 16 }}>🎉</div>
+            <p style={{ fontWeight: 700, color: '#10b981', fontSize: 18, margin: '0 0 8px' }}>Invitation Created!</p>
+            <p style={{ color: '#4b5563', fontSize: 13, lineHeight: '1.5', margin: '0 0 20px' }}>
+              We attempted to send an invitation email to <strong style={{ color: '#1f2937' }}>{email}</strong>.
+              If they don't receive it, you can share the secure link below directly:
+            </p>
+            
+            {inviteToken ? (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                background: '#f3f4f6', 
+                borderRadius: 12, 
+                padding: '6px 6px 6px 14px', 
+                border: '1.5px solid #e5e7eb',
+                marginBottom: 24,
+                gap: 8
+              }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/invite/${inviteToken}`}
+                  style={{
+                    flex: 1,
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 13,
+                    color: '#4b5563',
+                    fontFamily: 'monospace',
+                    textOverflow: 'ellipsis'
+                  }}
+                  onClick={(e) => e.target.select()}
+                />
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    padding: '8px 16px',
+                    background: copied ? '#10b981' : '#4f46e5',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                >
+                  {copied ? 'Copied! ✓' : '📋 Copy Link'}
+                </button>
+              </div>
+            ) : (
+              <p style={{ color: '#ef4444', fontSize: 12, marginBottom: 20 }}>
+                ⚠️ No invitation link could be generated.
+              </p>
+            )}
+
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%',
+                padding: '12px 0',
+                background: '#f3f4f6',
+                color: '#374151',
+                border: 'none',
+                borderRadius: 10,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'background 0.2s'
+              }}
+            >
+              Done
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
