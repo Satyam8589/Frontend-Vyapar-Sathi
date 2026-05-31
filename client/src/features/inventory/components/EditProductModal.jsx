@@ -274,10 +274,10 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 cursor-pointer font-semibold"
               >
                 <option>Pieces</option>
-                <option>kg</option>
+                {/* <option>kg</option>
                 <option>Liters</option>
                 <option>Packs</option>
-                <option>Bottles</option>
+                <option>Bottles</option> */}
               </select>
             </div>
 
