@@ -674,7 +674,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 {imageUploadState.status === "uploading" && (
                   <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    Uploading image to Cloudinary…
+                    Uploading image
                   </p>
                 )}
                 {imageUploadState.status === "error" && (
