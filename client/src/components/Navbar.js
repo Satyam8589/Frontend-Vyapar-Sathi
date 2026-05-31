@@ -102,19 +102,23 @@ export default function Navbar() {
   return (
     <>
       {loaderMessage && <PageLoader message={loaderMessage} />}
-      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 pt-2 pb-1.5 pointer-events-none backdrop-blur-3xl">
-        <div className="relative pointer-events-auto max-w-7xl mx-auto flex justify-between items-center bg-white/70 rounded-full px-5 md:px-8 py-2 border border-white/60 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
+      <nav className="fixed top-0 w-full z-50 px-4 md:px-6 pt-3 pb-0 pointer-events-none backdrop-blur-3xl">
+        <div className="relative pointer-events-auto max-w-7xl mx-auto flex justify-between items-center bg-white/70 rounded-full px-5 md:px-8 py-0 border border-white/60 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
           {/* Logo */}
           <Link
             href="/"
             className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="w-7 h-7 bg-gradient-to-tr from-amber-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg transition-transform group-hover:rotate-12 text-sm">
-              VS
+            <div className="w-12 h-12 md:w-14 md:h-14 transition-transform group-hover:scale-105 flex-shrink-0">
+              <Image
+                src="/images/logo/vs_logo.png"
+                alt="Vyapar Sathi"
+                width={256}
+                height={256}
+                priority
+                className="w-full h-full object-contain"
+              />
             </div>
-            <span className="text-lg md:text-xl font-bold tracking-tight text-slate-800 leading-none group-hover:text-blue-600 transition-colors">
-              Vyapar<span className="text-amber-500">Sathi</span>
-            </span>
           </Link>
 
           {/* Desktop nav links */}
@@ -184,15 +188,21 @@ export default function Navbar() {
                 </button>
 
                 {profileMenuOpen && (
-                  <div className={`absolute right-0 mt-2 ${emailExpanded ? "w-64" : "w-48"} bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 transition-all duration-300`}>
+                  <div
+                    className={`absolute right-0 mt-2 ${emailExpanded ? "w-64" : "w-48"} bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 transition-all duration-300`}
+                  >
                     <div className="px-4 py-2 border-b border-slate-100">
                       <p className="text-sm font-semibold text-slate-900 truncate">
                         {user?.displayName || "User"}
                       </p>
-                      <button 
+                      <button
                         onClick={() => setEmailExpanded(!emailExpanded)}
                         className={`text-xs text-slate-500 text-left block w-full transition-all ${emailExpanded ? "whitespace-normal break-all" : "truncate"}`}
-                        title={emailExpanded ? "Click to hide" : "Click to show full email"}
+                        title={
+                          emailExpanded
+                            ? "Click to hide"
+                            : "Click to show full email"
+                        }
                       >
                         {user?.email}
                       </button>
@@ -376,13 +386,20 @@ export default function Navbar() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate" title={user?.displayName || "User"}>
+                      <p
+                        className="text-sm font-bold text-slate-900 truncate"
+                        title={user?.displayName || "User"}
+                      >
                         {user?.displayName || "User"}
                       </p>
-                      <button 
+                      <button
                         onClick={() => setEmailExpanded(!emailExpanded)}
                         className={`text-xs text-slate-500 text-left block w-full transition-all ${emailExpanded ? "whitespace-normal break-all font-medium" : "truncate"}`}
-                        title={emailExpanded ? "Click to hide" : "Click to show full email"}
+                        title={
+                          emailExpanded
+                            ? "Click to hide"
+                            : "Click to show full email"
+                        }
                       >
                         {user?.email}
                       </button>
