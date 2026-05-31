@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import PageLoader from "@/components/PageLoader";
+import { uploadProductImage } from "../services/inventoryService";
 
 const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   const [mounted, setMounted] = useState(false);
+  const fileInputRef = useRef(null);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -17,6 +19,13 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
     price: "",
     expDate: "",
     barcode: "",
+    image: "",
+  });
+
+  const [imageOrigin, setImageOrigin] = useState("");
+  const [imageUploadState, setImageUploadState] = useState({
+    status: "idle",
+    error: "",
   });
 
   const [showOverlay, setShowOverlay] = useState(false);
@@ -76,17 +85,67 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
       setFormData({
         name: product.name || "",
         category: product.category || "General",
-        qty: (product.quantity || product.qty || 0).toString(),
+        qty: (product.quantity ?? product.qty ?? 0).toString(),
         unit: product.unit || "Pieces",
-        price: (product.price || 0).toString(),
+        price: (product.price ?? 0).toString(),
         expDate: formattedDate,
         barcode: product.barcode || "",
+        image: product.image || "",
       });
+
+      setImageOrigin(product.image ? "existing" : "");
+      setImageUploadState({ status: "idle", error: "" });
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   }, [isOpen, product]);
 
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    setImageUploadState({ status: "uploading", error: "" });
+
+    try {
+      const uploadedUrl = await uploadProductImage(file);
+      if (!uploadedUrl) {
+        throw new Error("Image upload returned no URL");
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        image: uploadedUrl,
+      }));
+      setImageOrigin("manual");
+      setImageUploadState({ status: "success", error: "" });
+    } catch (error) {
+      setImageUploadState({
+        status: "error",
+        error: error?.message || "Failed to upload image",
+      });
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      image: "",
+    }));
+    setImageOrigin("");
+    setImageUploadState({ status: "idle", error: "" });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (imageUploadState.status === "uploading") return;
     if (!product?._id) return;
     const submissionData = {
       ...formData,
@@ -101,6 +160,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const canEditImage = imageUploadState.status !== "uploading";
 
   if (!mounted || !isOpen) return null;
 
@@ -260,6 +321,91 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>
+
+            {/* Image */}
+            <div className="col-span-12 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                Product Image
+              </label>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!canEditImage}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-sm font-bold text-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16 8l-4-4m0 0L8 8m4-4v12"
+                    />
+                  </svg>
+                  <span>{formData.image ? "Change image" : "Upload image"}</span>
+                </button>
+
+                {formData.image && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-sm font-bold text-rose-700 transition-colors"
+                  >
+                    Remove image
+                  </button>
+                )}
+              </div>
+
+              {imageUploadState.status === "uploading" && (
+                <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  Uploading image
+                </p>
+              )}
+              {imageUploadState.status === "error" && (
+                <p className="text-xs text-rose-700 font-semibold flex items-center gap-1.5">
+                  ⚠️ {imageUploadState.error || "Image upload failed"}
+                </p>
+              )}
+
+              {formData.image && (
+                <div className={`flex items-center gap-3 mt-1 p-2 rounded-xl border ${imageOrigin === "manual" ? "bg-slate-50 border-slate-200" : "bg-indigo-50 border-indigo-200"}`}>
+                  <img
+                    src={formData.image}
+                    alt={formData.name || "Product image"}
+                    className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                  <div className="text-xs text-slate-600 font-medium leading-snug">
+                    <p className="font-bold text-slate-800">
+                      {imageOrigin === "manual" ? "Uploaded image" : "Existing image"}
+                    </p>
+                    <p className="text-slate-500">
+                      {imageOrigin === "manual"
+                        ? "Stored in Cloudinary and ready to save"
+                        : "Will be kept unless you upload a new image or remove it"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </form>
 
@@ -275,7 +421,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
           <button
             type="submit"
             form="edit-product-form"
-            disabled={loading}
+            disabled={loading || imageUploadState.status === "uploading"}
             className="btn-primary-yb py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm"
           >
             {loading && (
