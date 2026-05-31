@@ -47,6 +47,33 @@ export const deleteProduct = async (productId) => {
 };
 
 /**
+ * Upload a product image to the backend Cloudinary endpoint.
+ * Returns the uploaded Cloudinary URL, or null if the response is malformed.
+ *
+ * @param {File} file
+ * @returns {Promise<string|null>}
+ */
+export const uploadProductImage = async (file) => {
+  if (!file) return null;
+
+  try {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await apiPost("/product/upload-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 60000,
+    });
+
+    return response?.data?.imageUrl ?? response?.data?.url ?? null;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Resolve a barcode via the backend's multi-source resolver.
  * Uses the configured API client with interceptor settings.
  * Returns the normalized product object, or null on 404.
