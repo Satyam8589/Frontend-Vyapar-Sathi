@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import dynamic from "next/dynamic";
 import PageLoader from "@/components/PageLoader";
 import {
+  uploadProductImage,
   resolveProductByBarcode,
   fetchFromMasterProduct,
 } from "../services/inventoryService";
@@ -17,11 +18,9 @@ const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), {
 
 const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
+  const createInitialFormData = () => ({
     name: "",
     brand: "",
     category: "General",
@@ -33,6 +32,17 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     image: "",
     source: "",
     confidence: null,
+  });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const [formData, setFormData] = useState(createInitialFormData);
+  const [imageOrigin, setImageOrigin] = useState("");
+  const [imageUploadState, setImageUploadState] = useState({
+    status: "idle",
+    error: "",
   });
 
   // Barcode scanner / resolver state
@@ -78,19 +88,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   // Reset form + scanner state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        name: "",
-        brand: "",
-        category: "General",
-        qty: "",
-        unit: "Pieces",
-        price: "",
-        expDate: "",
-        barcode: "",
-        image: "",
-        source: "",
-        confidence: null,
-      });
+      setFormData(createInitialFormData());
+      setImageOrigin("");
+      setImageUploadState({ status: "idle", error: "" });
       setScannerOpen(false);
       setResolving(false);
       setResolveStatus(null);
@@ -139,11 +139,20 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         name: product.name || prev.name,
         brand: product.brand || prev.brand,
         category: mapToSelectCategory(product.category, product.source),
-        // Metadata from the resolver — sent to backend but not shown as editable fields
-        image: product.image || "",
-        source: product.source || "",
+        image:
+          imageOrigin === "manual" && prev.image
+            ? prev.image
+            : product.image || prev.image || "",
+        source:
+          imageOrigin === "manual" && prev.source
+            ? prev.source
+            : product.source || prev.source || "",
         confidence: product.confidence ?? null,
       }));
+
+      if (imageOrigin !== "manual") {
+        setImageOrigin(product.image ? "resolver" : "");
+      }
 
       setResolveStatus(source === "master" ? "master_found" : "found");
     } catch {
@@ -174,6 +183,48 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     }
     // Trigger resolver immediately on blur
     resolveAndAutofill(formData.barcode);
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    setImageUploadState({ status: "uploading", error: "" });
+
+    try {
+      const uploadedUrl = await uploadProductImage(file);
+      if (!uploadedUrl) {
+        throw new Error("Image upload returned no URL");
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        image: uploadedUrl,
+        source: prev.source || "manual-upload",
+      }));
+      setImageOrigin("manual");
+      setImageUploadState({ status: "success", error: "" });
+    } catch (error) {
+      setImageUploadState({
+        status: "error",
+        error: error?.message || "Failed to upload image",
+      });
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      image: "",
+      source: imageOrigin === "manual" ? "" : prev.source,
+    }));
+    setImageOrigin("");
+    setImageUploadState({ status: "idle", error: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   /**
@@ -233,6 +284,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (imageUploadState.status === "uploading") return;
     if (onAction) {
       const { qty, ...rest } = formData;
       const result = await onAction({
@@ -242,18 +294,10 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       });
       if (result?.success) {
         setFormData({
-          name: "",
-          brand: "",
-          category: "General",
-          qty: "",
-          unit: "Pieces",
-          price: "",
-          expDate: "",
-          barcode: "",
-          image: "",
-          source: "",
-          confidence: null,
+          ...createInitialFormData(),
         });
+        setImageOrigin("");
+        setImageUploadState({ status: "idle", error: "" });
         setResolveStatus(null);
       }
     }
@@ -511,6 +555,51 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   </button>
                 </div>
 
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={resolving || imageUploadState.status === "uploading"}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-sm font-bold text-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16 8l-4-4m0 0L8 8m4-4v12"
+                      />
+                    </svg>
+                    <span>
+                      {imageOrigin === "manual" ? "Change image" : "Upload image"}
+                    </span>
+                  </button>
+
+                  {formData.image && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-sm font-bold text-rose-700 transition-colors"
+                    >
+                      Remove image
+                    </button>
+                  )}
+                </div>
+
                 {/* Resolve status banners */}
                 {resolving && (
                   <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
@@ -542,7 +631,11 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                           {formData.brand}
                         </p>
                       )}
-                      <p className="text-slate-500">via {formData.source}</p>
+                      <p className="text-slate-500">
+                        {imageOrigin === "manual"
+                          ? "Uploaded image"
+                          : `via ${formData.source}`}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -569,11 +662,40 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                             </p>
                           )}
                           <p className="text-slate-500">
-                            From your product catalogue
+                            {imageOrigin === "manual"
+                              ? "Uploaded image"
+                              : "From your product catalogue"}
                           </p>
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+                {imageUploadState.status === "uploading" && (
+                  <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    Uploading image to Cloudinary…
+                  </p>
+                )}
+                {imageUploadState.status === "error" && (
+                  <p className="text-xs text-rose-700 font-semibold flex items-center gap-1.5">
+                    ⚠️ {imageUploadState.error || "Image upload failed"}
+                  </p>
+                )}
+                {formData.image && imageOrigin === "manual" && (
+                  <div className="flex items-center gap-3 mt-1 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    <img
+                      src={formData.image}
+                      alt={formData.name || "Uploaded product"}
+                      className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                    <div className="text-xs text-slate-600 font-medium leading-snug">
+                      <p className="font-bold text-slate-800">Uploaded image</p>
+                      <p className="text-slate-500">Stored in Cloudinary and ready to save</p>
+                    </div>
                   </div>
                 )}
                 {resolveStatus === "not_found" && (
@@ -623,7 +745,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
             <button
               type="submit"
               form="add-product-form"
-              disabled={loading || resolving}
+              disabled={loading || resolving || imageUploadState.status === "uploading"}
               className="btn-primary-yb py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm"
             >
               {loading && (
