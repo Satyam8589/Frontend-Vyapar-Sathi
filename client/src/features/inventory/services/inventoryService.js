@@ -74,8 +74,49 @@ export const uploadProductImage = async (file) => {
 };
 
 /**
- * Resolve a barcode via the backend's multi-source resolver.
- * Uses the configured API client with interceptor settings.
+ * Lookup a barcode in the user's OWN STORE (Priority 1).
+ * Returns the full store-product document (with price, qty, etc.) or null.
+ *
+ * @param {string} barcode
+ * @param {string} storeId
+ * @returns {Promise<object|null>}
+ */
+export const getStoreProductByBarcode = async (barcode, storeId) => {
+  try {
+    if (!barcode || !storeId) return null;
+    const response = await apiGet(`/product/barcode/${barcode}?storeId=${storeId}`);
+    return response?.data ?? null;
+  } catch (error) {
+    // 404 means product not in this store — that's expected, return null
+    if (error?.status === 404 || error?.statusCode === 404) return null;
+    // Any other network error — treat as not found so lookup continues
+    return null;
+  }
+};
+
+/**
+ * Lookup a barcode in the internal MasterProduct database (Priority 2).
+ * Does NOT call external APIs — only checks our shared catalog.
+ * Returns the product object, or null if not found.
+ *
+ * @param {string} barcode
+ * @returns {Promise<object|null>}
+ */
+export const fetchFromMasterProduct = async (barcode) => {
+  try {
+    const response = await apiGet(`/product/master/${barcode}`);
+    return response?.data ?? null;
+  } catch (error) {
+    // 404 means not in master DB either — that's fine, return null
+    if (error?.status === 404 || error?.statusCode === 404) return null;
+    // Any other error — swallow and treat as not found so manual fill shows
+    return null;
+  }
+};
+
+/**
+ * Resolve a barcode via the backend's multi-source external resolver (Priority 3).
+ * Checks Open*Facts databases (OpenFoodFacts, OpenBeautyFacts, OpenPetFoodFacts).
  * Returns the normalized product object, or null on 404.
  *
  * @param {string} barcode
@@ -96,53 +137,31 @@ export const resolveProductByBarcode = async (barcode) => {
 };
 
 /**
- * Lookup a barcode in the internal MasterProduct database.
- * This is the fallback when external APIs return nothing.
- * Returns the product object, or null if not found.
- *
- * @param {string} barcode
- * @returns {Promise<object|null>}
- */
-export const fetchFromMasterProduct = async (barcode) => {
-  try {
-    const response = await apiGet(`/products/master/${barcode}`);
-    return response?.data ?? null;
-  } catch (error) {
-    // 404 means not in master DB either — that's fine, return null
-    if (error?.status === 404 || error?.statusCode === 404) return null;
-    // Any other error — swallow and treat as not found so manual fill shows
-    return null;
-  }
-};
-
-/**
- * Save a product to the MasterProduct database.
+ * Save a product to the MasterProduct database (global shared catalog).
  * Only saves if the barcode doesn't already exist in MasterProduct.
- * This helps build a shared product catalog from user submissions.
+ * Called automatically after a manual entry or external API resolution.
  *
  * @param {object} productData - Product data to save (name, brand, category, barcode, image)
- * @returns {Promise<boolean>} - true if saved, false if already exists or error
+ * @returns {Promise<boolean>} - true if newly saved, false if already exists or error
  */
 export const saveToMasterProduct = async (productData) => {
   try {
     // Only save if barcode is present
     if (!productData.barcode) return false;
 
-    // Check if already exists in MasterProduct
-    const existing = await fetchFromMasterProduct(productData.barcode);
-    if (existing) return false; // Already in master DB, no need to save
-
     // Prepare payload - only save catalog data, not store-specific data
     const payload = {
       barcode: productData.barcode,
-      name: productData.name,
+      name: productData.name || "",
       brand: productData.brand || "",
       category: productData.category || "General",
       image: productData.image || "",
+      source: productData.source || "user-submitted",
     };
 
-    await apiPost("/products/master", payload);
-    return true;
+    const response = await apiPost("/product/master", payload);
+    // Backend returns { saved: true } for new saves, { saved: false } for existing
+    return response?.data?.saved ?? false;
   } catch (error) {
     // Silently fail - saving to MasterProduct is not critical
     console.warn("Failed to save to MasterProduct:", error);

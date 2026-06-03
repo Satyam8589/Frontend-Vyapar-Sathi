@@ -4,10 +4,13 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import dynamic from "next/dynamic";
 import PageLoader from "@/components/PageLoader";
+import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 import {
   uploadProductImage,
   resolveProductByBarcode,
   fetchFromMasterProduct,
+  getStoreProductByBarcode,
+  saveToMasterProduct,
 } from "../services/inventoryService";
 
 // Dynamically import BarcodeScanner — html5-qrcode accesses browser APIs,
@@ -17,6 +20,7 @@ const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), {
 });
 
 const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
+  const { storeId, updateProduct } = useInventoryContext();
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -45,17 +49,23 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     error: "",
   });
 
+  // ── Update mode state (Priority 1: product found in own store) ──────────────
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [storeProductId, setStoreProductId] = useState(null);
+  const [updating, setUpdating] = useState(false);
+
   // Barcode scanner / resolver state
   const [scannerOpen, setScannerOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const [resolvingStep, setResolvingStep] = useState(""); // "external" | "master"
-  const [resolveStatus, setResolveStatus] = useState(null); // "found" | "master_found" | "not_found" | "error"
+  const [resolvingStep, setResolvingStep] = useState(""); // "store" | "master" | "external"
+  const [resolveStatus, setResolveStatus] = useState(null);
+  // "store_found" | "master_found" | "found" (external) | "not_found" | "error"
 
   // Loading overlay state
   const [showOverlay, setShowOverlay] = useState(false);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
-  const resolveDebounceRef = useRef(null); // Debounce manual entry resolver
+  const resolveDebounceRef = useRef(null);
 
   // Handle delayed loading overlay
   useEffect(() => {
@@ -94,6 +104,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       setScannerOpen(false);
       setResolving(false);
       setResolveStatus(null);
+      setIsUpdateMode(false);
+      setStoreProductId(null);
     }
     return () => {
       if (resolveDebounceRef.current) clearTimeout(resolveDebounceRef.current);
@@ -101,60 +113,115 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   }, [isOpen]);
 
   /**
-   * Core resolver logic — used by both scanner and manual entry.
-   * Priority: 1) MasterProduct DB  2) External API  3) Manual fill
+   * Core resolver — implements the 4-level priority lookup chain.
+   *
+   * Priority:
+   *   1. Own store  (by barcode + storeId)  → Update mode
+   *   2. MasterProduct DB (global catalog)  → Pre-fill, add as new
+   *   3. External API (Open*Facts)          → Pre-fill, add as new, save to master async
+   *   4. Manual entry                       → On submit, save to master async
    */
   const resolveAndAutofill = async (barcode) => {
     if (!barcode || barcode.trim() === "") {
       setResolveStatus(null);
+      setIsUpdateMode(false);
+      setStoreProductId(null);
       return;
     }
 
     setResolveStatus(null);
+    setIsUpdateMode(false);
+    setStoreProductId(null);
     setResolving(true);
 
     try {
-      // ── Step 1: Try MasterProduct internal DB first (faster) ──────────────
-      setResolvingStep("master");
-      let product = await fetchFromMasterProduct(barcode);
-      let source = "master";
+      // ── Priority 1: Check own store ─────────────────────────────────────────
+      setResolvingStep("store");
+      const storeProduct = await getStoreProductByBarcode(barcode, storeId);
 
-      // ── Step 2: Fallback to external API (Open Food Facts, etc.) ──────────
-      if (!product) {
-        setResolvingStep("external");
-        product = await resolveProductByBarcode(barcode);
-        source = "external";
-      }
-
-      // ── Step 3: Neither found → prompt manual fill ────────────────────────
-      if (!product) {
-        setResolveStatus("not_found");
+      if (storeProduct) {
+        // Found in store — switch to update mode and pre-fill all fields
+        setStoreProductId(storeProduct._id);
+        setIsUpdateMode(true);
+        setFormData((prev) => ({
+          ...prev,
+          barcode,
+          name: storeProduct.name || prev.name,
+          brand: storeProduct.brand || prev.brand,
+          category: storeProduct.category || prev.category,
+          qty: storeProduct.quantity !== undefined ? String(storeProduct.quantity) : prev.qty,
+          unit: storeProduct.unit || prev.unit,
+          price: storeProduct.price !== undefined ? String(storeProduct.price) : prev.price,
+          expDate: storeProduct.expDate
+            ? new Date(storeProduct.expDate).toISOString().split("T")[0]
+            : prev.expDate,
+          image: storeProduct.image || prev.image || "",
+          source: storeProduct.source || prev.source || "",
+          confidence: storeProduct.confidence ?? null,
+        }));
+        if (storeProduct.image) setImageOrigin("resolver");
+        setResolveStatus("store_found");
         return;
       }
 
-      // Autofill available fields — qty is always manually entered by shopkeeper
-      setFormData((prev) => ({
-        ...prev,
-        barcode,
-        name: product.name || prev.name,
-        brand: product.brand || prev.brand,
-        category: mapToSelectCategory(product.category, product.source),
-        image:
-          imageOrigin === "manual" && prev.image
-            ? prev.image
-            : product.image || prev.image || "",
-        source:
-          imageOrigin === "manual" && prev.source
-            ? prev.source
-            : product.source || prev.source || "",
-        confidence: product.confidence ?? null,
-      }));
+      // ── Priority 2: Check MasterProduct DB ─────────────────────────────────
+      setResolvingStep("master");
+      const masterProduct = await fetchFromMasterProduct(barcode);
 
-      if (imageOrigin !== "manual") {
-        setImageOrigin(product.image ? "resolver" : "");
+      if (masterProduct) {
+        setFormData((prev) => ({
+          ...prev,
+          barcode,
+          name: masterProduct.name || prev.name,
+          brand: masterProduct.brand || prev.brand,
+          category: mapToSelectCategory(masterProduct.category, masterProduct.source),
+          image:
+            imageOrigin === "manual" && prev.image
+              ? prev.image
+              : masterProduct.image || prev.image || "",
+          source:
+            imageOrigin === "manual" && prev.source
+              ? prev.source
+              : masterProduct.source || prev.source || "",
+          confidence: masterProduct.confidence ?? null,
+        }));
+        if (imageOrigin !== "manual") {
+          setImageOrigin(masterProduct.image ? "resolver" : "");
+        }
+        setResolveStatus("master_found");
+        return;
       }
 
-      setResolveStatus(source === "master" ? "master_found" : "found");
+      // ── Priority 3: Try external API ────────────────────────────────────────
+      setResolvingStep("external");
+      const externalProduct = await resolveProductByBarcode(barcode);
+
+      if (externalProduct) {
+        setFormData((prev) => ({
+          ...prev,
+          barcode,
+          name: externalProduct.name || prev.name,
+          brand: externalProduct.brand || prev.brand,
+          category: mapToSelectCategory(externalProduct.category, externalProduct.source),
+          image:
+            imageOrigin === "manual" && prev.image
+              ? prev.image
+              : externalProduct.image || prev.image || "",
+          source:
+            imageOrigin === "manual" && prev.source
+              ? prev.source
+              : externalProduct.source || prev.source || "",
+          confidence: externalProduct.confidence ?? null,
+        }));
+        if (imageOrigin !== "manual") {
+          setImageOrigin(externalProduct.image ? "resolver" : "");
+        }
+        setResolveStatus("found");
+        return;
+      }
+
+      // ── Priority 4: Nothing found — manual entry ────────────────────────────
+      setResolveStatus("not_found");
     } catch {
       setResolveStatus("error");
     } finally {
@@ -165,7 +232,6 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   /**
    * Called by BarcodeScanner when a barcode is successfully decoded.
-   * Sends it to the backend resolver and autofills the form.
    */
   const handleScanComplete = async (barcode) => {
     setScannerOpen(false);
@@ -174,14 +240,12 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   };
 
   /**
-   * Handle manual barcode entry blur — triggers resolver only if barcode looks valid.
-   * Uses debounce to avoid excessive API calls if user is still typing.
+   * Handle manual barcode entry blur — triggers resolver only if barcode is non-empty.
    */
   const handleBarcodeBlur = () => {
     if (resolveDebounceRef.current) {
       clearTimeout(resolveDebounceRef.current);
     }
-    // Trigger resolver immediately on blur
     resolveAndAutofill(formData.barcode);
   };
 
@@ -234,11 +298,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
    */
   const mapToSelectCategory = (raw = "", source = "") => {
     if (!raw) {
-      // Use source as a fallback signal when category is null
       if (/beauty/i.test(source)) return "Personal Care";
       return "General";
     }
-    // Strip Open*Facts taxonomy prefixes like "en:" before matching
     const cleaned = raw
       .replace(/\ben:[\w-]*/gi, "")
       .replace(/,\s*,/g, ",")
@@ -258,13 +320,14 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     if (/produce|fruit|veg|fresh/.test(lower)) return "Produce";
     if (/snack|chip|crisp|nut|popcorn/.test(lower)) return "Snacks";
     if (/pantry|grain|rice|flour|oil|spice|sauce/.test(lower)) return "Pantry";
-    // If Open*Facts source but no category match, treat as Personal Care
     if (/beauty/i.test(source)) return "Personal Care";
     return "General";
   };
 
   const getBarcodeInputClass = () => {
     if (resolving) return "bg-blue-50 border-blue-300 cursor-wait";
+    if (resolveStatus === "store_found")
+      return "bg-teal-50 border-teal-400 focus:ring-2 focus:ring-teal-400";
     if (resolveStatus === "found")
       return "bg-green-50 border-green-400 focus:ring-2 focus:ring-green-400";
     if (resolveStatus === "master_found")
@@ -275,6 +338,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   };
 
   const getBarcodeIconClass = () => {
+    if (resolveStatus === "store_found") return "text-teal-500";
     if (resolveStatus === "found") return "text-green-500";
     if (resolveStatus === "master_found") return "text-indigo-500";
     if (resolveStatus === "not_found" || resolveStatus === "error")
@@ -282,23 +346,66 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     return "text-slate-400";
   };
 
+  /**
+   * Handle form submission.
+   * - Update mode (store product found): calls updateProduct via context
+   * - Add mode: calls onAction (addProduct via parent), then saves to MasterProduct async
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (imageUploadState.status === "uploading") return;
-    if (onAction) {
-      const { qty, ...rest } = formData;
-      const result = await onAction({
-        ...rest,
-        quantity: Number(qty),
-        price: Number(formData.price),
-      });
-      if (result?.success) {
-        setFormData({
-          ...createInitialFormData(),
-        });
-        setImageOrigin("");
-        setImageUploadState({ status: "idle", error: "" });
-        setResolveStatus(null);
+
+    const { qty, ...rest } = formData;
+    const payload = {
+      ...rest,
+      quantity: Number(qty),
+      price: Number(formData.price),
+    };
+
+    if (isUpdateMode && storeProductId) {
+      // ── Update existing store product ───────────────────────────────────────
+      setUpdating(true);
+      try {
+        const result = await updateProduct(storeProductId, payload);
+        if (result?.success) {
+          setFormData(createInitialFormData());
+          setImageOrigin("");
+          setImageUploadState({ status: "idle", error: "" });
+          setResolveStatus(null);
+          setIsUpdateMode(false);
+          setStoreProductId(null);
+          onClose();
+        }
+      } finally {
+        setUpdating(false);
+      }
+    } else {
+      // ── Add new store product ───────────────────────────────────────────────
+      if (onAction) {
+        const result = await onAction(payload);
+        if (result?.success) {
+          // Save to MasterProduct async when product has a barcode and wasn't from master/external
+          // (external resolver already saved it; master_found means it's already there)
+          if (
+            formData.barcode &&
+            (resolveStatus === "not_found" || resolveStatus === null || resolveStatus === "error")
+          ) {
+            saveToMasterProduct({
+              barcode: formData.barcode,
+              name: formData.name,
+              brand: formData.brand,
+              category: formData.category,
+              image: formData.image,
+              source: "user-submitted",
+            }).catch(() => {
+              // Silently ignore — saving to master catalog is non-critical
+            });
+          }
+          setFormData(createInitialFormData());
+          setImageOrigin("");
+          setImageUploadState({ status: "idle", error: "" });
+          setResolveStatus(null);
+        }
       }
     }
   };
@@ -310,9 +417,15 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
 
   if (!mounted || !isOpen) return null;
 
+  const isBusy = loading || resolving || updating || imageUploadState.status === "uploading";
+
   return ReactDOM.createPortal(
     <>
-      {showOverlay && <PageLoader message="Adding product to inventory..." />}
+      {showOverlay && (
+        <PageLoader
+          message={isUpdateMode ? "Updating product..." : "Adding product to inventory..."}
+        />
+      )}
 
       {/* Barcode Scanner Modal */}
       {scannerOpen && (
@@ -332,13 +445,21 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         {/* Modal Content */}
         <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/20 overflow-y-auto max-h-[calc(100vh-6rem)] animate-scale-up scrollbar-hide">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-start justify-between">
+          <div
+            className={`px-6 py-4 border-b border-slate-200 flex items-start justify-between ${
+              isUpdateMode
+                ? "bg-gradient-to-r from-teal-50 to-cyan-50"
+                : "bg-gradient-to-r from-blue-50 to-indigo-50"
+            }`}
+          >
             <div>
               <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                Add New Product
+                {isUpdateMode ? "Update Product" : "Add New Product"}
               </h2>
               <p className="text-xs text-slate-600 mt-0.5 font-semibold">
-                Register a new product to your inventory
+                {isUpdateMode
+                  ? "Edit and save changes to this existing product"
+                  : "Register a new product to your inventory"}
               </p>
             </div>
             <button
@@ -422,7 +543,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               {/* Qty & Unit */}
               <div className="col-span-5 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
-                  Initial Qty
+                  {isUpdateMode ? "Quantity" : "Initial Qty"}
                 </label>
                 <input
                   required
@@ -528,6 +649,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                     disabled={resolving}
                     onClick={() => {
                       setResolveStatus(null);
+                      setIsUpdateMode(false);
+                      setStoreProductId(null);
                       setScannerOpen(true);
                     }}
                     className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/30 active:scale-95"
@@ -600,45 +723,51 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                   )}
                 </div>
 
-                {/* Resolve status banners */}
+                {/* ── Resolve status banners ─────────────────────────────────── */}
+
                 {resolving && (
                   <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    {resolvingStep === "master"
+                    {resolvingStep === "store"
+                      ? "Checking your store inventory…"
+                      : resolvingStep === "master"
                       ? "Checking product catalogue…"
                       : "Looking up product details…"}
                   </p>
                 )}
-                {resolveStatus === "found" && (
-                  <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
-                    ✓ Product found — fields auto-filled. Review and adjust if
-                    needed.
-                  </p>
-                )}
-                {resolveStatus === "found" && formData.image && (
-                  <div className="flex items-center gap-3 mt-1 p-2 bg-green-50 border border-green-200 rounded-xl">
-                    <img
-                      src={formData.image}
-                      alt={formData.name}
-                      className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                    <div className="text-xs text-slate-600 font-medium leading-snug">
-                      {formData.brand && (
-                        <p className="font-bold text-slate-800">
-                          {formData.brand}
-                        </p>
-                      )}
-                      <p className="text-slate-500">
-                        {imageOrigin === "manual"
-                          ? "Uploaded image"
-                          : `via ${formData.source}`}
-                      </p>
-                    </div>
+
+                {/* Priority 1: Found in own store */}
+                {resolveStatus === "store_found" && (
+                  <div className="mt-1 p-3 bg-teal-50 border border-teal-200 rounded-xl">
+                    <p className="text-xs text-teal-800 font-bold flex items-center gap-1.5">
+                      <svg className="h-4 w-4 text-teal-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      This product is already in your store — editing existing product
+                    </p>
+                    <p className="text-xs text-teal-700 mt-1">
+                      All fields have been pre-filled. Make your changes and click <strong>Update Product</strong>.
+                    </p>
+                    {formData.image && (
+                      <div className="flex items-center gap-3 mt-2 p-2 bg-white border border-teal-200 rounded-xl">
+                        <img
+                          src={formData.image}
+                          alt={formData.name}
+                          className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
+                          onError={(e) => { e.target.style.display = "none"; }}
+                        />
+                        <div className="text-xs text-slate-600 font-medium leading-snug">
+                          {formData.brand && (
+                            <p className="font-bold text-slate-800">{formData.brand}</p>
+                          )}
+                          <p className="text-slate-500">From your inventory</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Priority 2: Found in MasterProduct */}
                 {resolveStatus === "master_found" && (
                   <div className="mt-1">
                     <p className="text-xs text-indigo-700 font-semibold flex items-center gap-1.5">
@@ -651,15 +780,11 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                           src={formData.image}
                           alt={formData.name}
                           className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                          }}
+                          onError={(e) => { e.target.style.display = "none"; }}
                         />
                         <div className="text-xs text-slate-600 font-medium leading-snug">
                           {formData.brand && (
-                            <p className="font-bold text-slate-800">
-                              {formData.brand}
-                            </p>
+                            <p className="font-bold text-slate-800">{formData.brand}</p>
                           )}
                           <p className="text-slate-500">
                             {imageOrigin === "manual"
@@ -671,6 +796,35 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                     )}
                   </div>
                 )}
+
+                {/* Priority 3: Found via external API */}
+                {resolveStatus === "found" && (
+                  <p className="text-xs text-green-700 font-semibold flex items-center gap-1.5">
+                    ✓ Product found — fields auto-filled. Review and adjust if needed.
+                  </p>
+                )}
+                {resolveStatus === "found" && formData.image && (
+                  <div className="flex items-center gap-3 mt-1 p-2 bg-green-50 border border-green-200 rounded-xl">
+                    <img
+                      src={formData.image}
+                      alt={formData.name}
+                      className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
+                      onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                    <div className="text-xs text-slate-600 font-medium leading-snug">
+                      {formData.brand && (
+                        <p className="font-bold text-slate-800">{formData.brand}</p>
+                      )}
+                      <p className="text-slate-500">
+                        {imageOrigin === "manual"
+                          ? "Uploaded image"
+                          : `via ${formData.source}`}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Image upload states */}
                 {imageUploadState.status === "uploading" && (
                   <p className="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
@@ -688,9 +842,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                       src={formData.image}
                       alt={formData.name || "Uploaded product"}
                       className="h-14 w-14 object-contain rounded-lg border border-slate-200 bg-white flex-shrink-0"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
+                      onError={(e) => { e.target.style.display = "none"; }}
                     />
                     <div className="text-xs text-slate-600 font-medium leading-snug">
                       <p className="font-bold text-slate-800">Uploaded image</p>
@@ -698,6 +850,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                     </div>
                   </div>
                 )}
+
+                {/* Priority 4: Not found anywhere */}
                 {resolveStatus === "not_found" && (
                   <div className="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                     <p className="text-xs text-amber-800 font-bold flex items-center gap-1.5">
@@ -717,9 +871,9 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                       Product not found in any source
                     </p>
                     <p className="text-xs text-amber-700 mt-1">
-                      This barcode wasn&apos;t found in the external database or
-                      our product catalogue. Please fill in the product details
-                      manually below.
+                      This barcode wasn&apos;t found in your store, the product catalogue, or any
+                      external database. Please fill in the product details manually — it will
+                      be saved to the shared catalogue for future users.
                     </p>
                   </div>
                 )}
@@ -745,13 +899,25 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
             <button
               type="submit"
               form="add-product-form"
-              disabled={loading || resolving || imageUploadState.status === "uploading"}
-              className="btn-primary-yb py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm"
+              disabled={isBusy}
+              className={`py-2.5 px-6 font-bold disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg text-sm rounded-xl text-white transition-all ${
+                isUpdateMode
+                  ? "bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 shadow-teal-500/30"
+                  : "btn-primary-yb"
+              }`}
             >
-              {loading && (
+              {(loading || updating) && (
                 <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
-              <span>{loading ? "Adding..." : "Add Product"}</span>
+              <span>
+                {updating
+                  ? "Updating..."
+                  : loading
+                  ? "Adding..."
+                  : isUpdateMode
+                  ? "Update Product"
+                  : "Add Product"}
+              </span>
             </button>
           </div>
         </div>
