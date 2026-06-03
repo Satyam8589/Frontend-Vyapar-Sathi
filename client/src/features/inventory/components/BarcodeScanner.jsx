@@ -194,19 +194,27 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         );
       }
     } catch (err) {
-      console.error("Error scanning barcode:", err);
+      // html5-qrcode throws NotFoundException when no barcode is found in the image.
+      // This is expected and normal — do NOT log it as an error.
+      const isNoBarcode =
+        err?.name === "NotFoundException" ||
+        err?.message?.includes("No MultiFormat Readers") ||
+        err?.message?.includes("No barcode or QR code detected");
 
-      // Check if it's a "no barcode found" error
-      if (err?.message?.includes("No MultiFormat Readers")) {
+      if (isNoBarcode) {
+        // Expected: camera captured a frame with no readable barcode
         showSuccess(
           "No barcode detected. Ensure barcode is clear, well-lit, and in focus.",
         );
       } else {
+        // Unexpected error — worth logging
+        console.warn("BarcodeScanner: unexpected scan error:", err?.message ?? err);
         showSuccess("Scan failed. Please try again.");
       }
     } finally {
       setIsProcessing(false);
     }
+
   };
 
   const stopCamera = () => {
