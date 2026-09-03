@@ -22,6 +22,7 @@ import {
   getSessionIdFromURL,
   generateMobileScanURL,
 } from "../services/billingSyncService";
+import { useOfflineBilling } from "../hooks/useOfflineBilling";
 
 const BillingContext = createContext(null);
 
@@ -183,6 +184,28 @@ export const BillingProvider = ({ children }) => {
   const [userContext, setUserContext] = useState({ role: null, permissions: [] });
   const [billedProducts, setBilledProducts] = useState([]);
   const [discount, setDiscount] = useState({ type: "fixed", value: 0 }); // { type: 'percent' | 'fixed', value: number }
+
+  // Offline billing - use ref for processBill to avoid circular dependency
+  const processBillRef = useRef(null);
+
+  const {
+    saveBillOffline,
+    clearSession,
+    syncPendingBills,
+    processSyncQueue,
+  } = useOfflineBilling({
+    storeId,
+    sessionId,
+    syncEnabled,
+    isMobile,
+    billedProducts,
+    discount,
+    currentStore,
+    setBilledProducts,
+    setDiscount,
+    setScannedBarcode,
+    processBill: (...args) => processBillRef.current?.(...args),
+  });
 
   // Check if current user has a specific permission
   const hasPermission = useCallback((permissionKey) => {
@@ -467,10 +490,21 @@ export const BillingProvider = ({ children }) => {
           billedAt: new Date().toISOString(),
         };
 
-        // Generate bill (automatically updates inventory via cart confirmPayment)
-        const bill = await billingService.generateBill(billData);
+        // Save bill offline first (works even without internet)
+        await saveBillOffline(billData);
 
-        console.log("Bill generated successfully:", bill);
+        // Try to generate bill on server (will succeed when online)
+        let bill = null;
+        try {
+          bill = await billingService.generateBill(billData);
+          console.log("Bill generated successfully:", bill);
+
+          // Clear offline session on success
+          await clearSession();
+        } catch (syncError) {
+          console.log("📴 Offline mode: Bill saved locally, will sync when online");
+          showSuccess("Bill saved offline! Will sync when internet is available.");
+        }
 
         // Save bill data for PDF download
         setLastBillData(billData);
@@ -478,7 +512,10 @@ export const BillingProvider = ({ children }) => {
         // Clear the bill
         setBilledProducts([]);
         setDiscount({ type: "fixed", value: 0 });
-        showSuccess("Bill generated and inventory updated successfully!");
+
+        if (bill) {
+          showSuccess("Bill generated and inventory updated successfully!");
+        }
 
         return bill;
       } catch (err) {
@@ -491,16 +528,22 @@ export const BillingProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [billedProducts, storeId, user?.uid, calculateTotal],
+    [billedProducts, storeId, user?.uid, calculateTotal, saveBillOffline, clearSession],
   );
 
+  // Set ref for offline billing hook
+  useEffect(() => {
+    processBillRef.current = processBill;
+  }, [processBill]);
+
   // Clear current bill
-  const clearBill = useCallback(() => {
+  const clearBill = useCallback(async () => {
     setBilledProducts([]);
     setScannedBarcode("");
     setDiscount({ type: "fixed", value: 0 });
+    await clearSession();
     showSuccess("Bill cleared");
-  }, []);
+  }, [clearSession]);
 
   const value = useMemo(
     () => ({
