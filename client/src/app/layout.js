@@ -27,8 +27,8 @@ export const metadata = {
   ],
   authors: [{ name: "Vyapar Sathi Team" }],
   icons: {
-    icon: "/images/logo/vs_logo.png",
-    shortcut: "/images/logo/vs_logo.png",
+    icon: "/vs_logo.ico",
+    shortcut: "/vs_logo.ico",
     apple: "/images/logo/vs_logo.png",
   },
   manifest: "/manifest.json",
@@ -44,7 +44,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
+      {/* <head>
         <link
           rel="icon"
           href="/images/logo/vs_logo.png"
@@ -59,7 +59,7 @@ export default function RootLayout({ children }) {
         />
         <link rel="apple-touch-icon" href="/images/logo/vs_logo.png" />
         <meta name="theme-color" content="#1e40af" />
-      </head>
+      </head> */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -14,6 +14,7 @@ import {
   isOnline,
   onOnline,
   onOffline,
+  db,
 } from "@/features/InventoryBilling/utils/db";
 import * as billingService from "@/features/InventoryBilling/services/billingService";
 
@@ -149,7 +150,7 @@ export function useOfflineBilling({
     }
   }, [storeId]);
 
-  // Process sync queue
+  // Process sync queue - sole sync authority
   const processSyncQueue = useCallback(async () => {
     if (!storeId || syncInProgressRef.current || !isOnline()) return;
 
@@ -163,11 +164,27 @@ export function useOfflineBilling({
           await updateSyncQueueItem(item.id, { status: "processing" });
 
           if (item.type === "bill") {
+            // Check if this bill was already synced (e.g. by a prior syncPendingBills run)
+            // to avoid creating duplicate invoices on the server.
+            const existingBill = await db.offlineBills.get(item.billId);
+            if (existingBill && existingBill.synced) {
+              console.log("✅ Bill already synced, completing queue item:", item.id);
+              await updateSyncQueueItem(item.id, {
+                status: "completed",
+                completedAt: new Date().toISOString(),
+              });
+              continue;
+            }
+
             const serverBill = await billingService.generateBill(item.billData);
 
             if (serverBill) {
               await markBillSynced(item.billId, serverBill._id || serverBill.id);
-              await updateSyncQueueItem(item.id, { status: "completed", completedAt: new Date().toISOString() });
+              await updateSyncQueueItem(item.id, {
+                status: "completed",
+                completedAt: new Date().toISOString(),
+              });
+              console.log("✅ Bill synced to server:", item.id);
             }
           }
         } catch (error) {
@@ -183,14 +200,19 @@ export function useOfflineBilling({
       console.error("Process sync queue error:", error);
     } finally {
       syncInProgressRef.current = false;
+      // Notify the indicator to refresh counts immediately
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("billing-sync-complete"));
+      }
     }
   }, [storeId]);
 
   // Listen for online/offline events
   useEffect(() => {
     const handleOnline = () => {
-      console.log("🌐 Online - syncing pending bills...");
-      syncPendingBills();
+      console.log("🌐 Online - processing sync queue...");
+      // Only processSyncQueue runs — it handles all pending bills safely
+      // (including skipping ones already synced by a prior run)
       processSyncQueue();
     };
 
@@ -205,12 +227,11 @@ export function useOfflineBilling({
       cleanupOnline();
       cleanupOffline();
     };
-  }, [syncPendingBills, processSyncQueue]);
+  }, [processSyncQueue]);
 
   // Initial sync check on mount
   useEffect(() => {
     if (isOnline()) {
-      syncPendingBills();
       processSyncQueue();
     }
   }, []); // Run once on mount

@@ -23,6 +23,13 @@ import {
   generateMobileScanURL,
 } from "../services/billingSyncService";
 import { useOfflineBilling } from "../hooks/useOfflineBilling";
+import { 
+  isOnline, 
+  saveOfflineProducts, 
+  getOfflineProductByBarcode,
+  saveSyncMetadata,
+  getOfflineProducts 
+} from "../utils/db";
 
 const BillingContext = createContext(null);
 
@@ -232,8 +239,21 @@ export const BillingProvider = ({ children }) => {
   const fetchStoreProducts = useCallback(async () => {
     if (!storeId) return;
     try {
-      const data = await billingService.getStoreProducts(storeId);
-      setStoreProducts(data || []);
+      if (isOnline()) {
+        const data = await billingService.getStoreProducts(storeId);
+        setStoreProducts(data || []);
+        if (data && data.length > 0) {
+          // Save to Dexie for offline use
+          await saveOfflineProducts(storeId, data);
+          await saveSyncMetadata(storeId, 'products');
+          console.log("📦 Products synced for offline use");
+        }
+      } else {
+        // Load from Dexie if offline
+        const offlineData = await getOfflineProducts(storeId);
+        setStoreProducts(offlineData || []);
+        console.log("📴 Loaded products from offline cache");
+      }
     } catch (err) {
       console.error("PRODUCTS_FETCH_ERROR:", err);
     }
@@ -269,10 +289,13 @@ export const BillingProvider = ({ children }) => {
         }
 
         // Normal mode (laptop) - fetch product and add to cart
-        const product = await billingService.getProductByBarcode(
-          barcode,
-          storeId,
-        );
+        let product = null;
+        if (isOnline()) {
+          product = await billingService.getProductByBarcode(barcode, storeId);
+        } else {
+          console.log("📴 Offline mode: searching barcode locally...");
+          product = await getOfflineProductByBarcode(storeId, barcode);
+        }
 
         if (!product) {
           showError("Product not found with this barcode");
@@ -548,6 +571,7 @@ export const BillingProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       currentStore,
+      storeId,
       userContext,
       hasPermission,
       billedProducts,
@@ -579,6 +603,7 @@ export const BillingProvider = ({ children }) => {
     }),
     [
       currentStore,
+      storeId,
       billedProducts,
       loading,
       error,

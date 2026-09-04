@@ -8,6 +8,11 @@ db.version(1).stores({
   sessions: 'id, storeId, updatedAt',
 });
 
+db.version(2).stores({
+  products: 'id, [storeId+barcode], storeId',
+  syncMetadata: '++id, storeId, entity',
+});
+
 export function isOnline() {
   return typeof navigator !== 'undefined' && navigator.onLine;
 }
@@ -126,4 +131,50 @@ export async function getCurrentSession(storeId) {
 export async function clearCurrentSession(storeId) {
   const sessionKey = `session_${storeId}`;
   return await db.sessions.delete(sessionKey);
+}
+
+// --- Offline Products & Sync Metadata ---
+
+export async function saveOfflineProducts(storeId, products) {
+  const offlineProducts = products.map((p) => ({
+    ...p,
+    storeId,
+    id: p._id || p.id,
+  }));
+  return await db.products.bulkPut(offlineProducts);
+}
+
+export async function getOfflineProductByBarcode(storeId, barcode) {
+  return await db.products
+    .where('[storeId+barcode]')
+    .equals([storeId, barcode])
+    .first();
+}
+
+export async function getOfflineProducts(storeId) {
+  return await db.products.where('storeId').equals(storeId).toArray();
+}
+
+export async function saveSyncMetadata(storeId, entity) {
+  const existing = await db.syncMetadata
+    .where({ storeId, entity })
+    .first();
+
+  if (existing) {
+    return await db.syncMetadata.update(existing.id, {
+      lastSyncedAt: new Date().toISOString(),
+    });
+  } else {
+    return await db.syncMetadata.add({
+      storeId,
+      entity,
+      lastSyncedAt: new Date().toISOString(),
+    });
+  }
+}
+
+export async function getSyncMetadata(storeId, entity) {
+  return await db.syncMetadata
+    .where({ storeId, entity })
+    .first();
 }
