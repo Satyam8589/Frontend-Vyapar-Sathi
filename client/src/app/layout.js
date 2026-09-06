@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import ServiceWorkerRegistrar from "./ServiceWorkerRegistrar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,8 +27,8 @@ export const metadata = {
   ],
   authors: [{ name: "Vyapar Sathi Team" }],
   icons: {
-    icon: "/images/logo/vs_logo.png",
-    shortcut: "/images/logo/vs_logo.png",
+    icon: "/vs_logo.ico",
+    shortcut: "/vs_logo.ico",
     apple: "/images/logo/vs_logo.png",
   },
   manifest: "/manifest.json",
@@ -43,7 +44,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
+      {/* <head>
         <link
           rel="icon"
           href="/images/logo/vs_logo.png"
@@ -58,20 +59,12 @@ export default function RootLayout({ children }) {
         />
         <link rel="apple-touch-icon" href="/images/logo/vs_logo.png" />
         <meta name="theme-color" content="#1e40af" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-              }
-            `,
-          }}
-        />
-      </head>
+      </head> */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

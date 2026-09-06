@@ -1,232 +1,158 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useBillingContext } from "../context/billingContext";
 import {
-  Smartphone,
-  Wifi,
-  WifiOff,
-  QrCode,
-  X,
-  Copy,
-  Check,
-} from "lucide-react";
-import QRCode from "react-qr-code";
+  getPendingSyncQueue,
+  getSyncMetadata,
+  getOfflineProducts,
+  isOnline,
+  onOnline,
+  onOffline,
+} from "../utils/db";
 
-export const BillingSyncIndicator = () => {
-  const {
-    syncEnabled,
-    syncStatus,
-    isMobile,
-    startSync,
-    stopSync,
-    getMobileScanURL,
-  } = useBillingContext();
+function formatTime(isoString) {
+  if (!isoString) return null;
+  const d = new Date(isoString);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
-  const [showQR, setShowQR] = useState(false);
-  const [copied, setCopied] = useState(false);
+export function BillingSyncIndicator() {
+  const { storeId } = useBillingContext();
+  const [online, setOnline] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [catalogReady, setCatalogReady] = useState(false);
+  const [lastSynced, setLastSynced] = useState(null);
+  const [swActive, setSwActive] = useState(false);
 
-  const handleToggleSync = () => {
-    if (syncEnabled) {
-      stopSync();
-      setShowQR(false);
-    } else {
-      startSync();
+  const refresh = useCallback(async () => {
+    if (!storeId) return;
+    try {
+      // syncQueue is the single source of truth for pending operations.
+      // offlineBills.synced is updated independently; counting both would
+      // double-count the same bill while sync is in-flight.
+      const [queue, meta, products] = await Promise.all([
+        getPendingSyncQueue(storeId),
+        getSyncMetadata(storeId, "products"),
+        getOfflineProducts(storeId),
+      ]);
+      setPendingCount(queue.length);
+      setCatalogReady(products.length > 0);
+      setLastSynced(meta?.lastSyncedAt || null);
+    } catch (err) {
+      console.error("[BillingSyncIndicator] Failed to refresh status:", err);
     }
-  };
+  }, [storeId]);
 
-  const handleShowQR = () => {
-    if (!syncEnabled) {
-      startSync();
+  useEffect(() => {
+    if (!storeId) return;
+
+    setOnline(isOnline());
+    refresh();
+
+    const cleanupOnline = onOnline(() => {
+      setOnline(true);
+      refresh();
+    });
+    const cleanupOffline = onOffline(() => {
+      setOnline(false);
+      refresh();
+    });
+
+    // Check Service Worker status
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.ready
+        .then(() => setSwActive(true))
+        .catch(() => setSwActive(false));
     }
-    setShowQR(true);
-  };
 
-  const handleCopyURL = async () => {
-    const url = getMobileScanURL();
-    if (url) {
-      try {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("Failed to copy URL:", err);
-      }
-    }
-  };
+    const interval = setInterval(refresh, 10000);
 
-  const getStatusColor = () => {
-    switch (syncStatus) {
-      case "connected":
-        return "bg-green-500";
-      case "syncing":
-        return "bg-blue-500 animate-pulse";
-      case "connecting":
-        return "bg-yellow-500 animate-pulse";
-      default:
-        return "bg-gray-400";
-    }
-  };
+    // Refresh immediately when a sync cycle completes
+    const handleSyncComplete = () => refresh();
+    window.addEventListener("billing-sync-complete", handleSyncComplete);
 
-  const getStatusText = () => {
-    switch (syncStatus) {
-      case "connected":
-        return "Connected";
-      case "syncing":
-        return "Syncing...";
-      case "connecting":
-        return "Connecting...";
-      default:
-        return "Disconnected";
-    }
-  };
+    return () => {
+      cleanupOnline();
+      cleanupOffline();
+      clearInterval(interval);
+      window.removeEventListener("billing-sync-complete", handleSyncComplete);
+    };
+  }, [storeId, refresh]);
 
-  // Don't show sync controls on mobile, only show if enabled
-  if (isMobile && !syncEnabled) {
-    return null;
+  const offlineReady = swActive && catalogReady;
+
+  // Online, nothing pending
+  if (online && pendingCount === 0) {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+        </span>
+        <span className="text-green-700 font-medium">Online</span>
+        {lastSynced && (
+          <span className="text-gray-400 text-xs">
+            · Catalog synced {formatTime(lastSynced)}
+          </span>
+        )}
+        {offlineReady && (
+          <span className="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700">
+            Offline Ready
+          </span>
+        )}
+      </div>
+    );
   }
 
-  return (
-    <>
-      {/* Sync Status Indicator */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {syncEnabled ? (
-              <Wifi className="text-green-600 flex-shrink-0" size={24} />
-            ) : (
-              <WifiOff className="text-gray-400 flex-shrink-0" size={24} />
-            )}
-            <div>
-              <h3 className="font-semibold text-gray-800">Real-Time Sync</h3>
-              <p className="text-xs md:text-sm text-gray-500">
-                Scan on phone, see on laptop instantly
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 md:gap-3">
-            {/* Status indicator */}
-            {syncEnabled && (
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-                <span className="text-sm font-medium text-gray-700">
-                  {getStatusText()}
-                </span>
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              {/* QR Code button */}
-              {syncEnabled && (
-                <button
-                  onClick={handleShowQR}
-                  className="flex-1 sm:flex-initial px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  <QrCode size={18} />
-                  <span className="hidden sm:inline">Show QR</span>
-                  <span className="sm:hidden">QR Code</span>
-                </button>
-              )}
-
-              {/* Toggle sync button */}
-              <button
-                onClick={handleToggleSync}
-                className={`flex-1 sm:flex-initial px-3 md:px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm md:text-base ${
-                  syncEnabled
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-green-600 text-white hover:bg-green-700"
-                }`}
-              >
-                {syncEnabled ? (
-                  <>
-                    <WifiOff size={18} />
-                    <span className="hidden sm:inline">Disable Sync</span>
-                    <span className="sm:hidden">Disable</span>
-                  </>
-                ) : (
-                  <>
-                    <Wifi size={18} />
-                    <span className="hidden sm:inline">Enable Sync</span>
-                    <span className="sm:hidden">Enable</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+  // Offline but catalog is prepared
+  if (!online && offlineReady) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-sm">
+        <span className="relative flex h-2 w-2">
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+        </span>
+        <span className="font-medium">Offline</span>
+        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+          Offline Ready
+        </span>
+        {pendingCount > 0 && (
+          <span className="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
+            {pendingCount} bill{pendingCount > 1 ? "s" : ""} pending sync
+          </span>
+        )}
       </div>
+    );
+  }
 
-      {/* QR Code Modal */}
-      {showQR && syncEnabled && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Scan with Mobile
-              </h2>
-              <button
-                onClick={() => setShowQR(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
+  // Offline, NOT prepared
+  if (!online && !offlineReady) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+        <span className="relative flex h-2 w-2">
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+        </span>
+        <span className="font-medium">Offline</span>
+        <span className="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700">
+          Not Ready — connect internet first
+        </span>
+      </div>
+    );
+  }
 
-            {/* QR Code */}
-            <div className="bg-white p-6 rounded-lg border-2 border-gray-200 mb-4 flex justify-center">
-              <QRCode value={getMobileScanURL() || ""} size={200} />
-            </div>
-
-            {/* Instructions */}
-            <div className="space-y-3 mb-4">
-              <p className="text-sm text-gray-600">
-                <strong>How to use:</strong>
-              </p>
-              <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                <li>Open camera app on your phone</li>
-                <li>Scan this QR code</li>
-                <li>Tap the link to open billing page in mobile mode</li>
-                <li>Scan products - they'll appear here instantly!</li>
-              </ol>
-            </div>
-
-            {/* Copy URL */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={getMobileScanURL() || ""}
-                readOnly
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50"
-              />
-              <button
-                onClick={handleCopyURL}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                {copied ? (
-                  <>
-                    <Check size={18} />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={18} />
-                    Copy
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Alternative sharing options */}
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-xs text-blue-800">
-                💡 <strong>Tip:</strong> You can also copy the URL above and
-                send it to your phone via WhatsApp, Email, or any messaging app.
-              </p>
-            </div>
-          </div>
-        </div>
+  // Online, pending bills syncing
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+      <span className="relative flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+      </span>
+      <span className="font-medium">Syncing…</span>
+      {pendingCount > 0 && (
+        <span className="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100">
+          {pendingCount} pending
+        </span>
       )}
-    </>
+    </div>
   );
-};
+}
