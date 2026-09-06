@@ -45,14 +45,14 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
   }
 
   return (
-    <div className="sticky top-20 z-40 w-full mb-3.5">
+    <div className="sticky top-0 z-40 mx-auto mb-3 w-[calc(100%-2rem)]">
       {/* Opaque layer that blocks content from showing behind breadcrumb while scrolling */}
       <div
         aria-hidden="true"
         className="absolute -inset-x-2 -top-2.5 -bottom-2.5 rounded-2x"
       />
 
-      <div className="relative flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+      <div className="relative flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
         {isResponsive && (
           <button
             type="button"
@@ -80,7 +80,7 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
 
         <nav
           aria-label="Breadcrumb"
-          className="flex min-w-0 w-0 flex-1 flex-wrap items-center gap-2 text-sm text-slate-700"
+          className="flex min-w-0 w-0 flex-1 flex-wrap items-center gap-1.0 text-xs text-slate-700"
         >
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
