@@ -12,16 +12,18 @@ export default function Providers({ children }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signUp";
   const isBillingPage = pathname?.endsWith("/billing");
+  const isStorePage = pathname?.startsWith("/storeDashboard/");
+  const showNavbar = !isAuthPage && !isBillingPage && !isStorePage;
 
   return (
     <AuthProvider>
       <StorePageProvider>
         <Background />
-        {!isAuthPage && !isBillingPage && <Navbar />}
+        {showNavbar && <Navbar />}
         <div
-          className={`relative min-h-screen ${!isAuthPage && !isBillingPage ? "pt-20" : ""}`}
+          className={`relative min-h-screen ${showNavbar ? "pt-20" : ""}`}
           style={
-            !isAuthPage && !isBillingPage
+            showNavbar
               ? {
                   WebkitMaskImage:
                     "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
