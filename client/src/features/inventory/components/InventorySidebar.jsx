@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 
@@ -286,40 +286,39 @@ export default function VyaparSathiSidebar({
 
   const SidebarContent = () => (
     <>
-      {/* Close Button - Visible on mobile/tablet if needed */}
-      {isResponsive && (
-        <button
-          onClick={toggleStoreSidebar}
-          style={{
-            position: "absolute",
-            top: 20,
-            right: 12,
-            background: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            color: "#7a97be",
-            cursor: "pointer",
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 101,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-            e.currentTarget.style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            e.currentTarget.style.color = "#7a97be";
-          }}
-          aria-label="Close sidebar"
-        >
-          <X size={18} />
-        </button>
-      )}
+      {/* Back Button */}
+      <button
+        onClick={toggleStoreSidebar}
+        style={{
+          position: "absolute",
+          top: 20,
+          left: 12,
+          background: "#263d5e",
+          border: "none",
+          color: "#dbeafe",
+          cursor: "pointer",
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 101,
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#35527c";
+          e.currentTarget.style.color = "#fff";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#263d5e";
+          e.currentTarget.style.color = "#dbeafe";
+        }}
+        aria-label="Back"
+        title="Back"
+      >
+        <ArrowLeft size={18} />
+      </button>
 
       {/* Logo */}
       <div
@@ -327,7 +326,7 @@ export default function VyaparSathiSidebar({
           display: "flex",
           alignItems: "center",
           gap: 9,
-          padding: "2px 6px 16px 6px",
+          padding: "2px 6px 16px 52px",
         }}
       >
         <div
