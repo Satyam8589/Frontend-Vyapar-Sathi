@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ArrowLeft } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
@@ -200,6 +200,7 @@ export default function VyaparSathiSidebar({
 }) {
   const pathname = usePathname();
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const storeId = params?.storeId;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -222,6 +223,12 @@ export default function VyaparSathiSidebar({
   const handleNavClick = () => {
     if (onNavClick) onNavClick();
     setIsMobileOpen(false);
+  };
+
+  const handleBackClick = () => {
+    handleNavClick();
+    toggleStoreSidebar();
+    router.push("/storeDashboard");
   };
 
   // Sync store sidebar state with mobile open state
@@ -288,7 +295,7 @@ export default function VyaparSathiSidebar({
     <>
       {/* Back Button */}
       <button
-        onClick={toggleStoreSidebar}
+        onClick={handleBackClick}
         style={{
           position: "absolute",
           top: 20,
