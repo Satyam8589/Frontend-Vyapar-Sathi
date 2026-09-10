@@ -1,40 +1,17 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { Toaster } from "react-hot-toast";
-import Navbar from "@/components/Navbar";
 import Background from "@/components/Background";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { StorePageProvider } from "@/features/store/context/storePageContext";
 import SwipeToCloseToast from "@/components/SwipeToCloseToast";
 
 export default function Providers({ children }) {
-  const pathname = usePathname();
-  const isAuthPage = pathname === "/login" || pathname === "/signUp";
-  const isBillingPage = pathname?.endsWith("/billing");
-  const isStorePage = pathname?.startsWith("/storeDashboard/");
-  const showNavbar = !isAuthPage && !isBillingPage && !isStorePage;
-
   return (
     <AuthProvider>
       <StorePageProvider>
         <Background />
-        {showNavbar && <Navbar />}
-        <div
-          className={`relative min-h-screen ${showNavbar ? "pt-20" : ""}`}
-          style={
-            showNavbar
-              ? {
-                  WebkitMaskImage:
-                    "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
-                  maskImage:
-                    "linear-gradient(to bottom, transparent 0px, transparent 50px, black 80px)",
-                }
-              : {}
-          }
-        >
-          {children}
-        </div>
+        <div className="relative min-h-screen">{children}</div>
         {/* Toast Notifications */}
         <Toaster
           position="bottom-right"
