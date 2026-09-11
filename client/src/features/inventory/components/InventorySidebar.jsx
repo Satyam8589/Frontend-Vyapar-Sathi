@@ -2,9 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 
@@ -200,6 +200,7 @@ export default function VyaparSathiSidebar({
 }) {
   const pathname = usePathname();
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const storeId = params?.storeId;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -222,6 +223,12 @@ export default function VyaparSathiSidebar({
   const handleNavClick = () => {
     if (onNavClick) onNavClick();
     setIsMobileOpen(false);
+  };
+
+  const handleBackClick = () => {
+    handleNavClick();
+    toggleStoreSidebar();
+    router.push("/storeDashboard");
   };
 
   // Sync store sidebar state with mobile open state
@@ -286,40 +293,39 @@ export default function VyaparSathiSidebar({
 
   const SidebarContent = () => (
     <>
-      {/* Close Button - Visible on mobile/tablet if needed */}
-      {isResponsive && (
-        <button
-          onClick={toggleStoreSidebar}
-          style={{
-            position: "absolute",
-            top: 20,
-            right: 12,
-            background: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            color: "#7a97be",
-            cursor: "pointer",
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 101,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-            e.currentTarget.style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            e.currentTarget.style.color = "#7a97be";
-          }}
-          aria-label="Close sidebar"
-        >
-          <X size={18} />
-        </button>
-      )}
+      {/* Back Button */}
+      <button
+        onClick={handleBackClick}
+        style={{
+          position: "absolute",
+          top: 20,
+          left: 12,
+          background: "#263d5e",
+          border: "none",
+          color: "#dbeafe",
+          cursor: "pointer",
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 101,
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#35527c";
+          e.currentTarget.style.color = "#fff";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#263d5e";
+          e.currentTarget.style.color = "#dbeafe";
+        }}
+        aria-label="Back"
+        title="Back"
+      >
+        <ArrowLeft size={18} />
+      </button>
 
       {/* Logo */}
       <div
@@ -327,7 +333,7 @@ export default function VyaparSathiSidebar({
           display: "flex",
           alignItems: "center",
           gap: 9,
-          padding: "2px 6px 16px 6px",
+          padding: "2px 6px 16px 52px",
         }}
       >
         <div
@@ -567,11 +573,11 @@ export default function VyaparSathiSidebar({
   }
 
   return (
-    <div style={{ padding: "16px 20px 20px 24px", minWidth: 258 }}>
+    <div style={{ width: 324, minWidth: 324, padding: "30px 0 20px 32px" }}>
       <div
         style={{
-          width: 214,
-          height: "calc(100vh - 125px)",
+          width: 302,
+          height: "calc(100vh - 62px)",
           background: "#1b2a42",
           borderRadius: 18,
           display: "flex",
@@ -580,8 +586,8 @@ export default function VyaparSathiSidebar({
           boxShadow:
             "0 8px 32px rgba(0,0,0,0.22), 0 1.5px 6px rgba(0,0,0,0.13)",
           position: "fixed",
-          top: 95,
-          left: 24,
+          top: 17,
+          left: 32,
           zIndex: 40,
         }}
       >

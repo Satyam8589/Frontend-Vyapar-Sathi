@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 
@@ -193,6 +193,7 @@ function NavLink({ label, href, icon, active, onClick }) {
 export default function StoreSidebarDrawer() {
   const pathname = usePathname();
   const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
   const storeId = params?.storeId;
   const { storeSidebarOpen, setStoreSidebarOpen } = useStorePageContext();
@@ -211,6 +212,11 @@ export default function StoreSidebarDrawer() {
 
   const handleNavClick = () => {
     setStoreSidebarOpen(false);
+  };
+
+  const handleBackClick = () => {
+    setStoreSidebarOpen(false);
+    router.push("/storeDashboard");
   };
 
   const navItems = [
@@ -310,6 +316,41 @@ export default function StoreSidebarDrawer() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={handleBackClick}
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 12,
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            color: "#7a97be",
+            cursor: "pointer",
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 101,
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+            e.currentTarget.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+            e.currentTarget.style.color = "#7a97be";
+          }}
+          aria-label="Back to store dashboard"
+          title="Back to store dashboard"
+        >
+          <ArrowLeft size={18} />
+        </button>
+
         {/* Close Button */}
         <button
           onClick={() => setStoreSidebarOpen(false)}
