@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { streamCopilotResponse } from "../../services/aiDashboardService";
+import { clearSessionId } from "@/servies/api";
 
 const SUGGESTED_PROMPTS = [
   "Which products should I restock first this week and why?",
@@ -81,6 +82,14 @@ const AskCopilotSection = ({ storeId }) => {
       abortRef.current = null;
     }
     setLoading(false);
+  };
+
+  const newChat = () => {
+    stopStreaming();
+    clearSessionId();
+    setMessages([]);
+    setError("");
+    setMessage("");
   };
 
   const askCopilot = async (promptText) => {
@@ -203,6 +212,20 @@ const AskCopilotSection = ({ storeId }) => {
         </div>
 
         <div className="mt-4 w-30% min-w-[100px] self-center">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-400">
+              {messages.length ? `${messages.length} messages` : "Start a new conversation"}
+            </span>
+            {messages.length > 0 ? (
+              <button
+                type="button"
+                onClick={newChat}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition"
+              >
+                New Chat
+              </button>
+            ) : null}
+          </div>
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
             <div className="flex items-end gap-2">
               <button

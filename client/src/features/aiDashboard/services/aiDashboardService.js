@@ -1,4 +1,5 @@
 import { apiGet } from "@/servies/api";
+import { getSessionId, setSessionId } from "@/servies/api";
 
 export const fetchForecast = async (storeId) => {
   const response = await apiGet(`/ai/${storeId}/forecast`);
@@ -35,13 +36,15 @@ export const streamCopilotResponse = async ({
   signal,
 }) => {
   const token = localStorage.getItem("authToken");
+  const sessionId = getSessionId();
+
   const response = await fetch(`${API_BASE_URL}/ai/${storeId}/copilot/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, session_id: sessionId }),
     signal,
   });
 
@@ -79,6 +82,11 @@ export const streamCopilotResponse = async ({
       } catch {
         payload = { text: rawData };
       }
+    }
+
+    if (event === "session" && payload?.sessionId) {
+      setSessionId(payload.sessionId);
+      return;
     }
 
     onEvent?.({ event, payload });

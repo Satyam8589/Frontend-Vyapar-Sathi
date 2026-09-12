@@ -1,5 +1,22 @@
 import axios from 'axios';
 
+// Session ID management
+const SESSION_STORAGE_KEY = 'copilot_session_id';
+
+export function getSessionId() {
+  return localStorage.getItem(SESSION_STORAGE_KEY);
+}
+
+export function setSessionId(sessionId) {
+  if (sessionId) {
+    localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+  }
+}
+
+export function clearSessionId() {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
@@ -17,6 +34,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Attach session ID if available
+    const sessionId = getSessionId();
+    if (sessionId) {
+      config.headers['x-session-id'] = sessionId;
+    }
+
     return config;
   },
   (error) => {
@@ -27,6 +51,11 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
+    // Capture session ID from response headers
+    const sessionId = response.headers['x-session-id'];
+    if (sessionId) {
+      setSessionId(sessionId);
+    }
     return response.data;
   },
   (error) => {
