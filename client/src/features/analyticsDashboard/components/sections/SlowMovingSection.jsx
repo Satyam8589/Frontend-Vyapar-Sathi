@@ -42,7 +42,7 @@ const SlowMovingSection = ({ slowMoving, loading, error }) => {
         <p className="text-[9px] font-black uppercase tracking-[0.35em] text-rose-600 sm:text-[10px]">
           Attention
         </p>
-        <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl\">
+        <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl">
           Slow-moving products
         </h3>
       </div>

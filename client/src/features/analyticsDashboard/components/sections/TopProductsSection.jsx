@@ -40,7 +40,7 @@ const TopProductsSection = ({
           <p className="text-[9px] font-black uppercase tracking-[0.35em] text-indigo-600 sm:text-[10px]">
             Products
           </p>
-          <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl\">
+          <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl">
             Top products
           </h3>
         </div>
