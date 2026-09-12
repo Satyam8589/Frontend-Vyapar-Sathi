@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { streamCopilotResponse } from "../../services/aiDashboardService";
-import { clearSessionId } from "@/servies/api";
+import { streamCopilotResponse, fetchChatMessages } from "../../services/aiDashboardService";
+import { clearSessionId, clearChatId } from "@/servies/api";
 
 const SUGGESTED_PROMPTS = [
   "Which products should I restock first this week and why?",
@@ -11,7 +11,7 @@ const SUGGESTED_PROMPTS = [
   "Give me 3 actions to improve inventory health this week.",
 ];
 
-const AskCopilotSection = ({ storeId }) => {
+const AskCopilotSection = ({ storeId, chatId }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,6 +19,44 @@ const AskCopilotSection = ({ storeId }) => {
   const abortRef = useRef(null);
   const textareaRef = useRef(null);
   const endRef = useRef(null);
+
+  // Load previous chat messages when chatId changes
+  useEffect(() => {
+    if (!chatId || !storeId) {
+      setMessages([]);
+      return;
+    }
+
+    let isMounted = true;
+    setLoading(true);
+
+    fetchChatMessages(storeId, chatId)
+      .then((data) => {
+        if (!isMounted) return;
+        const msgs = (data?.messages || []).map((m, i) => ({
+          id: `${m.role}-${i}`,
+          role: m.role,
+          text: m.content,
+          timestamp: m.timestamp,
+          streaming: false,
+          meta: null,
+          error: "",
+        }));
+        setMessages(msgs);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        setError(err?.message || "Failed to load chat history");
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [chatId, storeId]);
 
   useEffect(() => {
     if (endRef.current) {
@@ -87,6 +125,7 @@ const AskCopilotSection = ({ storeId }) => {
   const newChat = () => {
     stopStreaming();
     clearSessionId();
+    clearChatId();
     setMessages([]);
     setError("");
     setMessage("");
@@ -128,6 +167,7 @@ const AskCopilotSection = ({ storeId }) => {
       await streamCopilotResponse({
         storeId,
         message: question,
+        chatId,
         signal: controller.signal,
         onEvent: ({ event, payload }) => {
           if (event === "token") {

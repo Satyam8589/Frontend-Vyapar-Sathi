@@ -157,30 +157,21 @@ const AIDashboardPage = () => {
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900 md:text-5xl">
                 {store?.name || "Store"} Intelligence Dashboard
               </h1>
-              {/* <p className="mt-3 max-w-2xl text-sm font-semibold leading-relaxed text-slate-600">
-                Forecast demand, prioritize restocks, and review explainable inventory insights from recent store activity.
-              </p> */}
             </div>
-            {/* <div className="flex gap-3">
-              <button
-                onClick={() => router.push(`/storeDashboard/${storeId}`)}
-                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                Back To Inventory
-              </button>
-            </div> */}
           </div>
         </section>
 
-        <AIDashboardContent
-          storeId={storeId}
-          forecast={forecast}
-          restock={restock}
-          insights={insights}
-          summary={summary}
-          loadingState={loadingState}
-          errorState={errorState}
-        />
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <AIDashboardContent
+            storeId={storeId}
+            forecast={forecast}
+            restock={restock}
+            insights={insights}
+            summary={summary}
+            loadingState={loadingState}
+            errorState={errorState}
+          />
+        </div>
       </div>
     </main>
   );

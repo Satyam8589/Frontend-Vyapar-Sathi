@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Session ID management
+// Session ID management (legacy — kept for backwards compatibility)
 const SESSION_STORAGE_KEY = 'copilot_session_id';
 
 export function getSessionId() {
@@ -15,6 +15,23 @@ export function setSessionId(sessionId) {
 
 export function clearSessionId() {
   localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
+// Chat ID management (new — preferred over session_id)
+const CHAT_STORAGE_KEY = 'copilot_chat_id';
+
+export function getChatId() {
+  return localStorage.getItem(CHAT_STORAGE_KEY);
+}
+
+export function setChatId(chatId) {
+  if (chatId) {
+    localStorage.setItem(CHAT_STORAGE_KEY, chatId);
+  }
+}
+
+export function clearChatId() {
+  localStorage.removeItem(CHAT_STORAGE_KEY);
 }
 
 // Create axios instance with default config

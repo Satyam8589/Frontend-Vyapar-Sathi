@@ -1,5 +1,5 @@
-import { apiGet } from "@/servies/api";
-import { getSessionId, setSessionId } from "@/servies/api";
+import { apiGet, apiDelete } from "@/servies/api";
+import { getSessionId, setSessionId, setChatId, getChatId } from "@/servies/api";
 
 export const fetchForecast = async (storeId) => {
   const response = await apiGet(`/ai/${storeId}/forecast`);
@@ -26,17 +26,38 @@ export const fetchProductInsight = async (storeId, productId) => {
   return response?.data || null;
 };
 
+// ---------------------------------------------------------------------------
+// Chat history
+// ---------------------------------------------------------------------------
+
+export const fetchChatList = async (storeId) => {
+  const response = await apiGet(`/ai/${storeId}/chats`);
+  return response?.data || { chats: [], total: 0 };
+};
+
+export const fetchChatMessages = async (storeId, chatId) => {
+  const response = await apiGet(`/ai/${storeId}/chats/${chatId}`);
+  return response?.data || { chat_id: chatId, messages: [] };
+};
+
+export const deleteChat = async (storeId, chatId) => {
+  const response = await apiDelete(`/ai/${storeId}/chats/${chatId}`);
+  return response || { data: { deleted: false } };
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export const streamCopilotResponse = async ({
   storeId,
   message,
+  chatId,
   onEvent,
   signal,
 }) => {
   const token = localStorage.getItem("authToken");
   const sessionId = getSessionId();
+  const effectiveChatId = chatId || getChatId();
 
   const response = await fetch(`${API_BASE_URL}/ai/${storeId}/copilot/stream`, {
     method: "POST",
@@ -44,7 +65,7 @@ export const streamCopilotResponse = async ({
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message, session_id: sessionId }),
+    body: JSON.stringify({ message, session_id: sessionId, chat_id: effectiveChatId }),
     signal,
   });
 
@@ -84,8 +105,8 @@ export const streamCopilotResponse = async ({
       }
     }
 
-    if (event === "session" && payload?.sessionId) {
-      setSessionId(payload.sessionId);
+    if (event === "session" && payload?.chatId) {
+      setChatId(payload.chatId);
       return;
     }
 
