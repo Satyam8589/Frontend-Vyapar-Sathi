@@ -37,6 +37,28 @@ export const fetchTopProducts = async (storeId) => {
 };
 
 /**
+ * Helper to calculate growth percentage between current and previous values
+ */
+export const calculateGrowth = (current = 0, previous = 0) => {
+  if (previous === 0) {
+    if (current === 0) {
+      return { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" };
+    }
+    return { value: 100, isPositive: true, isNeutral: false, text: "↑ 100% from last month" };
+  }
+
+  const change = ((current - previous) / previous) * 100;
+  const rounded = Math.round(change);
+
+  if (rounded > 0) {
+    return { value: rounded, isPositive: true, isNeutral: false, text: `↑ ${rounded}% from last month` };
+  } else if (rounded < 0) {
+    return { value: Math.abs(rounded), isPositive: false, isNeutral: false, text: `↓ ${Math.abs(rounded)}% from last month` };
+  }
+  return { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" };
+};
+
+/**
  * Calculate sales metrics from bills data
  */
 export const calculateSalesMetrics = (bills = []) => {
@@ -44,24 +66,46 @@ export const calculateSalesMetrics = (bills = []) => {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(today.getDate() - 6);
+
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = monthStart;
+
   const yearStart = new Date(now.getFullYear(), 0, 1);
+  const nextYearStart = new Date(now.getFullYear() + 1, 0, 1);
 
   let dailySales = 0;
   let weeklySales = 0;
   let monthlySales = 0;
+  let lastMonthSales = 0;
   let yearlySales = 0;
+  let totalSales = 0;
+
   let totalOrders = bills.length;
-  const productMap = {};
+  let monthlyOrders = 0;
+  let lastMonthOrders = 0;
+
+  const allTimeProductMap = {};
+  const monthlyProductMap = {};
 
   bills.forEach((bill) => {
     const billDate = new Date(bill.completedAt || bill.updatedAt || bill.createdAt);
     const billAmount = Number(bill.totalAmount ?? bill.totalPrice ?? 0);
 
-    yearlySales += billAmount;
+    totalSales += billAmount;
 
-    if (billDate >= monthStart) {
+    if (billDate >= yearStart && billDate < nextYearStart) {
+      yearlySales += billAmount;
+    }
+
+    if (billDate >= monthStart && billDate < nextMonthStart) {
       monthlySales += billAmount;
+      monthlyOrders += 1;
+    } else if (billDate >= lastMonthStart && billDate < lastMonthEnd) {
+      lastMonthSales += billAmount;
+      lastMonthOrders += 1;
     }
 
     if (billDate >= sevenDaysAgo) {
@@ -76,25 +120,61 @@ export const calculateSalesMetrics = (bills = []) => {
     items.forEach((item) => {
       const productName = item.product?.name || item.nameSnapshot || "Unknown Product";
       const quantity = Number(item.quantity || 0);
-      productMap[productName] = (productMap[productName] || 0) + quantity;
+
+      allTimeProductMap[productName] = (allTimeProductMap[productName] || 0) + quantity;
+
+      if (billDate >= monthStart && billDate < nextMonthStart) {
+        monthlyProductMap[productName] = (monthlyProductMap[productName] || 0) + quantity;
+      }
     });
   });
 
-  const topProduct = Object.entries(productMap).reduce(
+  const salesGrowth = calculateGrowth(monthlySales, lastMonthSales);
+  const ordersGrowth = calculateGrowth(monthlyOrders, lastMonthOrders);
+
+  const currentAov = monthlyOrders > 0 ? monthlySales / monthlyOrders : 0;
+  const lastMonthAov = lastMonthOrders > 0 ? lastMonthSales / lastMonthOrders : 0;
+  const aovGrowth = calculateGrowth(currentAov, lastMonthAov);
+
+  const monthlyTop = Object.entries(monthlyProductMap).reduce(
     (max, [name, qty]) => (qty > max.qty ? { name, qty } : max),
     { name: "N/A", qty: 0 },
   );
+
+  const allTimeTop = Object.entries(allTimeProductMap).reduce(
+    (max, [name, qty]) => (qty > max.qty ? { name, qty } : max),
+    { name: "N/A", qty: 0 },
+  );
+
+  let topProduct = monthlyTop.name;
+  let topProductQty = monthlyTop.qty;
+  let topProductSubtitle = `${monthlyTop.qty} units sold this month`;
+
+  // Fallback to all-time top product if no sales recorded in current month yet
+  if (monthlyTop.qty === 0 && allTimeTop.qty > 0) {
+    topProduct = allTimeTop.name;
+    topProductQty = allTimeTop.qty;
+    topProductSubtitle = `${allTimeTop.qty} units sold (all-time)`;
+  } else if (monthlyTop.qty === 0 && allTimeTop.qty === 0) {
+    topProduct = "N/A";
+    topProductQty = 0;
+    topProductSubtitle = "0 units sold this month";
+  }
 
   return {
     dailySales,
     weeklySales,
     monthlySales,
     yearlySales,
-    totalSales: yearlySales,
+    totalSales,
     totalOrders,
-    averageOrderValue: totalOrders > 0 ? yearlySales / totalOrders : 0,
-    topProduct: topProduct.name,
-    topProductQty: topProduct.qty,
+    averageOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0,
+    topProduct,
+    topProductQty,
+    topProductSubtitle,
+    salesGrowth,
+    ordersGrowth,
+    aovGrowth,
   };
 };
 

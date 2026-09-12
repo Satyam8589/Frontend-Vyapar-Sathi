@@ -35,7 +35,7 @@ const ProductOverviewSection = ({
     );
   }
 
-  if (!productOverview || !selectedProduct) {
+  if (!productOverview) {
     return (
       <EmptyState
         title="Select a product"
@@ -43,6 +43,15 @@ const ProductOverviewSection = ({
       />
     );
   }
+
+  const productName =
+    productOverview?.product?.name ||
+    selectedProduct?.productName ||
+    "Selected Product";
+  const productCategory =
+    productOverview?.product?.category ||
+    selectedProduct?.category ||
+    "General";
 
   return (
     <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -52,13 +61,10 @@ const ProductOverviewSection = ({
             Product drill-down
           </p>
           <h3 className="mt-1 text-lg font-black tracking-tight text-slate-900 sm:mt-2 sm:text-2xl">
-            {productOverview?.product?.name || selectedProduct.productName}
+            {productName}
           </h3>
           <p className="mt-1 text-xs font-semibold text-slate-500 sm:mt-2 sm:text-sm">
-            {productOverview?.product?.category ||
-              selectedProduct.category ||
-              "General"}{" "}
-            • Stock{" "}
+            {productCategory} • Stock{" "}
             {Number(productOverview?.product?.currentStock || 0).toLocaleString(
               "en-IN",
             )}
