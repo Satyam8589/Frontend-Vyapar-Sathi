@@ -187,7 +187,8 @@ export const useAnalyticsDashboard = (storeId) => {
 
   const refresh = useCallback(() => {
     loadDashboard();
-  }, [loadDashboard]);
+    loadProductOverview();
+  }, [loadDashboard, loadProductOverview]);
 
   const selectedProduct = useMemo(() => {
     return topProducts.find((item) => String(item._id || item.productId) === String(selectedProductId)) || null;

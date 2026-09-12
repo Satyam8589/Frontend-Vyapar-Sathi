@@ -19,6 +19,11 @@ const OverviewPage = () => {
     totalOrders: 0,
     averageOrderValue: 0,
     topProduct: "N/A",
+    topProductQty: 0,
+    topProductSubtitle: "0 units sold this month",
+    salesGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+    ordersGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+    aovGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
   });
   const [chartData, setChartData] = useState({
     dailyBreakdown: [],
@@ -116,8 +121,16 @@ const OverviewPage = () => {
                 </svg>
               </div>
             </div>
-            <p className="text-xs text-green-600 font-medium">
-              ↑ 12% from last month
+            <p
+              className={`text-xs font-medium ${
+                salesData.salesGrowth?.isNeutral
+                  ? "text-gray-500"
+                  : salesData.salesGrowth?.isPositive
+                  ? "text-green-600"
+                  : "text-rose-600"
+              }`}
+            >
+              {salesData.salesGrowth?.text || "0% from last month"}
             </p>
           </div>
 
@@ -149,8 +162,16 @@ const OverviewPage = () => {
                 </svg>
               </div>
             </div>
-            <p className="text-xs text-green-600 font-medium">
-              ↑ 8% from last month
+            <p
+              className={`text-xs font-medium ${
+                salesData.ordersGrowth?.isNeutral
+                  ? "text-gray-500"
+                  : salesData.ordersGrowth?.isPositive
+                  ? "text-green-600"
+                  : "text-rose-600"
+              }`}
+            >
+              {salesData.ordersGrowth?.text || "0% from last month"}
             </p>
           </div>
 
@@ -181,8 +202,16 @@ const OverviewPage = () => {
                 </svg>
               </div>
             </div>
-            <p className="text-xs text-green-600 font-medium">
-              ↑ 5% from last month
+            <p
+              className={`text-xs font-medium ${
+                salesData.aovGrowth?.isNeutral
+                  ? "text-gray-500"
+                  : salesData.aovGrowth?.isPositive
+                  ? "text-green-600"
+                  : "text-rose-600"
+              }`}
+            >
+              {salesData.aovGrowth?.text || "0% from last month"}
             </p>
           </div>
 
@@ -213,7 +242,8 @@ const OverviewPage = () => {
               </div>
             </div>
             <p className="text-xs text-green-600 font-medium">
-              {salesData.topProductQty} units sold this month
+              {salesData.topProductSubtitle ||
+                `${salesData.topProductQty || 0} units sold this month`}
             </p>
           </div>
         </div>
