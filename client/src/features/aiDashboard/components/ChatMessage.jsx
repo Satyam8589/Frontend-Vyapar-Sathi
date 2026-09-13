@@ -726,7 +726,8 @@ export function ToolCallCard({
     status === "running"
       ? Loader2
       : status === "error"
-        CheckCircle2;
+      ? XCircle
+      : CheckCircle2;
 
 
   const statusColors = {

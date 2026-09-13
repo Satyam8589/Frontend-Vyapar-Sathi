@@ -82,6 +82,15 @@ export const streamCopilotResponse = async ({
   const reader = response.body.getReader();
   let buffer = "";
 
+  const parsePayload = (rawData) => {
+    if (!rawData) return {};
+    try {
+      return JSON.parse(rawData);
+    } catch {
+      return { text: rawData };
+    }
+  };
+
   const parseEventBlock = (block) => {
     const lines = block.split("\n");
     let event = "message";
@@ -96,14 +105,7 @@ export const streamCopilotResponse = async ({
     }
 
     const rawData = dataLines.join("\n");
-    let payload = {};
-    if (rawData) {
-      try {
-        payload = JSON.parse(rawData);
-      } catch {
-        payload = { text: rawData };
-      }
-    }
+    const payload = parsePayload(rawData);
 
     if (event === "session" && payload?.chatId) {
       setChatId(payload.chatId);

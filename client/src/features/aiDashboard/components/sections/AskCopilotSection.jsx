@@ -108,9 +108,38 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
   const messagesEndRef = useRef(null);
   const modalRef = useRef(null);
 
-  const scrollToBottom = useCallback((smooth = true) => {
+  // Accumulate the LLM's reasoning trace (tool calls + results) for the
+  // current assistant message so the user can see *why* the answer was
+  // produced, not just the answer itself.
+  const toolCallsRef = useRef([]);
+
+  const appendAssistantText = useCallback((assistantId, textChunk) => {
+    setMessages((prev) =>
+      prev.map((entry) =>
+        entry.id === assistantId
+          ? { ...entry, text: `${entry.text}${textChunk || ""}` }
+          : entry
+      )
+    );
+  }, []);
+
+  const upsertToolCall = useCallback((assistantId, toolCall) => {
+    setMessages((prev) =>
+      prev.map((entry) => {
+        if (entry.id !== assistantId) return entry;
+        const calls = entry.meta?.tool_calls || [];
+        const idx = calls.findIndex((c) => c.id === toolCall.id);
+        const next = idx >= 0
+          ? [...calls.slice(0, idx), toolCall, ...calls.slice(idx + 1)]
+          : [...calls, toolCall];
+        return { ...entry, meta: { ...entry.meta, tool_calls: next } };
+      })
+    );
+   }, []);
+
+  const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "end" });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, []);
 
@@ -157,27 +186,19 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
     };
   }, [chatId, storeId]);
 
-  const appendAssistantText = useCallback((assistantId, textChunk) => {
-    setMessages((prev) =>
-      prev.map((entry) =>
-        entry.id === assistantId
-          ? { ...entry, text: `${entry.text}${textChunk || ""}` }
-          : entry
-      )
-    );
-  }, []);
-
   const updateAssistantMeta = useCallback((assistantId, payload) => {
     setMessages((prev) =>
-      prev.map((entry) =>
-        entry.id === assistantId
-          ? {
-              ...entry,
-              meta: payload || null,
-              streaming: false,
-            }
-          : entry
-      )
+      prev.map((entry) => {
+        if (entry.id !== assistantId) return entry;
+        // Preserve the accumulated tool-call reasoning trace when the
+        // backend sends a final meta payload — don't let it wipe it out.
+        const existing = entry.meta?.tool_calls || [];
+        return {
+          ...entry,
+          meta: { ...(payload || {}), tool_calls: existing },
+          streaming: false,
+        };
+      })
     );
   }, []);
 
@@ -236,6 +257,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
       setError("");
       setLoading(true);
       setShowSuggestions(false);
+      toolCallsRef.current = [];
 
       const userId = `user-${Date.now()}`;
       const assistantId = `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -269,6 +291,17 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
           onEvent: ({ event, payload }) => {
             if (event === "token") {
               appendAssistantText(assistantId, payload?.text || "");
+              return;
+            }
+
+            if (event === "tool_call") {
+              // The backend streams the LLM's reasoning trace: which tool
+              // it decided to call, with what arguments, and what the
+              // tool returned. Surface this so the user can see *why*
+              // the answer was produced, not just the answer itself.
+              if (payload?.id) {
+                upsertToolCall(assistantId, payload);
+              }
               return;
             }
 
