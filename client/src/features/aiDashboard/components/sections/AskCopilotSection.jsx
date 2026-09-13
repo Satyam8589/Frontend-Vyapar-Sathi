@@ -94,7 +94,7 @@ const TOOL_ICONS = {
   get_store_insights: Lightbulb,
 };
 
-const AskCopilotSection = ({ storeId, chatId }) => {
+const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -269,6 +269,20 @@ const AskCopilotSection = ({ storeId, chatId }) => {
           onEvent: ({ event, payload }) => {
             if (event === "token") {
               appendAssistantText(assistantId, payload?.text || "");
+              return;
+            }
+
+            if (event === "session") {
+              // Backend created a new chat (or returned an existing one)
+              // along with a freshly generated title. Let the parent
+              // refresh the sidebar so the meaningful title replaces the
+              // "New Chat" placeholder.
+              if (payload?.chatId) {
+                onChatCreated?.();
+                if (payload?.title) {
+                  onTitleGenerated?.(payload.chatId, payload.title);
+                }
+              }
               return;
             }
 

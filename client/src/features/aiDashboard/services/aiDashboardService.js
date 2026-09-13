@@ -107,6 +107,9 @@ export const streamCopilotResponse = async ({
 
     if (event === "session" && payload?.chatId) {
       setChatId(payload.chatId);
+      // Also surface the generated title so the caller can refresh the
+      // sidebar without a separate round-trip.
+      onEvent?.({ event: "session", payload });
       return;
     }
 

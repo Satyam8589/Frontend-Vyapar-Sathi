@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchChatList, deleteChat } from "../services/aiDashboardService";
 import { getChatId, setChatId, clearChatId } from "@/servies/api";
 
-const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted }) => {
+const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted, refreshKey = 0 }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -15,7 +15,7 @@ const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted }) => {
       setLoading(false);
       return;
     }
-    try {
+try {
       setLoading(true);
       setError("");
       const data = await fetchChatList(storeId);
@@ -29,7 +29,8 @@ const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted }) => {
 
   useEffect(() => {
     loadChats();
-  }, [storeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId, refreshKey]);
 
   const handleSelectChat = (chat) => {
     setActiveChatId(chat.chat_id);

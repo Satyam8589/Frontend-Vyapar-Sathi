@@ -49,6 +49,9 @@ const AIDashboardContent = ({
   }
 
   const [chatKey, setChatKey] = useState(getChatId());
+  // Bumped whenever a new chat is created or titled, so the sidebar
+  // refetches its list and shows the generated title.
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
 
   const handleChatSelect = (chat) => {
     if (!chat) {
@@ -63,6 +66,18 @@ const AIDashboardContent = ({
     setChatKey(null);
   };
 
+  // When a new chat is created mid-stream, refresh the sidebar so the
+  // new chat appears with its generated title.
+  const handleChatCreated = () => {
+    setSidebarRefreshKey((k) => k + 1);
+  };
+
+  // When the backend generates a title for a new chat, refresh the
+  // sidebar list so the meaningful title replaces "New Chat".
+  const handleTitleGenerated = () => {
+    setSidebarRefreshKey((k) => k + 1);
+  };
+
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
       <div className="lg:w-72 lg:shrink-0">
@@ -70,6 +85,8 @@ const AIDashboardContent = ({
           storeId={storeId}
           onChatSelect={handleChatSelect}
           onChatDeleted={handleChatDeleted}
+          refreshKey={sidebarRefreshKey}
+          key={storeId}
         />
       </div>
 
@@ -78,6 +95,8 @@ const AIDashboardContent = ({
           storeId={storeId}
           chatId={chatKey}
           key={chatKey || "new-chat"}
+          onChatCreated={handleChatCreated}
+          onTitleGenerated={handleTitleGenerated}
         />
 
         <SummarySection
