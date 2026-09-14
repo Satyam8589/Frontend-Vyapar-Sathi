@@ -144,6 +144,22 @@ const icons = {
       <path d="M12 7v5l3 3" />
     </svg>
   ),
+  Logout: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  ),
 };
 
 function NavLink({ label, href, icon, active, onClick }) {
@@ -194,7 +210,7 @@ export default function StoreSidebarDrawer() {
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const storeId = params?.storeId;
   const { storeSidebarOpen, setStoreSidebarOpen } = useStorePageContext();
   const { currentStore } = useInventoryContext();
@@ -622,6 +638,45 @@ export default function StoreSidebarDrawer() {
             <span style={{ whiteSpace: "nowrap" }}>Settings</span>
           </button>
         </Link>
+
+        {/* Logout Button */}
+        <button
+          onClick={async () => {
+            handleNavClick();
+            await logout();
+          }}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "6.5px 11px",
+            borderRadius: 10,
+            border: "none",
+            background: "transparent",
+            color: "#f87171",
+            fontWeight: 400,
+            fontSize: 13.5,
+            fontFamily: "'Segoe UI', sans-serif",
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "background 0.13s, color 0.13s",
+            marginTop: 2,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+            e.currentTarget.style.color = "#fca5a5";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "#f87171";
+          }}
+        >
+          <span style={{ opacity: 0.85, flexShrink: 0, display: "flex" }}>
+            {icons.Logout}
+          </span>
+          <span style={{ whiteSpace: "nowrap" }}>Logout</span>
+        </button>
       </div>
     </>
   );
