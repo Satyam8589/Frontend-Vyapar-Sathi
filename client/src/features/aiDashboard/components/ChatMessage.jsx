@@ -308,13 +308,29 @@ function ResultTable({ rows }) {
   return (
     <div
       className="
+        w-full
+        min-w-0
+        max-w-full
         overflow-hidden
         rounded-lg
         border
         border-slate-200
       "
     >
-      <div className="max-h-80 overflow-auto">
+      {/*
+        The scroll box must be width-constrained by its parent,
+        never sized by the table. `min-w-0` on every ancestor
+        flex item is what makes this hold.
+      */}
+      <div
+        className="
+          max-h-80
+          w-full
+          overflow-x-auto
+          overflow-y-auto
+          overscroll-x-contain
+        "
+      >
         <table className="w-full border-collapse text-xs">
           <thead className="sticky top-0 bg-slate-50">
             <tr>
@@ -344,7 +360,14 @@ function ResultTable({ rows }) {
                 {columns.map((column) => (
                   <td
                     key={column}
+                    title={
+                      row[column] && typeof row[column] === "object"
+                        ? undefined
+                        : formatValue(row[column])
+                    }
                     className="
+                      max-w-[240px]
+                      truncate
                       whitespace-nowrap
                       px-3
                       py-2
@@ -384,6 +407,8 @@ function ScalarGrid({ entries }) {
     <dl
       className="
         grid
+        w-full
+        min-w-0
         grid-cols-1
         gap-x-6
         gap-y-2
@@ -403,9 +428,11 @@ function ScalarGrid({ entries }) {
             pb-1.5
           "
         >
-          <dt className="text-xs text-slate-500">{formatKey(key)}</dt>
+          <dt className="flex-shrink-0 text-xs text-slate-500">
+            {formatKey(key)}
+          </dt>
 
-          <dd className="text-xs font-medium text-slate-800">
+          <dd className="min-w-0 break-words text-right text-xs font-medium text-slate-800">
             <ValueCell value={value} />
           </dd>
         </div>
@@ -722,6 +749,9 @@ function CodeBlock({ children, className }) {
       className="
         relative
         my-4
+        w-full
+        min-w-0
+        max-w-full
         overflow-hidden
         rounded-xl
         border
@@ -895,7 +925,19 @@ function MarkdownRenderer({ content, className = "" }) {
           },
 
           table: ({ children }) => (
-            <div className="my-4 overflow-x-auto rounded-lg border border-slate-200">
+            <div
+              className="
+                my-4
+                w-full
+                min-w-0
+                max-w-full
+                overflow-x-auto
+                overscroll-x-contain
+                rounded-lg
+                border
+                border-slate-200
+              "
+            >
               <table className="w-full border-collapse text-sm">{children}</table>
             </div>
           ),
@@ -1039,6 +1081,9 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
     <details
       className="
         group
+        w-full
+        min-w-0
+        max-w-full
         overflow-hidden
         rounded-xl
         border
@@ -1121,7 +1166,7 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
         />
       </summary>
 
-      <div className="border-t border-slate-200 bg-slate-50/60 p-3">
+      <div className="w-full min-w-0 border-t border-slate-200 bg-slate-50/60 p-3">
         {result !== undefined && result !== null ? (
           <ToolResultView result={result} />
         ) : (
@@ -1160,7 +1205,7 @@ function AgentTrace({ steps, toolCalls, isStreaming }) {
     : "Context loaded";
 
   return (
-    <div className="mb-3">
+    <div className="mb-3 w-full min-w-0">
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
@@ -1196,7 +1241,7 @@ function AgentTrace({ steps, toolCalls, isStreaming }) {
       </button>
 
       {expanded && (
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 w-full min-w-0 space-y-2">
           {steps.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {steps.map((step, index) => {
@@ -1297,20 +1342,41 @@ export function ChatMessage({
 
   return (
     <div
+      /*
+        `contain: inline-size` is the real fix for the stretched
+        layout. `min-w-0` only works if EVERY ancestor also sets
+        it — one flex/grid ancestor with the default
+        `min-width: auto` anywhere up the tree and a wide table
+        pushes the whole page sideways again.
+
+        Inline-size containment makes this box's intrinsic width
+        contribution zero, so no ancestor can ever be widened by
+        what's inside a message. The box takes its width from the
+        parent, full stop.
+      */
+      style={{ contain: "inline-size" }}
       className={`
         flex
         w-full
+        min-w-0
+        max-w-full
         gap-3
         ${isUser ? "justify-end" : "justify-start"}
       `}
     >
       {!isUser && <AIAvatar streaming={isStreaming} />}
 
+      {/*
+        Assistant messages take the full remaining width so wide
+        tool tables have room to scroll in. User bubbles stay
+        narrow. `overflow-hidden` is the hard stop: anything wider
+        than this column has to scroll inside its own box.
+      */}
       <div
         className={`
           min-w-0
-          max-w-[85%]
-          ${isUser ? "order-first" : ""}
+          overflow-hidden
+          ${isUser ? "order-first max-w-[85%]" : "w-0 max-w-full flex-1"}
         `}
       >
         {isUser ? (
@@ -1329,7 +1395,7 @@ export function ChatMessage({
             </p>
           </div>
         ) : (
-          <div className="px-1">
+          <div className="w-full min-w-0 px-1">
             {/* REASONING TRACE — always above the answer */}
 
             <AgentTrace
