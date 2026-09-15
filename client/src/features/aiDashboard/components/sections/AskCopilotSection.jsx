@@ -500,7 +500,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
   };
 
   return (
-    <section className="h-[750px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <section className="h-[650px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-2">
@@ -589,7 +589,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
           )}
         </div>
 
-        <div className="border-t border-slate-100 bg-white/80 backdrop-blur-sm p-4">
+        <div className="border-t border-slate-100 bg-white/80 backdrop-blur-sm p-1">
           <div className="max-w-4xl mx-auto">
             {/* {messages.length > 0 && (
               <div className="mb-3 flex items-center justify-between">
@@ -608,7 +608,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
             )} */}
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-indigo-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
-              <div className="flex items-end gap-2 p-2">
+              <div className="flex items-end gap-2 p-1 mx-1">
                 <button
                   type="button"
                   onClick={() => setShowAttachmentModal(true)}
