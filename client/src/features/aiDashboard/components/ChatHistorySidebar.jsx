@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchChatList, deleteChat } from "../services/aiDashboardService";
 import { getChatId, setChatId, clearChatId } from "@/servies/api";
 
-const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted, refreshKey = 0 }) => {
+const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted, refreshKey = 0, open = false, onClose }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -76,70 +76,99 @@ try {
     return d.toLocaleDateString();
   };
 
-  return (
-    <aside className="w-72 shrink-0 border-r border-slate-200 bg-slate-50/80 flex flex-col h-full">
-      <div className="p-4 border-b border-slate-200">
-        <button
-          onClick={handleNewChat}
-          className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
-        >
-          + New Chat
-        </button>
-      </div>
+return (
+    <>
+      {/* Backdrop overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {loading && (
-          <div className="text-center text-xs text-slate-400 py-6">
-            Loading chats...
-          </div>
-        )}
+      <aside
+        className={`fixed top-0 right-0 z-50 flex h-full w-72 max-w-[80vw] shrink-0 flex-col border-l border-slate-200 bg-slate-50/95 shadow-xl transition-transform duration-300 ease-out ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <h2 className="text-sm font-semibold text-slate-800">Chat History</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+            aria-label="Close chat history"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        {!loading && error && (
-          <div className="text-xs text-rose-600 bg-rose-50 rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        <div className="p-4 border-b border-slate-200">
+          <button
+            onClick={handleNewChat}
+            className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+          >
+            + New Chat
+          </button>
+        </div>
 
-        {!loading && !error && chats.length === 0 && (
-          <div className="text-center text-xs text-slate-400 py-6">
-            No chats yet. Start a conversation!
-          </div>
-        )}
-
-        {!loading &&
-          chats.map((chat) => (
-            <div
-              key={chat.chat_id}
-              onClick={() => handleSelectChat(chat)}
-              className={`group relative rounded-xl p-3 cursor-pointer transition ${
-                activeChatId === chat.chat_id
-                  ? "bg-white shadow-sm border border-slate-200"
-                  : "hover:bg-slate-100"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-slate-800 truncate">
-                    {chat.title || "New Chat"}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {formatDate(chat.updated_at)} · {chat.message_count} msgs
-                  </p>
-                </div>
-                <button
-                  onClick={(e) => handleDeleteChat(chat, e)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 transition p-1"
-                  title="Delete chat"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {loading && (
+            <div className="text-center text-xs text-slate-400 py-6">
+              Loading chats...
             </div>
-          ))}
-      </div>
-    </aside>
+          )}
+
+          {!loading && error && (
+            <div className="text-xs text-rose-600 bg-rose-50 rounded-lg p-3">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && chats.length === 0 && (
+            <div className="text-center text-xs text-slate-400 py-6">
+              No chats yet. Start a conversation!
+            </div>
+          )}
+
+          {!loading &&
+            chats.map((chat) => (
+              <div
+                key={chat.chat_id}
+                onClick={() => handleSelectChat(chat)}
+                className={`group relative rounded-xl p-3 cursor-pointer transition ${
+                  activeChatId === chat.chat_id
+                    ? "bg-white shadow-sm border border-slate-200"
+                    : "hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800 truncate">
+                      {chat.title || "New Chat"}
+                    </p>
+                    {/* <p className="text-xs text-slate-400 mt-0.5">
+                      {formatDate(chat.updated_at)} · {chat.message_count} msgs
+                    </p> */}
+                  </div>
+                  <button
+                    onClick={(e) => handleDeleteChat(chat, e)}
+                    className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 transition p-1"
+                    title="Delete chat"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      </aside>
+    </>
   );
 };
 

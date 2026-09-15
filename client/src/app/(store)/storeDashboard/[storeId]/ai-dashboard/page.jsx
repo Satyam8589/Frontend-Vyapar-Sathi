@@ -148,7 +148,7 @@ const AIDashboardPage = () => {
   return (
     <main className="min-h-screen px-4 py-6 md:px-6">
       <div className="mx-auto max-w-7xl">
-        <section className="mb-6 rounded-[2.5rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">
+        {/* <section className="mb-6 rounded-[2.5rem] border border-slate-200 bg-white px-6 py-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.35em] text-indigo-600">
@@ -159,7 +159,7 @@ const AIDashboardPage = () => {
               </h1>
             </div>
           </div>
-        </section>
+        </section> */}
 
         <div className="flex flex-col gap-6 lg:flex-row">
           <AIDashboardContent

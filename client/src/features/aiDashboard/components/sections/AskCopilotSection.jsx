@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { streamCopilotResponse, fetchChatMessages } from "../../services/aiDashboardService";
 import { clearSessionId, clearChatId } from "@/servies/api";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
+import AttachmentModal from "../AttachmentModal";
 import {
   Send,
   X,
@@ -64,17 +65,51 @@ import {
   ArrowRight,
   XCircle,
   BarChart2,
-  File,
   Upload,
-  X as XIcon,
   Camera,
 } from "lucide-react";
 
 const SUGGESTED_PROMPTS = [
-  { text: "Which products should I restock first this week and why?", icon: "restock" },
-  { text: "What is the highest stockout risk in the next 7 days?", icon: "forecast" },
-  { text: "Which anomaly needs immediate action today?", icon: "anomaly" },
-  { text: "Give me 3 actions to improve inventory health this week.", icon: "action" },
+  {
+    text: "Which products should I restock first this week and why?",
+    icon: "restock",
+    label: "Restock",
+    gradient: "from-rose-500 to-orange-500",
+    bg: "bg-rose-50",
+    hoverBg: "group-hover:bg-rose-100",
+    iconColor: "text-rose-600",
+    ring: "group-hover:ring-rose-200",
+  },
+  {
+    text: "What is the highest stockout risk in the next 7 days?",
+    icon: "forecast",
+    label: "Forecast",
+    gradient: "from-indigo-500 to-purple-500",
+    bg: "bg-indigo-50",
+    hoverBg: "group-hover:bg-indigo-100",
+    iconColor: "text-indigo-600",
+    ring: "group-hover:ring-indigo-200",
+  },
+  {
+    text: "Which anomaly needs immediate action today?",
+    icon: "anomaly",
+    label: "Alert",
+    gradient: "from-amber-400 to-yellow-500",
+    bg: "bg-amber-50",
+    hoverBg: "group-hover:bg-amber-100",
+    iconColor: "text-amber-600",
+    ring: "group-hover:ring-amber-200",
+  },
+  {
+    text: "Give me 3 actions to improve inventory health this week.",
+    icon: "action",
+    label: "Actions",
+    gradient: "from-emerald-500 to-teal-500",
+    bg: "bg-emerald-50",
+    hoverBg: "group-hover:bg-emerald-100",
+    iconColor: "text-emerald-600",
+    ring: "group-hover:ring-emerald-200",
+  },
 ];
 
 const ICON_COMPONENTS = {
@@ -94,7 +129,7 @@ const TOOL_ICONS = {
   get_store_insights: Lightbulb,
 };
 
-const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated }) => {
+const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, onToggleSidebar }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -435,45 +470,100 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
         type="button"
         disabled={disabled || loading}
         onClick={() => askCopilot(prompt.text)}
-        className="group flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left transition-all hover:border-slate-300 hover:shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="group relative flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-transparent disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <div className="flex-shrink-0 p-2 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-slate-200 transition-colors">
+        <div
+          className={`flex-shrink-0 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${prompt.gradient} text-white shadow-sm transition-all ${prompt.ring} ring-1 ring-transparent`}
+        >
           <Icon className="h-5 w-5" />
         </div>
-        <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">{prompt.text}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              {prompt.label}
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 truncate">
+            {prompt.text}
+          </p>
+        </div>
+        <svg
+          className="h-4 w-4 flex-shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+        </svg>
       </button>
     );
   };
 
   return (
-    <section className="h-[600px] flex flex-col rounded-[2rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <section className="h-[750px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+              <Bot className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-800 leading-tight">Vyapar Sathi</h2>
+              <p className="text-[10px] text-slate-400 leading-tight">AI Copilot</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+<button
+            type="button"
+            onClick={newChat}
+            className="group inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-slate-700 hover:to-slate-800 hover:shadow transition"
+            title="New Chat"
+          >
+            <Plus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
+            <span className="hidden sm:inline">New</span>
+          </button>
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="group inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-indigo-400 hover:to-purple-500 hover:shadow transition"
+            title="Chat History"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">History</span>
+          </button>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {!messages.length && !loading ? (
             <div className="flex h-full flex-col items-center justify-center gap-6 px-6 text-center">
               <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center mx-auto">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 flex items-center justify-center mx-auto shadow-lg shadow-slate-300">
                   <Bot className="h-10 w-10 text-white" />
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border-2 border-white">
-                  <Sparkles className="h-3.5 w-3.5 text-slate-600" />
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center border-2 border-white shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5 text-white" />
                 </div>
               </div>
               <div className="space-y-2 max-w-md">
-                <h2 className="text-2xl font-bold text-slate-800">Ask Vyapar Sathi</h2>
-                <p className="text-slate-500 leading-relaxed">
-                  Get instant insights on inventory, forecasts, restocking, and anomalies.
-                  Your AI copilot analyzes real-time store data to help you make smarter decisions.
-                </p>
+                <h2 className="text-3xl font-black tracking-tight">
+                  <span className="bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-700 bg-clip-text text-transparent">
+                    Ask Vyapar Sathi
+                  </span>
+                </h2>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+              <div className="flex flex-col gap-3 w-full max-w-md">
                 {SUGGESTED_PROMPTS.map((prompt) => (
                   <SuggestionChip key={prompt.text} prompt={prompt} icon={prompt.icon} disabled={loading} />
                 ))}
               </div>
-              <p className="text-xs text-slate-400">
-                Press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Shift+Enter</kbd> for new line
-              </p>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Enter</kbd>
+                <span>to send</span>
+                <span className="text-slate-300">·</span>
+                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Shift+Enter</kbd>
+                <span>for new line</span>
+              </div>
             </div>
           ) : (
             <>
@@ -488,11 +578,11 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
                     onFeedback={handleFeedback}
                   />
                 ))}
-                {loading && messages.length > 0 && (
-                  <div className="flex justify-center py-4" ref={messagesEndRef}>
-                    <ThinkingIndicator />
-                  </div>
-                )}
+                {/* {loading && messages.length > 0 && (
+                  // <div className="flex justify-center py-4" ref={messagesEndRef}>
+                  //   <ThinkingIndicator />
+                  // </div>
+                )} */}
                 <div ref={messagesEndRef} />
               </div>
             </>
@@ -501,7 +591,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
 
         <div className="border-t border-slate-100 bg-white/80 backdrop-blur-sm p-4">
           <div className="max-w-4xl mx-auto">
-            {messages.length > 0 && (
+            {/* {messages.length > 0 && (
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-400">
                   {messages.filter((m) => m.role === "user").length} messages in this chat
@@ -515,17 +605,18 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
                   New Chat
                 </button>
               </div>
-            )}
+            )} */}
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-slate-300 focus-within:shadow-md">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-indigo-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
               <div className="flex items-end gap-2 p-2">
                 <button
                   type="button"
                   onClick={() => setShowAttachmentModal(true)}
-                  className="flex-shrink-0 h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition"
+                  className="group flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-sm hover:from-cyan-400 hover:to-blue-500 hover:shadow-md transition flex items-center justify-center"
                   aria-label="Add attachment"
+                  title="Add attachment"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Paperclip className="h-5 w-5 transition-transform group-hover:rotate-12" />
                 </button>
 
                 <textarea
@@ -548,18 +639,20 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
                   <button
                     type="button"
                     onClick={stopStreaming}
-                    className="flex-shrink-0 h-10 w-10 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition flex items-center justify-center"
+                    className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-sm hover:from-rose-400 hover:to-red-500 hover:shadow-md transition flex items-center justify-center"
                     aria-label="Stop generating"
+                    title="Stop generating"
                   >
-                    <X className="h-5 w-5" />
+                    <Square className="h-4 w-4" />
                   </button>
                 ) : (
                   <button
                     type="button"
                     disabled={!String(message).trim()}
                     onClick={() => askCopilot()}
-                    className="flex-shrink-0 h-10 w-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-slate-900 transition flex items-center justify-center"
+                    className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-sm hover:from-slate-700 hover:to-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:from-slate-800 disabled:hover:to-slate-900 hover:shadow-md transition flex items-center justify-center"
                     aria-label="Send message"
+                    title="Send message"
                   >
                     <Send className="h-5 w-5" />
                   </button>
@@ -568,68 +661,10 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated })
             </div>
 
             {showAttachmentModal && (
-              <div
-                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-                onClick={closeAttachmentModal}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Add attachment"
-              >
-                <div
-                  className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-                  onClick={closeAttachmentModal}
-                />
-                <div
-                  ref={modalRef}
-                  className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden transform transition-all duration-200 ease-out"
-                  style={{ opacity: 1, transform: "translateY(0)" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                    <h3 className="text-sm font-semibold text-slate-800">Add Attachment</h3>
-                    <button
-                      type="button"
-                      onClick={closeAttachmentModal}
-                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
-                      aria-label="Close"
-                    >
-                      <XIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                  <div className="p-2 space-y-1">
-                    <button
-                      type="button"
-                      onClick={() => handleAttachmentSelect("file")}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition"
-                    >
-                      <div className="flex-shrink-0 p-2 rounded-lg bg-blue-100 text-blue-600">
-                        <File className="h-5 w-5" />
-                      </div>
-                      <span className="text-sm font-medium text-slate-700">Upload File</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAttachmentSelect("image")}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition"
-                    >
-                      <div className="flex-shrink-0 p-2 rounded-lg bg-green-100 text-green-600">
-                        <Image className="h-5 w-5" />
-                      </div>
-                      <span className="text-sm font-medium text-slate-700">Upload Image</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAttachmentSelect("camera")}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-50 transition"
-                    >
-                      <div className="flex-shrink-0 p-2 rounded-lg bg-purple-100 text-purple-600">
-                        <Camera className="h-5 w-5" />
-                      </div>
-                      <span className="text-sm font-medium text-slate-700">Take Photo</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <AttachmentModal
+                onClose={closeAttachmentModal}
+                onSelect={handleAttachmentSelect}
+              />
             )}
 
             {error && (

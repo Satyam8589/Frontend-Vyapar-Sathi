@@ -24,10 +24,12 @@ const AIDashboardContent = ({
 
   if (allLoading) {
     return (
-      <EmptyState
-        title="Loading AI dashboard"
-        description="Generating forecasts, restock guidance, and inventory insights."
-      />
+      <div className="flex flex-col gap-8 lg:flex-row">
+        <EmptyState
+          title="Loading AI dashboard"
+          description="Generating forecasts, restock guidance, and inventory insights."
+        />
+      </div>
     );
   }
 
@@ -49,6 +51,7 @@ const AIDashboardContent = ({
   }
 
   const [chatKey, setChatKey] = useState(getChatId());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   // Bumped whenever a new chat is created or titled, so the sidebar
   // refetches its list and shows the generated title.
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
@@ -60,6 +63,7 @@ const AIDashboardContent = ({
     }
     setChatId(chat.chat_id);
     setChatKey(chat.chat_id);
+    setSidebarOpen(false);
   };
 
   const handleChatDeleted = () => {
@@ -80,16 +84,6 @@ const AIDashboardContent = ({
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="lg:w-72 lg:shrink-0">
-        <ChatHistorySidebar
-          storeId={storeId}
-          onChatSelect={handleChatSelect}
-          onChatDeleted={handleChatDeleted}
-          refreshKey={sidebarRefreshKey}
-          key={storeId}
-        />
-      </div>
-
       <div className="min-w-0 flex-1 space-y-8">
         <AskCopilotSection
           storeId={storeId}
@@ -97,14 +91,25 @@ const AIDashboardContent = ({
           key={chatKey || "new-chat"}
           onChatCreated={handleChatCreated}
           onTitleGenerated={handleTitleGenerated}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
 
-        <SummarySection
+        <ChatHistorySidebar
+          storeId={storeId}
+          onChatSelect={handleChatSelect}
+          onChatDeleted={handleChatDeleted}
+          refreshKey={sidebarRefreshKey}
+          key={storeId}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+
+        {/* <SummarySection
           storeId={storeId}
           summary={summary}
           loading={loadingState.summary}
           error={errorState.summary}
-        />
+        /> */}
 
         <ForecastSection
           forecast={forecast}
