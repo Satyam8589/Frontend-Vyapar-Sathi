@@ -500,7 +500,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
   };
 
   return (
-    <section className="h-[650px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <section className="h-[700px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
           <div className="flex items-center gap-2">
