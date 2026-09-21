@@ -109,8 +109,98 @@ export const streamCopilotResponse = async ({
 
     if (event === "session" && payload?.chatId) {
       setChatId(payload.chatId);
-      // Also surface the generated title so the caller can refresh the
-      // sidebar without a separate round-trip.
+      onEvent?.({ event: "session", payload });
+      return;
+    }
+
+    onEvent?.({ event, payload });
+  };
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        if (part.trim()) {
+          parseEventBlock(part);
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      parseEventBlock(buffer);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+};
+
+export const streamClarifyResponse = async ({
+  storeId,
+  chatId,
+  answer,
+  onEvent,
+  signal,
+}) => {
+  const token = localStorage.getItem("authToken");
+
+  const response = await fetch(`${API_BASE_URL}/ai/${storeId}/clarify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ chat_id: chatId, answer }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(errorText || `Clarify failed with status ${response.status}`);
+  }
+
+  if (!response.body) {
+    throw new Error("Streaming is not supported by this browser.");
+  }
+
+  const decoder = new TextDecoder("utf-8");
+  const reader = response.body.getReader();
+  let buffer = "";
+
+  const parsePayload = (rawData) => {
+    if (!rawData) return {};
+    try {
+      return JSON.parse(rawData);
+    } catch {
+      return { text: rawData };
+    }
+  };
+
+  const parseEventBlock = (block) => {
+    const lines = block.split("\n");
+    let event = "message";
+    const dataLines = [];
+
+    for (const line of lines) {
+      if (line.startsWith("event:")) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        dataLines.push(line.slice(5).trim());
+      }
+    }
+
+    const rawData = dataLines.join("\n");
+    const payload = parsePayload(rawData);
+
+    if (event === "session" && payload?.chatId) {
+      setChatId(payload.chatId);
       onEvent?.({ event: "session", payload });
       return;
     }

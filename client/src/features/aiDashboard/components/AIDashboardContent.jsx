@@ -88,7 +88,10 @@ const AIDashboardContent = ({
         <AskCopilotSection
           storeId={storeId}
           chatId={chatKey}
-          key={chatKey || "new-chat"}
+          onSession={(id) => {
+            setChatId(id);
+            setChatKey(id);
+          }}
           onChatCreated={handleChatCreated}
           onTitleGenerated={handleTitleGenerated}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}

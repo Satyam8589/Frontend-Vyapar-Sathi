@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { streamCopilotResponse, fetchChatMessages } from "../../services/aiDashboardService";
-import { clearSessionId, clearChatId } from "@/servies/api";
+import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from "../../services/aiDashboardService";
+import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
 import AttachmentModal from "../AttachmentModal";
+import ClarificationBanner from "../ClarificationBanner";
 import {
   Send,
   X,
@@ -129,7 +130,7 @@ const TOOL_ICONS = {
   get_store_insights: Lightbulb,
 };
 
-const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, onToggleSidebar }) => {
+const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, onToggleSidebar, onSession }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -137,6 +138,13 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isComposing, setIsComposing] = useState(false);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const [clarification, setClarification] = useState({
+    isOpen: false,
+    question: "",
+    chatId: null,
+    threadId: null,
+    isSubmitting: false,
+  });
   const abortRef = useRef(null);
   const textareaRef = useRef(null);
   const endRef = useRef(null);
@@ -280,6 +288,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
     setMessage("");
     setShowSuggestions(true);
     resetTextareaHeight();
+    setClarification((prev) => ({ ...prev, isOpen: false }));
   }, [stopStreaming, resetTextareaHeight]);
 
   const askCopilot = useCallback(
@@ -368,6 +377,21 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
               setLoading(false);
               abortRef.current = null;
             }
+
+            if (event === "clarification") {
+              if (payload?.chatId) {
+                onSession?.(payload.chatId);
+              }
+              setLoading(false);
+              abortRef.current = null;
+              setClarification({
+                isOpen: true,
+                question: payload?.question || "I need more information to help you.",
+                chatId: payload?.chatId || chatId,
+                threadId: payload?.threadId || null,
+                isSubmitting: false,
+              });
+            }
           },
         });
       } catch (streamError) {
@@ -378,7 +402,106 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
         abortRef.current = null;
       }
     },
-    [message, storeId, chatId, appendAssistantText, updateAssistantMeta, updateAssistantError, resetTextareaHeight]
+    [message, storeId, chatId, appendAssistantText, updateAssistantMeta, updateAssistantError, resetTextareaHeight, onSession]
+  );
+
+  const handleClarificationSubmit = useCallback(
+    async (answer) => {
+      if (!answer || !storeId || !chatId) return;
+
+      setClarification((prev) => ({ ...prev, isSubmitting: true }));
+
+      const userId = `user-${Date.now()}`;
+      const assistantId = `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: userId,
+          role: "user",
+          text: answer,
+          timestamp: Date.now(),
+        },
+        {
+          id: assistantId,
+          role: "assistant",
+          text: "",
+          streaming: true,
+          meta: null,
+          error: "",
+          timestamp: Date.now() + 1,
+        },
+      ]);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        await streamClarifyResponse({
+          storeId,
+          chatId,
+          answer,
+          signal: controller.signal,
+          onEvent: ({ event, payload }) => {
+            if (event === "token") {
+              appendAssistantText(assistantId, payload?.text || "");
+              return;
+            }
+            if (event === "tool_call") {
+              if (payload?.id) {
+                upsertToolCall(assistantId, payload);
+              }
+              return;
+            }
+            if (event === "session") {
+              if (payload?.chatId) {
+                onChatCreated?.();
+                if (payload?.title) {
+                  onTitleGenerated?.(payload.chatId, payload.title);
+                }
+              }
+              return;
+            }
+            if (event === "done") {
+              updateAssistantMeta(assistantId, payload || null);
+              setLoading(false);
+              abortRef.current = null;
+              setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
+              return;
+            }
+            if (event === "error") {
+              const errorMessage = payload?.message || "Clarify stream failed.";
+              setError(errorMessage);
+              updateAssistantError(assistantId, errorMessage);
+              setLoading(false);
+              abortRef.current = null;
+              setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
+              return;
+            }
+            if (event === "clarification") {
+              updateAssistantMeta(assistantId, payload || null);
+              setLoading(false);
+              abortRef.current = null;
+              setClarification({
+                isOpen: true,
+                question: payload?.question || "I need more information to help you.",
+                chatId: payload?.chatId || chatId,
+                threadId: payload?.threadId || null,
+                isSubmitting: false,
+              });
+              return;
+            }
+          },
+        });
+      } catch (streamError) {
+        const errorMessage = streamError?.message || "Unable to stream clarification response.";
+        setError(errorMessage);
+        setLoading(false);
+        abortRef.current = null;
+        setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
+      }
+    },
+    [storeId, chatId, appendAssistantText, updateAssistantMeta, upsertToolCall, onChatCreated, onTitleGenerated, updateAssistantError]
   );
 
   const handleKeyDown = useCallback(
@@ -590,24 +713,17 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
         </div>
 
         <div className="border-t border-slate-100 bg-white/80 backdrop-blur-sm p-1">
-          <div className="max-w-4xl mx-auto">
-            {/* {messages.length > 0 && (
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400">
-                  {messages.filter((m) => m.role === "user").length} messages in this chat
-                </span>
-                <button
-                  type="button"
-                  onClick={newChat}
-                  className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:border-slate-300 transition"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  New Chat
-                </button>
-              </div>
-            )} */}
+            <div className="max-w-4xl mx-auto">
+              {clarification.isOpen && (
+                <ClarificationBanner
+                  question={clarification.question}
+                  isSubmitting={clarification.isSubmitting}
+                  onSubmit={handleClarificationSubmit}
+                  onDismiss={() => setClarification((prev) => ({ ...prev, isOpen: false }))}
+                />
+              )}
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-indigo-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-indigo-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
               <div className="flex items-end gap-2 p-1 mx-1">
                 <button
                   type="button"
