@@ -12,7 +12,6 @@ import {
   ManualProductModal,
   BillPreviewModal,
   BillingHeader,
-  BillingActions,
   BillHistory,
   BillingSyncIndicator,
 } from "@/features/InventoryBilling/components";
@@ -48,26 +47,20 @@ const BillingContent = () => {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Input & Products */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Barcode Scanner Input */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Top row: let the two active cards use the full available width. */}
+          <div className="grid grid-cols-1 gap-6 lg:col-span-3 lg:grid-cols-2">
             <BarcodeInput />
-
-            {/* Billed Products List - Hidden on Mobile */}
-            {!isMobile && <BilledProductsList />}
+            {!isMobile && <ManualProductModal inline />}
           </div>
 
-          {/* Right Column - Actions & Total (Hidden on Mobile) */}
+          {/* Bottom row: current bill and payment summary. */}
           {!isMobile && (
-            <div className="space-y-6">
-              {/* Quick Actions */}
-              <BillingActions />
-
-              {/* Billing Total & Payment */}
-              <BillingTotal />
+            <div className="lg:col-span-2">
+              <BilledProductsList />
             </div>
           )}
+          {!isMobile && <BillingTotal />}
         </div>
 
 

@@ -43,6 +43,7 @@ export const BillingProvider = ({ children }) => {
   const [scannedBarcode, setScannedBarcode] = useState("");
   const [storeProducts, setStoreProducts] = useState([]);
   const [lastBillData, setLastBillData] = useState(null);
+  const [manualProductOpen, setManualProductOpen] = useState(false);
 
   // Real-time sync states
   const [syncEnabled, setSyncEnabled] = useState(false);
@@ -580,6 +581,8 @@ export const BillingProvider = ({ children }) => {
       scannedBarcode,
       storeProducts,
       lastBillData,
+      manualProductOpen,
+      setManualProductOpen,
       // Real-time sync
       syncEnabled,
       syncStatus,
@@ -610,6 +613,7 @@ export const BillingProvider = ({ children }) => {
       scannedBarcode,
       storeProducts,
       lastBillData,
+      manualProductOpen,
       syncEnabled,
       syncStatus,
       sessionId,

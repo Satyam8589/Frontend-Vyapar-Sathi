@@ -16,7 +16,7 @@ export const getProductByBarcode = async (barcode, storeId) => {
 // Fetch product by manual search (name/ID)
 export const searchProductInStore = async (searchTerm, storeId) => {
   const response = await apiGet(
-    `/product/search?query=${searchTerm}&storeId=${storeId}`,
+    `/product/search?query=${encodeURIComponent(searchTerm)}&storeId=${encodeURIComponent(storeId)}`,
   );
   return response.data;
 };
