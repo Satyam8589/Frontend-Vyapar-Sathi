@@ -1,9 +1,9 @@
 "use client";
 
 import { useManualProductAdd } from "../hooks";
-import { Search, X } from "lucide-react";
+import { Package, Search, X } from "lucide-react";
 
-export const ManualProductModal = () => {
+export const ManualProductModal = ({ inline = false }) => {
   const {
     searchTerm,
     setSearchTerm,
@@ -14,8 +14,116 @@ export const ManualProductModal = () => {
     isModalOpen,
     setIsModalOpen,
     filteredProducts,
+    isSearching,
+    addProduct,
     handleAddProduct,
   } = useManualProductAdd();
+
+  const renderProductRows = (compact = false) => (
+    <div className={compact ? "divide-y divide-gray-100" : "space-y-2"}>
+      {filteredProducts.map((product) => {
+        const price = Number(product.price || product.sellingPrice || 0);
+        const availableQty = Number(product.quantity || product.qty || 0);
+
+        return (
+          <div
+            key={product._id}
+            className={`flex items-center gap-3 ${
+              compact
+                ? "px-3 py-2.5"
+                : "p-4 border border-gray-200 rounded-lg"
+            }`}
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-50">
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <Package className="text-gray-400" size={22} />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-gray-800">
+                {product.name}
+              </p>
+              <p className="truncate text-xs text-gray-500">
+                {product.barcode
+                  ? `Barcode: ${product.barcode}`
+                  : product.sku
+                    ? `SKU: ${product.sku}`
+                    : "No barcode or SKU"}
+              </p>
+              <p
+                className={`text-xs font-semibold ${
+                  availableQty > 0 ? "text-emerald-600" : "text-red-600"
+                }`}
+              >
+                Stock: {availableQty}
+              </p>
+            </div>
+
+            <p className="shrink-0 font-bold text-gray-800">
+              ₹{price.toFixed(2)}
+            </p>
+            <button
+              type="button"
+              onClick={() => addProduct(product)}
+              disabled={availableQty <= 0}
+              className="shrink-0 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              Add
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (inline) {
+    return (
+      <div className="rounded-lg bg-white shadow-md">
+        <div className="p-4 md:p-6 pb-0">
+          <h2 className="mb-3 text-lg font-semibold text-gray-800 md:text-xl">
+            Search Product
+          </h2>
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={19}
+            />
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search product name, barcode or SKU..."
+              className="w-full rounded-lg border-2 border-blue-500 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              aria-label="Search products"
+            />
+          </div>
+        </div>
+
+        {searchTerm.trim() && (
+          <div className="mt-2 max-h-[22rem] overflow-y-auto">
+            {isSearching ? (
+              <p className="p-6 text-center text-sm text-gray-500">
+                Searching products...
+              </p>
+            ) : filteredProducts.length > 0 ? (
+              renderProductRows(true)
+            ) : (
+              <p className="p-6 text-center text-sm text-gray-500">
+                No matching products found
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!isModalOpen) return null;
 

@@ -48,26 +48,19 @@ const BillingContent = () => {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Input & Products */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Barcode Scanner Input */}
-            <BarcodeInput />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Top row: barcode, product search, and quick actions. */}
+          <BarcodeInput />
+          {!isMobile && <ManualProductModal inline />}
+          {!isMobile && <BillingActions />}
 
-            {/* Billed Products List - Hidden on Mobile */}
-            {!isMobile && <BilledProductsList />}
-          </div>
-
-          {/* Right Column - Actions & Total (Hidden on Mobile) */}
+          {/* Bottom row: current bill and payment summary. */}
           {!isMobile && (
-            <div className="space-y-6">
-              {/* Quick Actions */}
-              <BillingActions />
-
-              {/* Billing Total & Payment */}
-              <BillingTotal />
+            <div className="lg:col-span-2">
+              <BilledProductsList />
             </div>
           )}
+          {!isMobile && <BillingTotal />}
         </div>
 
 
