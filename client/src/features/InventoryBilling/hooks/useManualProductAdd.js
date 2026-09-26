@@ -3,6 +3,11 @@ import { useBillingContext } from "../context/billingContext";
 import { searchProductInStore } from "../services/billingService";
 import { isOnline } from "../utils/db";
 
+const productMatchesQuery = (product, query) =>
+  [product.name, product.barcode, product.sku].some((value) =>
+    String(value || "").toLowerCase().includes(query),
+  );
+
 /**
  * Custom hook for managing manual product addition
  */
@@ -18,12 +23,20 @@ export const useManualProductAdd = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const requestId = useRef(0);
+  const searchCache = useRef(new Map());
+  const cacheStoreId = useRef(storeId);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const query = searchTerm.trim();
+    const normalizedQuery = query.toLowerCase();
     const currentRequest = ++requestId.current;
+
+    if (cacheStoreId.current !== storeId) {
+      searchCache.current.clear();
+      cacheStoreId.current = storeId;
+    }
 
     if (!query) {
       setSearchResults([]);
@@ -32,14 +45,32 @@ export const useManualProductAdd = () => {
     }
 
     if (!isOnline()) {
-      const normalizedQuery = query.toLowerCase();
-      setSearchResults(
-        storeProducts.filter((product) =>
-          [product.name, product.barcode, product.sku].some((value) =>
-            value?.toLowerCase().includes(normalizedQuery),
-          ),
-        ),
+      const results = storeProducts.filter((product) =>
+        productMatchesQuery(product, normalizedQuery),
       );
+      searchCache.current.set(normalizedQuery, results);
+      setSearchResults(results);
+      setIsSearching(false);
+      return undefined;
+    }
+
+    const exactCachedResults = searchCache.current.get(normalizedQuery);
+    if (exactCachedResults) {
+      setSearchResults(exactCachedResults);
+      setIsSearching(false);
+      return undefined;
+    }
+
+    const cachedPrefix = [...searchCache.current.keys()]
+      .filter((cachedQuery) => normalizedQuery.startsWith(cachedQuery))
+      .sort((first, second) => second.length - first.length)[0];
+
+    if (cachedPrefix) {
+      const results = searchCache.current
+        .get(cachedPrefix)
+        .filter((product) => productMatchesQuery(product, normalizedQuery));
+      searchCache.current.set(normalizedQuery, results);
+      setSearchResults(results);
       setIsSearching(false);
       return undefined;
     }
@@ -49,7 +80,9 @@ export const useManualProductAdd = () => {
       try {
         const products = await searchProductInStore(query, storeId);
         if (currentRequest === requestId.current) {
-          setSearchResults(products || []);
+          const results = products || [];
+          searchCache.current.set(normalizedQuery, results);
+          setSearchResults(results);
         }
       } catch (error) {
         if (currentRequest === requestId.current) {

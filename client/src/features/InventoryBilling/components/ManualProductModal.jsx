@@ -30,11 +30,11 @@ export const ManualProductModal = ({ inline = false }) => {
             key={product._id}
             className={`flex items-center gap-3 ${
               compact
-                ? "px-3 py-2.5"
+                ? "group px-3 py-2.5 transition-colors hover:bg-blue-50/60"
                 : "p-4 border border-gray-200 rounded-lg"
             }`}
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-50">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 transition-colors group-hover:border-blue-100 group-hover:bg-blue-50">
               {product.image ? (
                 <img
                   src={product.image}
@@ -42,15 +42,15 @@ export const ManualProductModal = ({ inline = false }) => {
                   className="h-full w-full object-contain"
                 />
               ) : (
-                <Package className="text-gray-400" size={22} />
+                <Package className="text-slate-400 group-hover:text-blue-400" size={22} />
               )}
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-gray-800">
+              <p className="truncate text-sm font-semibold text-slate-800">
                 {product.name}
               </p>
-              <p className="truncate text-xs text-gray-500">
+              <p className="mt-0.5 truncate text-[11px] text-slate-400">
                 {product.barcode
                   ? `Barcode: ${product.barcode}`
                   : product.sku
@@ -58,22 +58,24 @@ export const ManualProductModal = ({ inline = false }) => {
                     : "No barcode or SKU"}
               </p>
               <p
-                className={`text-xs font-semibold ${
-                  availableQty > 0 ? "text-emerald-600" : "text-red-600"
+                className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  availableQty > 0
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-red-50 text-red-600"
                 }`}
               >
                 Stock: {availableQty}
               </p>
             </div>
 
-            <p className="shrink-0 font-bold text-gray-800">
+            <p className="shrink-0 text-sm font-bold text-slate-800">
               ₹{price.toFixed(2)}
             </p>
             <button
               type="button"
               onClick={() => addProduct(product)}
               disabled={availableQty <= 0}
-              className="shrink-0 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
             >
               Add
             </button>
@@ -85,7 +87,7 @@ export const ManualProductModal = ({ inline = false }) => {
 
   if (inline) {
     return (
-      <div className="rounded-lg bg-white shadow-md">
+      <div className="relative z-20 h-[8.5rem] rounded-lg bg-white shadow-md md:h-[9rem]">
         <div className="p-4 md:p-6 pb-0">
           <h2 className="mb-3 text-lg font-semibold text-gray-800 md:text-xl">
             Search Product
@@ -107,7 +109,7 @@ export const ManualProductModal = ({ inline = false }) => {
         </div>
 
         {searchTerm.trim() && (
-          <div className="mt-2 max-h-[22rem] overflow-y-auto">
+          <div className="absolute left-4 right-4 top-full z-30 mt-3 max-h-80 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 border-t-[3px] border-t-blue-500 bg-white shadow-2xl shadow-slate-900/15 ring-1 ring-black/5 md:left-6 md:right-6">
             {isSearching ? (
               <p className="p-6 text-center text-sm text-gray-500">
                 Searching products...
