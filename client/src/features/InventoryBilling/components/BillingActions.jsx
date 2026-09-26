@@ -7,7 +7,7 @@ export const BillingActions = () => {
   const { setIsModalOpen } = useManualProductAdd();
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+  <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
       <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">
         Quick Actions
       </h2>

@@ -12,7 +12,6 @@ import {
   ManualProductModal,
   BillPreviewModal,
   BillingHeader,
-  BillingActions,
   BillHistory,
   BillingSyncIndicator,
 } from "@/features/InventoryBilling/components";
@@ -52,7 +51,7 @@ const BillingContent = () => {
           {/* Top row: barcode, product search, and quick actions. */}
           <BarcodeInput />
           {!isMobile && <ManualProductModal inline />}
-          {!isMobile && <BillingActions />}
+          {/* {!isMobile && <BillingActions />} */}
 
           {/* Bottom row: current bill and payment summary. */}
           {!isMobile && (

@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useManualProductAdd } from "../hooks";
 
 export const BillingHeader = ({ storeId, storeName, isMobile }) => {
   const router = useRouter();
+  const { setIsModalOpen } = useManualProductAdd();
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
@@ -34,13 +36,15 @@ export const BillingHeader = ({ storeId, storeName, isMobile }) => {
           </div>
         </div>
 
-        <div className="text-left md:text-right">
-          <p className="text-xs md:text-sm text-gray-500">
-            Current Date & Time
-          </p>
-          <p className="text-sm md:text-lg font-semibold text-gray-900">
-            {new Date().toLocaleString()}
-          </p>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700 md:w-auto md:px-6 md:text-base"
+          >
+            <Package size={18} />
+            Add Product Manually
+          </button>
         </div>
       </div>
     </div>
