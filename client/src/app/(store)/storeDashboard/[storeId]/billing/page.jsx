@@ -48,10 +48,11 @@ const BillingContent = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Top row: barcode, product search, and quick actions. */}
-          <BarcodeInput />
-          {!isMobile && <ManualProductModal inline />}
-          {/* {!isMobile && <BillingActions />} */}
+          {/* Top row: let the two active cards use the full available width. */}
+          <div className="grid grid-cols-1 gap-6 lg:col-span-3 lg:grid-cols-2">
+            <BarcodeInput />
+            {!isMobile && <ManualProductModal inline />}
+          </div>
 
           {/* Bottom row: current bill and payment summary. */}
           {!isMobile && (
