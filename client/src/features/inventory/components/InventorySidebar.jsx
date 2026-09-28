@@ -136,6 +136,20 @@ const icons = {
       <path d="M12 7v5l3 3" />
     </svg>
   ),
+  Automations: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  ),
 };
 
 function NavLink({ label, href, icon, active, onClick }) {
@@ -275,6 +289,11 @@ export default function VyaparSathiSidebar({
         href: `/storeDashboard/${storeId}/ai-dashboard`,
         key: "ai-dashboard",
       },
+      {
+        label: "Automations",
+        href: `/storeDashboard/${storeId}/automations`,
+        key: "automations",
+      },
     ],
     [storeId],
   );
@@ -286,6 +305,7 @@ export default function VyaparSathiSidebar({
     if (pathname.includes("/staff")) return "staff";
     if (pathname.includes("/analytics")) return "analytics";
     if (pathname.includes("/ai-dashboard")) return "ai-dashboard";
+    if (pathname.includes("/automations")) return "automations";
     return "inventory";
   };
 
@@ -431,7 +451,7 @@ export default function VyaparSathiSidebar({
         {/* Intelligence Section */}
         <div style={{ padding: "0 4px", marginBottom: 6 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>INTELLIGENCE</p>
-          {navItems.filter(i => ["ai-dashboard"].includes(i.key)).map((item) => (
+          {navItems.filter(i => ["ai-dashboard", "automations"].includes(i.key)).map((item) => (
             <NavLink
               key={item.key}
               label={item.label}
