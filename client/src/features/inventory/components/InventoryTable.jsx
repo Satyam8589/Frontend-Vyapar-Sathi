@@ -178,13 +178,12 @@ const InventoryTable = ({
                     <div className="flex flex-col">
                       <span className="font-black text-slate-900 text-xs sm:text-lg">{qty}</span>
                       <span
-                        className={`text-[8px] sm:text-[10px] font-bold uppercase italic mt-0.5 ${
-                          qty > lowStockThreshold
+                        className={`text-[8px] sm:text-[10px] font-bold uppercase italic mt-0.5 ${qty > lowStockThreshold
                             ? "text-emerald-600"
                             : qty > 0
                               ? "text-amber-600"
                               : "text-red-600"
-                        }`}
+                          }`}
                       >
                         {qty > lowStockThreshold ? "In" : qty > 0 ? "Low" : "Out"}{" "}
                         <span className="hidden sm:inline">({item.unit || "pcs"})</span>

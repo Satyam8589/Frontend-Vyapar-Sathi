@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import {
   InventoryTable,
@@ -12,6 +13,7 @@ import {
   StoreDetailsSidebar,
   InventoryHeader,
   InventoryErrorAlert,
+  BulkUploadModal,
 } from "@/features/inventory/components";
 import {
   useInventoryContext,
@@ -27,14 +29,19 @@ import {
 const InventoryContent = () => {
   const params = useParams();
   const storeId = params.storeId;
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   // Get store and products data from context
-  const { currentStore, loading, error, setCurrentStore } =
+  const { currentStore, loading, error, setCurrentStore, fetchProducts } =
     useInventoryContext();
 
   // Use custom hooks for page logic
   const pageLogic = useInventoryPageLogic();
   const { stats, threshold, currencySymbol } = useInventoryStats();
+
+  const handleBulkUploadSuccess = () => {
+    fetchProducts();
+  };
 
   return (
     <div className="min-h-screen pb-8 sm:pb-12">
@@ -44,6 +51,7 @@ const InventoryContent = () => {
           storeId={storeId}
           storeName={currentStore?.name}
           onAddProductClick={() => pageLogic.setIsAddModalOpen(true)}
+          onBulkUploadClick={() => setIsBulkModalOpen(true)}
         />
 
         {/* Error Alert */}
@@ -106,6 +114,13 @@ const InventoryContent = () => {
         loading={loading}
       />
 
+      <BulkUploadModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        storeId={storeId}
+        onUploadSuccess={handleBulkUploadSuccess}
+      />
+
       <EditProductModal
         isOpen={pageLogic.isEditModalOpen}
         onClose={pageLogic.handleCloseEditModal}
@@ -140,3 +155,4 @@ const InventoryPage = () => {
 };
 
 export default InventoryPage;
+
