@@ -32,6 +32,30 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
 
+  const [extraQty, setExtraQty] = useState("");
+  const [showAddInput, setShowAddInput] = useState(false);
+  const [lastAddMessage, setLastAddMessage] = useState("");
+
+  const handleAddExtraStock = (amountToAdd) => {
+    const val = Number(amountToAdd);
+    if (isNaN(val) || val === 0) return;
+
+    const current = Number(formData.qty) || 0;
+    const newTotal = Math.max(0, current + val);
+
+    setFormData((prev) => ({
+      ...prev,
+      qty: newTotal.toString(),
+    }));
+
+    setLastAddMessage(`Added +${val} (Stock: ${current} ➔ ${newTotal})`);
+    setExtraQty("");
+
+    setTimeout(() => {
+      setLastAddMessage("");
+    }, 4000);
+  };
+
   // Handle delayed loading overlay
   useEffect(() => {
     if (loading) {
@@ -92,6 +116,10 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         barcode: product.barcode || "",
         image: product.image || "",
       });
+
+      setExtraQty("");
+      setShowAddInput(false);
+      setLastAddMessage("");
 
       setImageOrigin(product.image ? "existing" : "");
       setImageUploadState({ status: "idle", error: "" });
@@ -251,20 +279,90 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
 
             {/* Qty & Unit */}
             <div className="col-span-5 flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
-                Current Stock
-              </label>
-              <input
-                required
-                type="number"
-                name="qty"
-                value={formData.qty}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
-              />
+              <div className="flex items-center justify-between min-h-[20px]">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Current Stock
+                </label>
+                {lastAddMessage && (
+                  <span className="text-[10px] font-bold text-emerald-600 animate-fade-in truncate max-w-[130px]">
+                    ✅ {lastAddMessage}
+                  </span>
+                )}
+              </div>
+
+              {/* Input Box Container with Inline + Add Button inside */}
+              <div className="relative flex items-center bg-slate-50/50 border border-slate-300 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all pr-1.5 overflow-hidden">
+                <input
+                  required
+                  type="number"
+                  name="qty"
+                  value={formData.qty}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className="w-full px-3.5 py-3 bg-transparent outline-none text-slate-900 font-bold text-base min-w-0"
+                />
+
+                {/* Compact Inline Addition Tool inside Current Stock box */}
+                <div className="flex items-center gap-1 shrink-0 pl-1 border-l border-slate-200">
+                  {showAddInput ? (
+                    <div className="flex items-center gap-1 bg-white border border-blue-400 rounded-lg p-1 shadow-sm animate-scale-up">
+                      <span className="text-xs font-extrabold text-blue-600 pl-0.5">+</span>
+                      <input
+                        autoFocus
+                        type="number"
+                        placeholder="Qty"
+                        value={extraQty}
+                        onChange={(e) => setExtraQty(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddExtraStock(extraQty);
+                            setShowAddInput(false);
+                          } else if (e.key === "Escape") {
+                            setShowAddInput(false);
+                          }
+                        }}
+                        className="w-11 text-xs font-extrabold text-blue-800 bg-transparent outline-none text-center"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAddExtraStock(extraQty);
+                          setShowAddInput(false);
+                        }}
+                        className="px-1.5 py-0.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded text-[10px] font-bold transition-all"
+                        title="Sum up into current stock"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddInput(false)}
+                        className="px-1 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddInput(true)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        title="Click to add extra stock (Auto-Sums)"
+                      >
+                        <span className="font-extrabold">+</span>
+                        <span>Add</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
             <div className="col-span-7 flex flex-col gap-2">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[20px] flex items-end">
                 Unit
               </label>
               <select
@@ -274,10 +372,11 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 cursor-pointer font-semibold"
               >
                 <option>Pieces</option>
-                {/* <option>kg</option>
-                <option>Liters</option>
                 <option>Packs</option>
-                <option>Bottles</option> */}
+                <option>Boxes</option>
+                <option>Bottles</option>
+                <option>kg</option>
+                <option>Liters</option>
               </select>
             </div>
 

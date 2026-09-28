@@ -33,8 +33,8 @@ const StoreDetailsSidebar = ({ isOpen, onClose, store, onStoreUpdated }) => {
 
       {/* Sidebar Panel */}
       <aside
-        className={`fixed top-24 left-0 h-[calc(100vh-6rem)] w-full max-w-sm bg-white shadow-xl z-[120] border-r border-gray-200 will-change-transform transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-24 right-0 h-[calc(100vh-6rem)] w-full max-w-xs sm:max-w-[300px] bg-white shadow-2xl z-[120] border-l border-gray-200 will-change-transform transform-gpu transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isOpen ? "translate-x-0" : "translate-x-full"
         } flex flex-col`}
       >
         {/* Header */}
