@@ -168,3 +168,29 @@ export const saveToMasterProduct = async (productData) => {
     return false;
   }
 };
+
+/**
+ * Send Excel headers and sample rows to Gemini AI for column mapping
+ */
+export const analyzeBulkHeaders = async (headers, sampleRows) => {
+  try {
+    const response = await apiPost("/product/bulk-analyze", { headers, sampleRows }, { timeout: 30000 });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Execute bulk upload of parsed Excel items
+ */
+export const executeBulkUpload = async (payload) => {
+  try {
+    const response = await apiPost("/product/bulk-execute", payload, { timeout: 180000 });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
