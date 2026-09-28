@@ -16,8 +16,7 @@ const AnalyticsPage = () => {
   const analytics = useAnalyticsDashboard(storeId);
 
   return (
-    <main className="min-h-screen px-2 py-3 sm:px-3 md:px-4 lg:px-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:gap-4 md:gap-6">
+    <div className="min-h-screen py-3 px-2 sm:px-3 md:px-4 max-w-7xl mx-auto flex flex-col gap-3 sm:gap-4 md:gap-6">
         <AnalyticsHeader
           store={analytics.store}
           onBack={() => router.push(`/storeDashboard/${storeId}`)}
@@ -52,8 +51,7 @@ const AnalyticsPage = () => {
           selectedProduct={analytics.selectedProduct}
           onSelectProduct={analytics.setSelectedProductId}
         />
-      </div>
-    </main>
+    </div>
   );
 };
 
