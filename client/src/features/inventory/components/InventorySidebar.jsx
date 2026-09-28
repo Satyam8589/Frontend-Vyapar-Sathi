@@ -573,21 +573,21 @@ export default function VyaparSathiSidebar({
   }
 
   return (
-    <div style={{ width: 260, minWidth: 260, padding: "24px 0 20px 24px" }}>
+    <div style={{ width: 232, minWidth: 232, padding: "16px 0 16px 12px" }}>
       <div
         style={{
-          width: 236,
-          height: "calc(100vh - 62px)",
+          width: 220,
+          height: "calc(100vh - 32px)",
           background: "#1b2a42",
-          borderRadius: 18,
+          borderRadius: 16,
           display: "flex",
           flexDirection: "column",
-          padding: "15px 12px 14px 12px",
+          padding: "14px 10px 12px 10px",
           boxShadow:
             "0 8px 32px rgba(0,0,0,0.22), 0 1.5px 6px rgba(0,0,0,0.13)",
           position: "fixed",
-          top: 17,
-          left: 24,
+          top: 16,
+          left: 12,
           zIndex: 40,
         }}
       >

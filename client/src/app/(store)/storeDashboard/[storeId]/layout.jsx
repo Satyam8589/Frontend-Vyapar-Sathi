@@ -56,7 +56,7 @@ export default function StoreLayout({ children }) {
             flex: 1,
             width: "100%",
             minWidth: 0,
-            padding: isResponsive ? "15px 16px 20px 16px" : "15px 20px 20px 0px",
+            padding: isResponsive ? "12px 12px 16px 12px" : "12px 16px 16px 0px",
           }}
         >
           <StoreBreadcrumb isResponsive={isResponsive} />
