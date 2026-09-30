@@ -34,8 +34,8 @@ export default function AutomationsPage() {
   return (
     <main className="min-h-screen px-3 py-4 sm:px-5 sm:py-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:gap-6">
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-7 text-white shadow-[0_25px_90px_rgba(15,23,42,0.25)] sm:px-8 sm:py-9">
-          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-6 py-6 text-white shadow-[0_25px_90px_rgba(15,23,42,0.25)] sm:px-8 sm:py-7">
+          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-blue-300"><Sparkles className="h-4 w-4" />Workflow studio</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Scheduled automations</h1>
