@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { fetchProductInsight } from "@/features/aiDashboard/services/aiDashboardService";
 
 /**
@@ -19,6 +19,7 @@ const ProductDetailModal = ({
   const [insight, setInsight] = useState(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const params = useParams();
+  const router = useRouter();
   const storeId = params.storeId;
   
   useEffect(() => {
@@ -388,13 +389,28 @@ const ProductDetailModal = ({
             </div>
           </div>
 
-          {/* Footer Action */}
-          <div className="mt-6">
+          {/* Footer Actions */}
+          <div className="mt-6 flex items-center gap-3">
             <button
               onClick={onClose}
-              className="w-full py-2.5 bg-gray-900 text-white rounded-lg font-medium text-sm hover:bg-gray-800 active:scale-[0.98] transition-all"
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-all border border-slate-200 active:scale-[0.98]"
             >
               Close
+            </button>
+            <button
+              onClick={() => {
+                onClose?.();
+                const prodId = product._id || product.id;
+                if (storeId && prodId) {
+                  router.push(`/storeDashboard/${storeId}/${prodId}/analytics`);
+                }
+              }}
+              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>Details</span>
             </button>
           </div>
         </div>

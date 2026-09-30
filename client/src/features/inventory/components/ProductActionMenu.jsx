@@ -6,13 +6,14 @@ import { useInventoryContext } from "../context/inventoryContext";
 
 /**
  * ProductActionMenu Component
- * Kabab menu (⋮) with a portal-rendered dropdown for edit and delete actions.
+ * Kabab menu (⋮) with a portal-rendered dropdown for details, edit and delete actions.
  * Portal ensures the dropdown renders on <body> directly — no overflow/z-index clipping from table parents.
  *
- * @param {Function} onEdit   - Callback when Edit is clicked
- * @param {Function} onDelete - Callback when Delete is clicked
+ * @param {Function} onDetails - Callback when Details is clicked
+ * @param {Function} onEdit    - Callback when Edit is clicked
+ * @param {Function} onDelete  - Callback when Delete is clicked
  */
-const ProductActionMenu = ({ onEdit, onDelete }) => {
+const ProductActionMenu = ({ onDetails, onEdit, onDelete }) => {
   const { hasPermission } = useInventoryContext();
   const [isOpen, setIsOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -21,6 +22,7 @@ const ProductActionMenu = ({ onEdit, onDelete }) => {
 
   const canEdit = hasPermission('inventory:manage');
   const canDelete = hasPermission('inventory:manage');
+  const showDetails = typeof onDetails === "function";
 
   // Calculate dropdown position from the trigger button's bounding rect
   const openMenu = () => {
@@ -58,8 +60,8 @@ const ProductActionMenu = ({ onEdit, onDelete }) => {
     return () => window.removeEventListener("scroll", handleScroll, true);
   }, [isOpen]);
 
-  // If no permissions, don't show the menu at all (moved after hooks)
-  if (!canEdit && !canDelete) return null;
+  // If no actions are available, don't show the menu
+  if (!showDetails && !canEdit && !canDelete) return null;
 
   const dropdown = isOpen
     ? ReactDOM.createPortal(
@@ -68,6 +70,21 @@ const ProductActionMenu = ({ onEdit, onDelete }) => {
           style={{ top: menuPos.top, left: menuPos.left }}
           className="fixed z-[999] w-36 bg-white border border-slate-200 rounded-xl shadow-xl py-1 animate-scale-up"
         >
+          {showDetails && (
+            <button
+              onClick={() => { setIsOpen(false); onDetails?.(); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            >
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Details
+            </button>
+          )}
+
+          {showDetails && (canEdit || canDelete) && <div className="border-t border-slate-100 mx-2" />}
+
           {canEdit && (
             <button
               onClick={() => { setIsOpen(false); onEdit?.(); }}

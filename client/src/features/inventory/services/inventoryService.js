@@ -193,4 +193,17 @@ export const executeBulkUpload = async (payload) => {
   }
 };
 
+/**
+ * Send instant inventory status / low stock alert email to store owner
+ * @param {string} storeId
+ */
+export const sendInstantStockAlertMail = async (storeId) => {
+  try {
+    const response = await apiPost(`/store/${storeId}/send-stock-alert`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 

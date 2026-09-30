@@ -1,7 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import ProductActionMenu from "./ProductActionMenu";
+import { sendInstantStockAlertMail } from "../services/inventoryService";
 
 const getExpiryMeta = (expDate) => {
   if (!expDate) {
@@ -44,6 +47,41 @@ const InventoryTable = ({
   totalFilteredCount = 0,
   onPageChange,
 }) => {
+  const params = useParams();
+  const router = useRouter();
+  const storeId = params?.storeId;
+  const [isSendingMail, setIsSendingMail] = useState(false);
+
+  const handleSendInstantMail = async () => {
+    if (!storeId) {
+      toast.error("Store ID not found");
+      return;
+    }
+    if (isSendingMail) return;
+
+    try {
+      setIsSendingMail(true);
+      const res = await sendInstantStockAlertMail(storeId);
+      if (res?.status === "low_stock") {
+        toast.success(`⚠️ Low stock alert email sent for ${res.lowStockCount} product(s)!`);
+      } else {
+        toast.success("✅ All products healthy! Inventory status email sent.");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to send alert email");
+    } finally {
+      setIsSendingMail(false);
+    }
+  };
+
+  const handleNavigateToDetails = (item) => {
+    const prodId = item?._id || item?.id;
+    if (storeId && prodId) {
+      router.push(`/storeDashboard/${storeId}/${prodId}/analytics`);
+    } else {
+      onProductClick?.(item);
+    }
+  };
   if (loading && inventory.length === 0) {
     return (
       <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-slate-200 p-6 sm:p-12 flex flex-col items-center justify-center animate-pulse shadow-lg">
@@ -86,9 +124,33 @@ const InventoryTable = ({
         <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-slate-600">
           Showing {pageStart}-{pageEnd} of {totalFilteredCount}
         </p>
-        <p className="text-[10px] sm:text-xs font-semibold text-slate-500">
-          Page {currentPage} of {totalPages}
-        </p>
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <button
+            onClick={handleSendInstantMail}
+            disabled={isSendingMail}
+            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition-all shadow-sm ${
+              isSendingMail
+                ? "bg-amber-100 text-amber-600 cursor-wait animate-pulse"
+                : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white hover:shadow-amber-500/25 hover:shadow-md"
+            }`}
+            title="Instant Stock Alert: Send inventory status / low stock alert email now"
+          >
+            <svg
+              className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isSendingMail ? "animate-spin" : ""}`}
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            <span className="font-extrabold tracking-wide">
+              {isSendingMail ? "Sending..." : "Instant Alert"}
+            </span>
+          </button>
+
+          <p className="text-[10px] sm:text-xs font-semibold text-slate-500">
+            Page {currentPage} of {totalPages}
+          </p>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -169,6 +231,7 @@ const InventoryTable = ({
 
                   <td className="md:hidden px-3 sm:px-6 py-2 sm:py-4">
                     <ProductActionMenu
+                      onDetails={() => handleNavigateToDetails(item)}
                       onEdit={() => onEdit?.(item)}
                       onDelete={() => onDelete?.(item)}
                     />
@@ -216,6 +279,7 @@ const InventoryTable = ({
 
                   <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 text-right">
                     <ProductActionMenu
+                      onDetails={() => handleNavigateToDetails(item)}
                       onEdit={() => onEdit?.(item)}
                       onDelete={() => onDelete?.(item)}
                     />
