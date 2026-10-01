@@ -257,7 +257,7 @@ const InventoryTable = ({
                   <td className="px-3 sm:px-6 py-2 sm:py-4">
                     <p className="font-black text-slate-900 text-xs sm:text-base">
                       {currencySymbol}
-                      {Number(item.price || 0).toFixed(2)}
+                      {Number(item.sellingPrice || 0).toFixed(2)}
                     </p>
                     <p className="text-[8px] sm:text-[10px] text-slate-500 font-semibold">
                       per {(item.unit || "unit").toLowerCase()}

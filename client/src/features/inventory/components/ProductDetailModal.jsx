@@ -198,7 +198,7 @@ const ProductDetailModal = ({
             </div>
           )} */}
           {/* Core Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-slate-50/80 backdrop-blur-sm p-5 rounded-2xl border-2 border-slate-200 shadow-lg">
               <p className="text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
                 Stock Level
@@ -233,12 +233,27 @@ const ProductDetailModal = ({
 
             <div className="bg-slate-50/80 backdrop-blur-sm p-5 rounded-2xl border-2 border-slate-200 shadow-lg">
               <p className="text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Unit Price
+                Buying Price
               </p>
               <div className="flex items-end justify-start gap-1">
                 <span className="text-3xl font-black text-slate-900">
                   {currencySymbol}
-                  {(product.price || 0).toFixed(2)}
+                  {(product.buyingPrice || 0).toFixed(2)}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1.5 font-bold">
+                per {product.unit || "unit"}
+              </p>
+            </div>
+
+            <div className="bg-slate-50/80 backdrop-blur-sm p-5 rounded-2xl border-2 border-slate-200 shadow-lg">
+              <p className="text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Selling Price
+              </p>
+              <div className="flex items-end justify-start gap-1">
+                <span className="text-3xl font-black text-slate-900">
+                  {currencySymbol}
+                  {(product.sellingPrice || 0).toFixed(2)}
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-1.5 font-bold">

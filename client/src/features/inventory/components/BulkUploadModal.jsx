@@ -9,7 +9,8 @@ const TARGET_FIELDS = [
   { key: "name", label: "Product Name *", required: true },
   { key: "barcode", label: "Barcode / SKU / EAN", required: false },
   { key: "category", label: "Category *", required: true },
-  { key: "price", label: "Selling Price / Rate *", required: true },
+  { key: "buyingPrice", label: "Buying Price *", required: true },
+  { key: "sellingPrice", label: "Selling Price / Rate *", required: true },
   { key: "quantity", label: "Stock Quantity *", required: true },
   { key: "unit", label: "Unit (e.g. Pcs, Kg)", required: false },
   { key: "brand", label: "Brand Name", required: false },
@@ -86,7 +87,8 @@ export default function BulkUploadModal({ isOpen, onClose, storeId, onUploadSucc
         if (/name|product/i.test(lower)) defaultMapping.name = h;
         if (/code|barcode|sku/i.test(lower)) defaultMapping.barcode = h;
         if (/cat|category/i.test(lower)) defaultMapping.category = h;
-        if (/price|rate|mrp/i.test(lower)) defaultMapping.price = h;
+        if (/cost|buying|purchase/i.test(lower)) defaultMapping.buyingPrice = h;
+        if (/price|rate|mrp|selling/i.test(lower) && !/cost|buying|purchase/i.test(lower)) defaultMapping.sellingPrice = h;
         if (/qty|quantity|stock/i.test(lower)) defaultMapping.quantity = h;
         if (/unit/i.test(lower)) defaultMapping.unit = h;
         if (/brand/i.test(lower)) defaultMapping.brand = h;
@@ -107,8 +109,8 @@ export default function BulkUploadModal({ isOpen, onClose, storeId, onUploadSucc
 
   const handleExecuteUpload = async () => {
     // Validate required mappings
-    if (!mapping.name || !mapping.price || !mapping.quantity) {
-      toast.error("Please map required fields: Product Name, Price, and Quantity.");
+    if (!mapping.name || !mapping.sellingPrice || !mapping.buyingPrice || !mapping.quantity) {
+      toast.error("Please map required fields: Product Name, Buying Price, Selling Price, and Quantity.");
       return;
     }
 

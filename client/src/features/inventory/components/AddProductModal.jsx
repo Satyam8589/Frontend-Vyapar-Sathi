@@ -30,7 +30,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     category: "General",
     qty: "",
     unit: "Pieces",
-    price: "",
+    sellingPrice: "",
+    buyingPrice: "",
     expDate: "",
     barcode: "",
     image: "",
@@ -151,7 +152,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
           category: storeProduct.category || prev.category,
           qty: storeProduct.quantity !== undefined ? String(storeProduct.quantity) : prev.qty,
           unit: storeProduct.unit || prev.unit,
-          price: storeProduct.price !== undefined ? String(storeProduct.price) : prev.price,
+          sellingPrice: storeProduct.sellingPrice !== undefined ? String(storeProduct.sellingPrice) : prev.sellingPrice,
+          buyingPrice: storeProduct.buyingPrice !== undefined ? String(storeProduct.buyingPrice) : prev.buyingPrice,
           expDate: storeProduct.expDate
             ? new Date(storeProduct.expDate).toISOString().split("T")[0]
             : prev.expDate,
@@ -359,7 +361,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
     const payload = {
       ...rest,
       quantity: Number(qty),
-      price: Number(formData.price),
+      sellingPrice: Number(formData.sellingPrice),
+      buyingPrice: Number(formData.buyingPrice),
     };
 
     if (isUpdateMode && storeProductId) {
@@ -576,22 +579,37 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
               </div>
 
               {/* Price & Exp Date */}
-              <div className="col-span-5 flex flex-col gap-2">
+              <div className="col-span-6 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
-                  Price (₹)
+                  Buying Price (₹)
                 </label>
                 <input
                   required
                   type="number"
                   step="0.01"
-                  name="price"
-                  value={formData.price}
+                  name="buyingPrice"
+                  value={formData.buyingPrice}
                   onChange={handleChange}
                   placeholder="0.00"
                   className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
                 />
               </div>
-              <div className="col-span-7 flex flex-col gap-2">
+              <div className="col-span-6 flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
+                  Selling Price (₹)
+                </label>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  name="sellingPrice"
+                  value={formData.sellingPrice}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
+                />
+              </div>
+              <div className="col-span-12 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                   Expiry Date
                 </label>

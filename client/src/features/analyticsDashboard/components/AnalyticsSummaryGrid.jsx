@@ -49,6 +49,18 @@ const AnalyticsSummaryGrid = ({ summary, store }) => {
       tone: "indigo",
     },
     {
+      label: "Profit",
+      value: formatMoney(cards.profit, currency),
+      hint: "Total profit for the selected period.",
+      tone: "emerald",
+    },
+    {
+      label: "Margin",
+      value: `${Number(cards.margin || 0).toFixed(1)}%`,
+      hint: "Average profit margin.",
+      tone: "amber",
+    },
+    {
       label: "Units Sold",
       value: Number(cards.unitsSold || 0).toLocaleString("en-IN"),
       hint: "Number of individual product units sold.",

@@ -33,7 +33,7 @@ const ProductAnalyticsContent = ({ analytics, onBack }) => {
     </div>
 
     <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]"><SalesTrendPanel chart={overview?.chart} /><PerformancePanel summary={summary} performance={overview?.performance} expiry={overview?.expiry} /></div>
-    <div className="grid gap-4 lg:grid-cols-2"><StockPanel stock={overview?.stock} /><PeriodSummaryPanel summary={summary} product={product} currency={currency} /></div>
+    <div className="grid gap-4 lg:grid-cols-2"><StockPanel stock={overview?.stock} /><PeriodSummaryPanel summary={summary} profit={overview?.profit} product={product} currency={currency} /></div>
     <TransactionsPanel transactions={overview?.transactions} currency={currency} page={page} onPageChange={setPage} />
 
     {overview?.insights?.length > 0 && <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4"><div className="flex items-center gap-2 text-sm font-black text-blue-900"><ExternalLink className="h-4 w-4" />Product insights</div><div className="mt-3 grid gap-2 sm:grid-cols-2">{overview.insights.map((insight) => <p key={insight} className="rounded-xl bg-white/70 p-3 text-xs font-semibold text-blue-900">{insight}</p>)}</div></section>}

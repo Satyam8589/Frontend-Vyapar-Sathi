@@ -16,7 +16,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
     category: "General",
     qty: "",
     unit: "Pieces",
-    price: "",
+    sellingPrice: "",
+    buyingPrice: "",
     expDate: "",
     barcode: "",
     image: "",
@@ -111,7 +112,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         category: product.category || "General",
         qty: (product.quantity ?? product.qty ?? 0).toString(),
         unit: product.unit || "Pieces",
-        price: (product.price ?? 0).toString(),
+        sellingPrice: (product.sellingPrice ?? 0).toString(),
+        buyingPrice: (product.buyingPrice ?? 0).toString(),
         expDate: formattedDate,
         barcode: product.barcode || "",
         image: product.image || "",
@@ -179,7 +181,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
       ...formData,
       _id: product._id,
       quantity: Number(formData.qty),
-      price: Number(formData.price),
+      sellingPrice: Number(formData.sellingPrice),
+      buyingPrice: Number(formData.buyingPrice),
     };
     onUpdate?.(submissionData);
   };
@@ -381,21 +384,35 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
             </div>
 
             {/* Price & Exp Date */}
-            <div className="col-span-5 flex flex-col gap-2">
+            <div className="col-span-6 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
-                Price (₹)
+                Buying Price (₹)
               </label>
               <input
                 required
                 type="number"
                 step="0.01"
-                name="price"
-                value={formData.price}
+                name="buyingPrice"
+                value={formData.buyingPrice}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>
-            <div className="col-span-7 flex flex-col gap-2">
+            <div className="col-span-6 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
+                Selling Price (₹)
+              </label>
+              <input
+                required
+                type="number"
+                step="0.01"
+                name="sellingPrice"
+                value={formData.sellingPrice}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
+              />
+            </div>
+            <div className="col-span-12 flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
                 Expiry Date
               </label>
