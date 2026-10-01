@@ -136,6 +136,22 @@ const icons = {
       <path d="M12 7v5l3 3" />
     </svg>
   ),
+  Purchases: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  ),
   Automations: (
     <svg
       width="16"
@@ -148,6 +164,35 @@ const icons = {
       strokeLinejoin="round"
     >
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  ),
+  Sellers: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  Buyers: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   ),
   Logout: (
@@ -296,6 +341,21 @@ export default function VyaparSathiSidebar({
         key: "staff",
       },
       {
+        label: "Purchases",
+        href: `/storeDashboard/${storeId}/purchases`,
+        key: "purchases",
+      },
+      {
+        label: "Sellers",
+        href: `/storeDashboard/${storeId}/sellers`,
+        key: "sellers",
+      },
+      {
+        label: "Buyers",
+        href: `/storeDashboard/${storeId}/buyers`,
+        key: "buyers",
+      },
+      {
         label: "Analytics",
         href: `/storeDashboard/${storeId}/analytics`,
         key: "analytics",
@@ -318,6 +378,9 @@ export default function VyaparSathiSidebar({
     if (pathname.includes("/overview")) return "overview";
     if (pathname.includes("/billing-history")) return "billing-history";
     if (pathname.includes("/billing")) return "billing";
+    if (pathname.includes("/purchases")) return "purchases";
+    if (pathname.includes("/sellers")) return "sellers";
+    if (pathname.includes("/buyers")) return "buyers";
     if (pathname.includes("/staff")) return "staff";
     if (pathname.includes("/analytics")) return "analytics";
     if (pathname.includes("/ai-dashboard")) return "ai-dashboard";
@@ -450,7 +513,7 @@ export default function VyaparSathiSidebar({
         {/* Management Section */}
         <div style={{ padding: "0 4px", marginBottom: 6 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>MANAGEMENT</p>
-          {navItems.filter(i => ["staff", "analytics"].includes(i.key)).map((item) => (
+          {navItems.filter(i => ["purchases", "sellers", "buyers", "staff", "analytics"].includes(i.key)).map((item) => (
             <NavLink
               key={item.key}
               label={item.label}
