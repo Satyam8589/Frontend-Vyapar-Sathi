@@ -97,7 +97,7 @@ export async function getPendingSyncQueue(storeId) {
   return await db.syncQueue
     .where('storeId')
     .equals(storeId)
-    .and((item) => item.status === 'pending' || item.status === 'retry')
+    .and((item) => item.status === 'pending' || item.status === 'retry' || item.status === 'processing')
     .sortBy('createdAt');
 }
 

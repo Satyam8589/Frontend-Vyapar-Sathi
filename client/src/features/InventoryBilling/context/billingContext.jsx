@@ -514,34 +514,34 @@ export const BillingProvider = ({ children }) => {
           billedAt: new Date().toISOString(),
         };
 
-        // Save bill offline first (works even without internet)
-        await saveBillOffline(billData);
-
-        // Try to generate bill on server (will succeed when online)
+        // Try online first if online, otherwise fallback to offline storage
         let bill = null;
-        try {
-          bill = await billingService.generateBill(billData);
-          console.log("Bill generated successfully:", bill);
-
-          // Clear offline session on success
-          await clearSession();
-        } catch (syncError) {
+        if (isOnline()) {
+          try {
+            bill = await billingService.generateBill(billData);
+            console.log("Bill generated successfully on server:", bill);
+            await clearSession();
+            showSuccess("Bill generated and inventory updated successfully!");
+          } catch (serverError) {
+            console.warn("Online bill generation failed, saving offline for sync:", serverError);
+            await saveBillOffline(billData);
+            showSuccess("Server unavailable. Bill saved offline! Will sync when connected.");
+          }
+        } else {
+          // Completely offline
+          await saveBillOffline(billData);
           console.log("📴 Offline mode: Bill saved locally, will sync when online");
           showSuccess("Bill saved offline! Will sync when internet is available.");
         }
 
-        // Save bill data for PDF download
+        // Save bill data for PDF download / preview
         setLastBillData(billData);
 
         // Clear the bill
         setBilledProducts([]);
         setDiscount({ type: "fixed", value: 0 });
 
-        if (bill) {
-          showSuccess("Bill generated and inventory updated successfully!");
-        }
-
-        return bill;
+        return bill || { ...billData, offline: true };
       } catch (err) {
         const msg = err?.message || err?.error || "Failed to process bill";
         setError(msg);
