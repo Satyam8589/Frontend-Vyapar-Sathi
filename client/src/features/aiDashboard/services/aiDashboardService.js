@@ -55,7 +55,7 @@ export const streamCopilotResponse = async ({
   onEvent,
   signal,
 }) => {
-  const token = localStorage.getItem("authToken");
+  const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
   const sessionId = getSessionId();
   const effectiveChatId = chatId || getChatId();
 
@@ -149,7 +149,7 @@ export const streamClarifyResponse = async ({
   onEvent,
   signal,
 }) => {
-  const token = localStorage.getItem("authToken");
+  const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
   const response = await fetch(`${API_BASE_URL}/ai/${storeId}/clarify`, {
     method: "POST",

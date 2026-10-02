@@ -4,16 +4,19 @@ import axios from 'axios';
 const SESSION_STORAGE_KEY = 'copilot_session_id';
 
 export function getSessionId() {
+  if (typeof window === 'undefined') return null;
   return localStorage.getItem(SESSION_STORAGE_KEY);
 }
 
 export function setSessionId(sessionId) {
+  if (typeof window === 'undefined') return;
   if (sessionId) {
     localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
   }
 }
 
 export function clearSessionId() {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(SESSION_STORAGE_KEY);
 }
 
@@ -21,16 +24,19 @@ export function clearSessionId() {
 const CHAT_STORAGE_KEY = 'copilot_chat_id';
 
 export function getChatId() {
+  if (typeof window === 'undefined') return null;
   return localStorage.getItem(CHAT_STORAGE_KEY);
 }
 
 export function setChatId(chatId) {
+  if (typeof window === 'undefined') return;
   if (chatId) {
     localStorage.setItem(CHAT_STORAGE_KEY, chatId);
   }
 }
 
 export function clearChatId() {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(CHAT_STORAGE_KEY);
 }
 
@@ -47,7 +53,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Get token from localStorage if it exists
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -78,15 +84,19 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access - token invalid/expired
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+      }
     } else if (error.response?.status === 403) {
       // Handle forbidden - user not registered in database
       const message = error.response?.data?.message || 'Access forbidden';
       if (message.includes('not registered') || message.includes('complete registration')) {
         // Redirect to signup/register page if user hasn't completed registration
-        localStorage.removeItem('authToken');
-        window.location.href = '/signUp';
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('authToken');
+          window.location.href = '/signUp';
+        }
       }
     }
     return Promise.reject(error.response?.data || error.message);

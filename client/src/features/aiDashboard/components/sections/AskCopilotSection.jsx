@@ -6,6 +6,9 @@ import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
+import CartoonVoiceBotView from "../CartoonVoiceBotView";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import {
   Send,
   X,
@@ -26,6 +29,11 @@ import {
   ChevronUp,
   Mic,
   MicOff,
+  Volume2,
+  VolumeX,
+  Phone,
+  PhoneOff,
+  Radio,
   Image,
   Paperclip,
   Settings,
@@ -130,7 +138,17 @@ const TOOL_ICONS = {
   get_store_insights: Lightbulb,
 };
 
-const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, onToggleSidebar, onSession }) => {
+const AskCopilotSection = ({
+  storeId,
+  chatId,
+  onChatCreated,
+  onTitleGenerated,
+  onToggleSidebar,
+  onSession,
+  className = "h-[700px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden",
+  onClose,
+}) => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -145,6 +163,17 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
     threadId: null,
     isSubmitting: false,
   });
+
+  // Voice Assistant states
+  const [isLiveCallActive, setIsLiveCallActive] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [liveSpeechTranscript, setLiveSpeechTranscript] = useState("");
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [voiceAutoSpeak, setVoiceAutoSpeak] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const recognitionRef = useRef(null);
+  const accumulatedTextRef = useRef("");
   const abortRef = useRef(null);
   const textareaRef = useRef(null);
   const endRef = useRef(null);
@@ -155,6 +184,136 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
   // current assistant message so the user can see *why* the answer was
   // produced, not just the answer itself.
   const toolCallsRef = useRef([]);
+
+  // Gemini Live duplex voice WebSocket
+  const {
+    isConnected: isVoiceWsConnected,
+    isReady: isVoiceWsReady,
+    isRecording: isVoiceWsRecording,
+    isMuted: isVoiceWsMuted,
+    permissionError: voiceWsPermissionError,
+    connect: connectVoiceWs,
+    disconnect: disconnectVoiceWs,
+    startRecording: startVoiceWsRecording,
+    stopRecording: stopVoiceWsRecording,
+    toggleMute: toggleVoiceWsMute,
+  } = useVoiceAssistant(user?.uid, storeId);
+
+  const handleToggleLiveCall = useCallback(() => {
+    if (isLiveCallActive || isVoiceWsConnected) {
+      setIsLiveCallActive(false);
+      disconnectVoiceWs();
+      if (recognitionRef.current && isListening) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      }
+    } else {
+      setIsLiveCallActive(true);
+      connectVoiceWs();
+    }
+  }, [isLiveCallActive, isVoiceWsConnected, disconnectVoiceWs, isListening, connectVoiceWs]);
+
+  const handleEndLiveCall = useCallback(() => {
+    setIsLiveCallActive(false);
+    disconnectVoiceWs();
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, [disconnectVoiceWs, isListening]);
+
+  // Setup browser speech recognition for word-by-word user voice input
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setSpeechSupported(true);
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-IN";
+
+        recognition.onresult = (event) => {
+          let currentSpoken = "";
+          for (let i = 0; i < event.results.length; i++) {
+            currentSpoken += event.results[i][0].transcript;
+          }
+          setLiveSpeechTranscript(currentSpoken);
+          if (currentSpoken) {
+            setMessage(currentSpoken);
+            if (textareaRef.current) {
+              textareaRef.current.style.height = "auto";
+              textareaRef.current.style.height = `${Math.min(
+                textareaRef.current.scrollHeight,
+                240
+              )}px`;
+            }
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event.error);
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        setLiveSpeechTranscript("");
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error("Failed to start speech recognition:", err);
+      }
+    }
+  }, [isListening]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+    setIsListening(false);
+  }, [isListening]);
+
+  const speakText = useCallback(
+    (text) => {
+      if (typeof window === "undefined" || !window.speechSynthesis || !voiceAutoSpeak) return;
+      try {
+        window.speechSynthesis.cancel();
+        const cleanText = String(text || "")
+          .replace(/[*_#`~>-]/g, " ")
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+          .replace(/<[^>]*>/g, "")
+          .trim();
+        if (!cleanText) return;
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error("TTS error:", e);
+      }
+    },
+    [voiceAutoSpeak]
+  );
 
   const appendAssistantText = useCallback((assistantId, textChunk) => {
     setMessages((prev) =>
@@ -233,8 +392,6 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
     setMessages((prev) =>
       prev.map((entry) => {
         if (entry.id !== assistantId) return entry;
-        // Preserve the accumulated tool-call reasoning trace when the
-        // backend sends a final meta payload — don't let it wipe it out.
         const existing = entry.meta?.tool_calls || [];
         return {
           ...entry,
@@ -276,6 +433,10 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
       abortRef.current.abort();
       abortRef.current = null;
     }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
     setLoading(false);
   }, []);
 
@@ -289,6 +450,10 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
     setShowSuggestions(true);
     resetTextareaHeight();
     setClarification((prev) => ({ ...prev, isOpen: false }));
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
   }, [stopStreaming, resetTextareaHeight]);
 
   const askCopilot = useCallback(
@@ -302,6 +467,13 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
       setLoading(true);
       setShowSuggestions(false);
       toolCallsRef.current = [];
+      accumulatedTextRef.current = "";
+      stopListening();
+
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      }
 
       const userId = `user-${Date.now()}`;
       const assistantId = `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -334,7 +506,9 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
           signal: controller.signal,
           onEvent: ({ event, payload }) => {
             if (event === "token") {
-              appendAssistantText(assistantId, payload?.text || "");
+              const chunk = payload?.text || "";
+              accumulatedTextRef.current += chunk;
+              appendAssistantText(assistantId, chunk);
               return;
             }
 
@@ -367,6 +541,9 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
               updateAssistantMeta(assistantId, payload || null);
               setLoading(false);
               abortRef.current = null;
+              if (accumulatedTextRef.current) {
+                speakText(accumulatedTextRef.current);
+              }
               return;
             }
 
@@ -402,7 +579,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
         abortRef.current = null;
       }
     },
-    [message, storeId, chatId, appendAssistantText, updateAssistantMeta, updateAssistantError, resetTextareaHeight, onSession]
+    [message, storeId, chatId, appendAssistantText, updateAssistantMeta, updateAssistantError, resetTextareaHeight, onSession, speakText, stopListening]
   );
 
   const handleClarificationSubmit = useCallback(
@@ -410,6 +587,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
       if (!answer || !storeId || !chatId) return;
 
       setClarification((prev) => ({ ...prev, isSubmitting: true }));
+      accumulatedTextRef.current = "";
 
       const userId = `user-${Date.now()}`;
       const assistantId = `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -444,7 +622,9 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
           signal: controller.signal,
           onEvent: ({ event, payload }) => {
             if (event === "token") {
-              appendAssistantText(assistantId, payload?.text || "");
+              const chunk = payload?.text || "";
+              accumulatedTextRef.current += chunk;
+              appendAssistantText(assistantId, chunk);
               return;
             }
             if (event === "tool_call") {
@@ -467,6 +647,9 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
               setLoading(false);
               abortRef.current = null;
               setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
+              if (accumulatedTextRef.current) {
+                speakText(accumulatedTextRef.current);
+              }
               return;
             }
             if (event === "error") {
@@ -501,7 +684,7 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
         setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
       }
     },
-    [storeId, chatId, appendAssistantText, updateAssistantMeta, upsertToolCall, onChatCreated, onTitleGenerated, updateAssistantError]
+    [storeId, chatId, appendAssistantText, updateAssistantMeta, upsertToolCall, onChatCreated, onTitleGenerated, updateAssistantError, speakText]
   );
 
   const handleKeyDown = useCallback(
@@ -623,178 +806,330 @@ const AskCopilotSection = ({ storeId, chatId, onChatCreated, onTitleGenerated, o
   };
 
   return (
-    <section className="h-[700px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <section className={className}>
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-              <Bot className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-800 leading-tight">Vyapar Sathi</h2>
-              <p className="text-[10px] text-slate-400 leading-tight">AI Copilot</p>
-            </div>
+        {/* ------------------------------------------------------------------ */}
+        {/* CONDITIONAL BODY: LIVE CALL CARTOON BOT (BLUE HEADER ONLY)         */}
+        {/* VS STANDARD CHAT VIEW (WHITE HEADER + CHAT MESSAGES + INPUT BAR)   */}
+        {/* ------------------------------------------------------------------ */}
+        {isLiveCallActive || isVoiceWsConnected ? (
+          /* FULL SCREEN INTERACTIVE CARTOON TALKING BOT WITH ITS OWN BLUE HEADER */
+          <div className="flex-1 min-h-0 flex flex-col">
+            <CartoonVoiceBotView
+              isConnected={isVoiceWsConnected}
+              isReady={isVoiceWsReady}
+              isRecording={isVoiceWsRecording}
+              isMuted={isVoiceWsMuted}
+              permissionError={voiceWsPermissionError}
+              onStartRecording={startVoiceWsRecording}
+              onStopRecording={stopVoiceWsRecording}
+              onToggleMute={toggleVoiceWsMute}
+              onEndCall={handleEndLiveCall}
+              liveTranscript={liveSpeechTranscript}
+              isAISpeaking={isSpeaking}
+              onClose={onClose}
+              voiceAutoSpeak={voiceAutoSpeak}
+              onToggleVoiceAutoSpeak={() => setVoiceAutoSpeak((prev) => !prev)}
+              onQuickPrompt={(promptText) => {
+                handleEndLiveCall();
+                setTimeout(() => askCopilot(promptText), 200);
+              }}
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-<button
-            type="button"
-            onClick={newChat}
-            className="group inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-slate-700 hover:to-slate-800 hover:shadow transition"
-            title="New Chat"
-          >
-            <Plus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
-            <span className="hidden sm:inline">New</span>
-          </button>
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="group inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-indigo-400 hover:to-purple-500 hover:shadow transition"
-            title="Chat History"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">History</span>
-          </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
-          {!messages.length && !loading ? (
-            <div className="flex h-full flex-col items-center justify-center gap-6 px-6 text-center">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 flex items-center justify-center mx-auto shadow-lg shadow-slate-300">
-                  <Bot className="h-10 w-10 text-white" />
-                </div>
-                <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center border-2 border-white shadow-sm">
-                  <Sparkles className="h-3.5 w-3.5 text-white" />
-                </div>
-              </div>
-              <div className="space-y-2 max-w-md">
-                <h2 className="text-3xl font-black tracking-tight">
-                  <span className="bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-700 bg-clip-text text-transparent">
-                    Ask Vyapar Sathi
+        ) : (
+          /* STANDARD CHAT VIEW (WHITE HEADER + MESSAGES + INPUT BAR) */
+          <>
+            {/* TOP WHITE HEADER (ONLY SHOWN IN NORMAL CHAT MODE) */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="relative flex items-center justify-center">
+                  <div className="relative h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-[1.5px] shadow-md shadow-indigo-500/25 ring-2 ring-indigo-500/20">
+                    <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center overflow-hidden p-1">
+                      <img
+                        src="/images/logo/vs_logo.png"
+                        alt="Vyapar Sathi Logo"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-white" />
                   </span>
-                </h2>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 leading-tight">Vyapar Sathi</h2>
+                  <p className="text-[10px] font-semibold text-indigo-600 leading-tight flex items-center gap-1">
+                    <span>AI Copilot</span>
+                    <span className="h-1 w-1 rounded-full bg-indigo-500" />
+                    <span className="text-emerald-600 font-medium">Online</span>
+                  </p>
+                </div>
               </div>
-              <div className="flex flex-col gap-3 w-full max-w-md">
-                {SUGGESTED_PROMPTS.map((prompt) => (
-                  <SuggestionChip key={prompt.text} prompt={prompt} icon={prompt.icon} disabled={loading} />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Enter</kbd>
-                <span>to send</span>
-                <span className="text-slate-300">·</span>
-                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Shift+Enter</kbd>
-                <span>for new line</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flex w-full flex-col gap-6 py-4">
-                {messages.map((entry) => (
-                  <ChatMessage
-                    key={entry.id}
-                    message={entry}
-                    isStreaming={entry.streaming}
-                    onCopy={handleCopy}
-                    onRegenerate={handleRegenerate}
-                    onFeedback={handleFeedback}
-                  />
-                ))}
-                {/* {loading && messages.length > 0 && (
-                  // <div className="flex justify-center py-4" ref={messagesEndRef}>
-                  //   <ThinkingIndicator />
-                  // </div>
-                )} */}
-                <div ref={messagesEndRef} />
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="border-t border-slate-100 bg-white/80 backdrop-blur-sm p-1">
-            <div className="max-w-4xl mx-auto">
-              {clarification.isOpen && (
-                <ClarificationBanner
-                  question={clarification.question}
-                  isSubmitting={clarification.isSubmitting}
-                  onSubmit={handleClarificationSubmit}
-                  onDismiss={() => setClarification((prev) => ({ ...prev, isOpen: false }))}
-                />
-              )}
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-indigo-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
-              <div className="flex items-end gap-2 p-1 mx-1">
+              <div className="flex items-center gap-1.5">
+                {/* Voice auto-speak toggle */}
                 <button
                   type="button"
-                  onClick={() => setShowAttachmentModal(true)}
-                  className="group flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-sm hover:from-cyan-400 hover:to-blue-500 hover:shadow-md transition flex items-center justify-center"
-                  aria-label="Add attachment"
-                  title="Add attachment"
+                  onClick={() => setVoiceAutoSpeak((prev) => !prev)}
+                  className={`group inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition ${
+                    voiceAutoSpeak
+                      ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/20"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                  title={
+                    voiceAutoSpeak
+                      ? "AI Voice Readout: ON (Click to turn off)"
+                      : "AI Voice Readout: OFF (Click to enable)"
+                  }
                 >
-                  <Paperclip className="h-5 w-5 transition-transform group-hover:rotate-12" />
+                  {voiceAutoSpeak ? (
+                    <>
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Voice ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Voice OFF</span>
+                    </>
+                  )}
                 </button>
 
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(event) => {
-                    setMessage(event.target.value);
-                    autoGrowTextarea();
-                  }}
-                  onKeyDown={handleKeyDown}
-                  onCompositionStart={handleCompositionStart}
-                  onCompositionEnd={handleCompositionEnd}
-                  rows={1}
-                  placeholder="Ask Copilot anything about your inventory..."
-                  className="min-h-[44px] max-h-[240px] flex-1 resize-none border-0 bg-transparent px-2 py-3 text-left text-base text-slate-800 outline-none placeholder:text-slate-400"
-                  disabled={loading}
-                />
+                {/* Live Duplex Voice Call */}
+                <button
+                  type="button"
+                  onClick={handleToggleLiveCall}
+                  className="group inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition bg-gradient-to-br from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 hover:shadow"
+                  title="Start Live Interactive Voice Call"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Live Call</span>
+                </button>
 
-                {loading ? (
+                <button
+                  type="button"
+                  onClick={newChat}
+                  className="group inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-slate-700 hover:to-slate-800 hover:shadow transition"
+                  title="New Chat"
+                >
+                  <Plus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
+                  <span className="hidden sm:inline">New</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onToggleSidebar}
+                  className="group inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-indigo-400 hover:to-purple-500 hover:shadow transition"
+                  title="Chat History"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">History</span>
+                </button>
+
+                {onClose && (
                   <button
                     type="button"
-                    onClick={stopStreaming}
-                    className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-sm hover:from-rose-400 hover:to-red-500 hover:shadow-md transition flex items-center justify-center"
-                    aria-label="Stop generating"
-                    title="Stop generating"
+                    onClick={onClose}
+                    className="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                    title="Close"
                   >
-                    <Square className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={!String(message).trim()}
-                    onClick={() => askCopilot()}
-                    className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-sm hover:from-slate-700 hover:to-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:from-slate-800 disabled:hover:to-slate-900 hover:shadow-md transition flex items-center justify-center"
-                    aria-label="Send message"
-                    title="Send message"
-                  >
-                    <Send className="h-5 w-5" />
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
             </div>
 
-            {showAttachmentModal && (
-              <AttachmentModal
-                onClose={closeAttachmentModal}
-                onSelect={handleAttachmentSelect}
-              />
-            )}
+            <div className="flex-1 overflow-y-auto px-4 pb-4">
+              {!messages.length && !loading ? (
+                <div className="flex h-full flex-col items-center justify-center gap-6 px-6 text-center">
+                  <div className="relative mx-auto">
+                    <div className="relative h-20 w-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-1 shadow-xl shadow-indigo-500/30 ring-4 ring-indigo-500/20 flex items-center justify-center">
+                      <div className="h-full w-full rounded-[20px] bg-white flex items-center justify-center p-2 overflow-hidden">
+                        <img
+                          src="/images/logo/vs_logo.png"
+                          alt="Vyapar Sathi Logo"
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center border-2 border-white shadow-md">
+                      <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-w-md">
+                    <h2 className="text-3xl font-black tracking-tight">
+                      <span className="bg-gradient-to-r from-slate-800 via-indigo-900 to-blue-700 bg-clip-text text-transparent">
+                        Ask Vyapar Sathi
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="flex flex-col gap-3 w-full max-w-md">
+                    {SUGGESTED_PROMPTS.map((prompt) => (
+                      <SuggestionChip key={prompt.text} prompt={prompt} icon={prompt.icon} disabled={loading} />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Enter</kbd>
+                    <span>to send</span>
+                    <span className="text-slate-300">·</span>
+                    <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Shift+Enter</kbd>
+                    <span>for new line</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex w-full flex-col gap-6 py-4">
+                    {messages.map((entry) => (
+                      <ChatMessage
+                        key={entry.id}
+                        message={entry}
+                        isStreaming={entry.streaming}
+                        onCopy={handleCopy}
+                        onRegenerate={handleRegenerate}
+                        onFeedback={handleFeedback}
+                      />
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </>
+              )}
+            </div>
 
-            {error && (
-              <p className="mt-3 text-sm font-medium text-rose-600 flex items-center gap-1.5">
-                <AlertTriangle className="h-4 w-4" />
-                {error}
-              </p>
-            )}
+            <div className="border-t border-slate-100 bg-white/80 backdrop-blur-sm p-1">
+              <div className="max-w-4xl mx-auto">
+                {clarification.isOpen && (
+                  <ClarificationBanner
+                    question={clarification.question}
+                    isSubmitting={clarification.isSubmitting}
+                    onSubmit={handleClarificationSubmit}
+                    onDismiss={() => setClarification((prev) => ({ ...prev, isOpen: false }))}
+                  />
+                )}
 
-            <p className="mt-3 text-xs text-slate-400 text-center">
-              AI responses may contain errors. Verify critical decisions independently.
-            </p>
-          </div>
-        </div>
+                {/* LIVE USER SPEECH TRANSCRIPT BANNER */}
+                {isListening && (
+                  <div className="mb-2 flex items-center justify-between gap-3 px-3.5 py-2.5 bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-blue-500/15 border border-indigo-200/90 rounded-2xl backdrop-blur-sm shadow-sm animate-pulse">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="relative flex items-center justify-center flex-shrink-0">
+                        <span className="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-rose-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                      </div>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="text-xs font-bold text-indigo-950 flex-shrink-0">Listening:</span>
+                        <p className="text-xs font-semibold text-indigo-800 truncate">
+                          {liveSpeechTranscript ? `"${liveSpeechTranscript}"` : "Speak now, words will appear live..."}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={stopListening}
+                      className="text-[11px] font-bold px-2.5 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg shadow-sm transition flex-shrink-0"
+                    >
+                      Finish
+                    </button>
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 shadow-sm transition-all focus-within:border-indigo-300 focus-within:shadow-md focus-within:ring-2 focus-within:ring-indigo-100">
+                  <div className="flex items-end gap-2 p-1 mx-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachmentModal(true)}
+                      className="group flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-sm hover:from-cyan-400 hover:to-blue-500 hover:shadow-md transition flex items-center justify-center"
+                      aria-label="Add attachment"
+                      title="Add attachment"
+                    >
+                      <Paperclip className="h-5 w-5 transition-transform group-hover:rotate-12" />
+                    </button>
+
+                    {/* Speech to text microphone button */}
+                    {speechSupported && (
+                      <button
+                        type="button"
+                        onClick={toggleListening}
+                        className={`group flex-shrink-0 h-10 w-10 rounded-xl text-white shadow-sm hover:shadow-md transition flex items-center justify-center ${
+                          isListening
+                            ? "bg-gradient-to-br from-rose-500 to-red-600 animate-pulse ring-2 ring-red-400/50"
+                            : "bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500"
+                        }`}
+                        aria-label={isListening ? "Stop listening" : "Start speech input"}
+                        title={isListening ? "Stop voice listening" : "Speak to AI (Voice to text)"}
+                      >
+                        {isListening ? (
+                          <MicOff className="h-5 w-5 animate-bounce" />
+                        ) : (
+                          <Mic className="h-5 w-5 transition-transform group-hover:scale-110" />
+                        )}
+                      </button>
+                    )}
+
+                    <textarea
+                      ref={textareaRef}
+                      value={message}
+                      onChange={(event) => {
+                        setMessage(event.target.value);
+                        autoGrowTextarea();
+                      }}
+                      onKeyDown={handleKeyDown}
+                      onCompositionStart={handleCompositionStart}
+                      onCompositionEnd={handleCompositionEnd}
+                      rows={1}
+                      placeholder={
+                        isListening
+                          ? "Listening to your voice..."
+                          : "Ask Copilot anything or click mic to speak..."
+                      }
+                      className="min-h-[44px] max-h-[240px] flex-1 resize-none border-0 bg-transparent px-2 py-3 text-left text-base text-slate-800 outline-none placeholder:text-slate-400"
+                      disabled={loading}
+                    />
+
+                    {loading ? (
+                      <button
+                        type="button"
+                        onClick={stopStreaming}
+                        className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-sm hover:from-rose-400 hover:to-red-500 hover:shadow-md transition flex items-center justify-center"
+                        aria-label="Stop generating"
+                        title="Stop generating"
+                      >
+                        <Square className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!String(message).trim()}
+                        onClick={() => askCopilot()}
+                        className="flex-shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-sm hover:from-slate-700 hover:to-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:from-slate-800 disabled:hover:to-slate-900 hover:shadow-md transition flex items-center justify-center"
+                        aria-label="Send message"
+                        title="Send message"
+                      >
+                        <Send className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {showAttachmentModal && (
+                  <AttachmentModal
+                    onClose={closeAttachmentModal}
+                    onSelect={handleAttachmentSelect}
+                  />
+                )}
+
+                {error && (
+                  <p className="mt-3 text-sm font-medium text-rose-600 flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4" />
+                    {error}
+                  </p>
+                )}
+
+                <p className="mt-3 text-xs text-slate-400 text-center">
+                  AI responses may contain errors. Verify critical decisions independently.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

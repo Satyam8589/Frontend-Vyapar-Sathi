@@ -50,8 +50,12 @@ const AIDashboardContent = ({
     );
   }
 
-  const [chatKey, setChatKey] = useState(getChatId());
+  const [chatKey, setChatKey] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setChatKey(getChatId());
+  }, []);
   // Bumped whenever a new chat is created or titled, so the sidebar
   // refetches its list and shows the generated title.
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
