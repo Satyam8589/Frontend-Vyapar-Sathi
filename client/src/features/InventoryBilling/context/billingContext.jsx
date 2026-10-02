@@ -523,9 +523,26 @@ export const BillingProvider = ({ children }) => {
             await clearSession();
             showSuccess("Bill generated and inventory updated successfully!");
           } catch (serverError) {
-            console.warn("Online bill generation failed, saving offline for sync:", serverError);
-            await saveBillOffline(billData);
-            showSuccess("Server unavailable. Bill saved offline! Will sync when connected.");
+            console.error("Online bill generation failed:", serverError);
+            const errorMsg = serverError?.message || (typeof serverError === "string" ? serverError : null);
+            
+            // Check if this is a genuine network failure vs a business validation error (e.g., stock/permission)
+            const isNetworkError = !isOnline() || 
+              serverError?.name === "AxiosError" ||
+              serverError?.code === "ERR_NETWORK" ||
+              errorMsg?.toLowerCase()?.includes("network") ||
+              errorMsg?.toLowerCase()?.includes("failed to fetch") ||
+              errorMsg?.toLowerCase()?.includes("timeout");
+
+            if (isNetworkError) {
+              console.warn("Network unavailable, saving offline for sync");
+              await saveBillOffline(billData);
+              showSuccess("Server unavailable. Bill saved offline! Will sync when connected.");
+            } else {
+              // Real server error (e.g. Insufficient stock, Unauthorized, etc.)
+              showError(errorMsg || "Server rejected bill creation. Please check stock or permissions.");
+              return null;
+            }
           }
         } else {
           // Completely offline

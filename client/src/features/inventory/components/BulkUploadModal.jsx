@@ -8,10 +8,10 @@ import toast from "react-hot-toast";
 const TARGET_FIELDS = [
   { key: "name", label: "Product Name *", required: true },
   { key: "barcode", label: "Barcode / SKU / EAN", required: false },
-  { key: "category", label: "Category *", required: true },
-  { key: "buyingPrice", label: "Buying Price *", required: true },
-  { key: "sellingPrice", label: "Selling Price / Rate *", required: true },
-  { key: "quantity", label: "Stock Quantity *", required: true },
+  { key: "quantity", label: "Stock Quantity", required: false },
+  { key: "sellingPrice", label: "Selling Price / Rate", required: false },
+  { key: "buyingPrice", label: "Buying Price", required: false },
+  { key: "category", label: "Category", required: false },
   { key: "unit", label: "Unit (e.g. Pcs, Kg)", required: false },
   { key: "brand", label: "Brand Name", required: false },
   { key: "expDate", label: "Expiry Date", required: false },
@@ -109,8 +109,8 @@ export default function BulkUploadModal({ isOpen, onClose, storeId, onUploadSucc
 
   const handleExecuteUpload = async () => {
     // Validate required mappings
-    if (!mapping.name || !mapping.sellingPrice || !mapping.buyingPrice || !mapping.quantity) {
-      toast.error("Please map required fields: Product Name, Buying Price, Selling Price, and Quantity.");
+    if (!mapping.name) {
+      toast.error("Please map the required field: Product Name.");
       return;
     }
 
@@ -213,7 +213,14 @@ export default function BulkUploadModal({ isOpen, onClose, storeId, onUploadSucc
                   </span>
                   <span>Review & confirm column mappings before importing.</span>
                 </div>
-                <span className="font-semibold">{fileData.rows.length} rows ready</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[11px] border border-emerald-300">
+                    {TARGET_FIELDS.filter((f) => Boolean(mapping[f.key])).length} Updating
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[11px] border border-amber-300">
+                    {TARGET_FIELDS.filter((f) => !mapping[f.key]).length} Ignored
+                  </span>
+                </div>
               </div>
 
               {/* Stock Update Mode Selector */}
@@ -245,31 +252,62 @@ export default function BulkUploadModal({ isOpen, onClose, storeId, onUploadSucc
               </div>
 
               <div className="space-y-3">
-                {TARGET_FIELDS.map((field) => (
-                  <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 gap-2">
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 block">
-                        {field.label}
-                      </span>
-                      <span className="text-[10px] text-slate-400">Target Field</span>
-                    </div>
+                {TARGET_FIELDS.map((field) => {
+                  const isMapped = Boolean(mapping[field.key]);
+                  return (
+                    <div
+                      key={field.key}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border transition-all gap-2 ${
+                        isMapped
+                          ? "bg-emerald-50/40 border-emerald-200"
+                          : "bg-amber-50/60 border-dashed border-amber-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-800">
+                              {field.label}
+                            </span>
+                            {isMapped ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                ✓ Updating
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                                ⚠️ Ignored (Preserved)
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-500">
+                            {isMapped
+                              ? "Will update from Excel column"
+                              : "Will NOT overwrite existing product value"}
+                          </span>
+                        </div>
+                      </div>
 
-                    <div className="sm:w-64">
-                      <select
-                        value={mapping[field.key] || ""}
-                        onChange={(e) => handleMappingChange(field.key, e.target.value)}
-                        className="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">-- Ignore / Unmapped --</option>
-                        {fileData.headers.map((h) => (
-                          <option key={h} value={h}>
-                            Excel Column: {h}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="sm:w-64">
+                        <select
+                          value={mapping[field.key] || ""}
+                          onChange={(e) => handleMappingChange(field.key, e.target.value)}
+                          className={`w-full text-xs font-semibold rounded-lg p-2 outline-none border transition-all ${
+                            isMapped
+                              ? "bg-white border-emerald-300 text-emerald-950 focus:ring-2 focus:ring-emerald-500"
+                              : "bg-amber-50/70 border-amber-300 text-amber-900 focus:ring-2 focus:ring-amber-500"
+                          }`}
+                        >
+                          <option value="">-- Ignore / Unmapped --</option>
+                          {fileData.headers.map((h) => (
+                            <option key={h} value={h}>
+                              Excel Column: {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Sample Preview Table */}
