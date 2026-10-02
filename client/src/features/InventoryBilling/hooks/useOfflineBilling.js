@@ -188,12 +188,15 @@ export function useOfflineBilling({
             }
           }
         } catch (error) {
+          const newRetryCount = (item.retryCount || 0) + 1;
+          const isFailed = newRetryCount >= 5;
           await updateSyncQueueItem(item.id, {
-            status: "retry",
-            retryCount: item.retryCount + 1,
-            lastError: error.message,
+            status: isFailed ? "failed" : "retry",
+            retryCount: newRetryCount,
+            lastError: error?.message || String(error),
             lastRetryAt: new Date().toISOString(),
           });
+          console.error(`❌ Sync failed for item ${item.id} (attempt ${newRetryCount}):`, error);
         }
       }
     } catch (error) {
