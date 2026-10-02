@@ -9,6 +9,7 @@ import {
   fetchRestockPlan,
 } from "@/features/aiDashboard/services/aiDashboardService";
 import { fetchStoreById } from "@/features/storeDashboard/services/storeDashboardService";
+import VoiceBot from "@/components/VoiceBot";
 
 const getErrorMessage = (error, fallback) => {
   if (typeof error === "string") {
@@ -172,6 +173,7 @@ const AIDashboardPage = () => {
             errorState={errorState}
           />
         </div>
+        <VoiceBot />
       </div>
     </main>
   );
