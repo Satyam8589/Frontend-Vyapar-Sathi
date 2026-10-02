@@ -131,6 +131,10 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
                         onUserTranscriptRef.current?.(msg.text);
                     } else if (msg.type === 'turn_complete') {
                         onTurnCompleteRef.current?.();
+                    } else if (msg.type === 'tool_start') {
+                        optionsRef.current?.onToolStart?.(msg);
+                    } else if (msg.type === 'tool_complete') {
+                        optionsRef.current?.onToolComplete?.(msg);
                     }
                 } catch (_) {}
             }

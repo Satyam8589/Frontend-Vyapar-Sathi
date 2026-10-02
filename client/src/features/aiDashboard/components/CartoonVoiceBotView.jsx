@@ -34,6 +34,7 @@ export default function CartoonVoiceBotView({
   onEndCall,
   liveTranscript = "",
   isAISpeaking = false,
+  activeToolStatus = null,
   onQuickPrompt,
   onClose,
   voiceAutoSpeak = true,
@@ -571,10 +572,38 @@ export default function CartoonVoiceBotView({
         </div>
 
         {/* ------------------------------------------------------------- */}
+        {/* LIVE REALTIME TOOL STATUS BADGE (Redis / Pinecone / Inventory) */}
+        {/* ------------------------------------------------------------- */}
+        {activeToolStatus?.active && (
+          <div className="mt-2.5 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.5)] animate-fade-in text-white text-xs font-bold z-20">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  activeToolStatus.completed ? "bg-emerald-400" : "bg-cyan-400"
+                }`}
+              />
+              <span
+                className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                  activeToolStatus.completed ? "bg-emerald-400" : "bg-cyan-400"
+                }`}
+              />
+            </span>
+            <span className={activeToolStatus.completed ? "text-emerald-300" : "text-cyan-200"}>
+              {activeToolStatus.label}
+            </span>
+            {activeToolStatus.completed ? (
+              <span className="text-[11px] text-emerald-400">✓ Done</span>
+            ) : (
+              <Sparkles className="h-3.5 w-3.5 text-cyan-300 animate-spin" />
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
         {/* LIVE TRANSCRIPT SPEECH BUBBLE (Fades in smoothly)             */}
         {/* ------------------------------------------------------------- */}
         <div
-          className={`mt-3.5 w-full max-w-sm px-3 transition-all duration-700 ${
+          className={`mt-3 w-full max-w-sm px-3 transition-all duration-700 ${
             entrancePhase === "portal" || entrancePhase === "ascending"
               ? "opacity-0 translate-y-6"
               : "opacity-100 translate-y-0"

@@ -264,6 +264,33 @@ const AskCopilotSection = ({
   // produced, not just the answer itself.
   const toolCallsRef = useRef([]);
 
+  // Realtime tool status for Voice Bot
+  const [voiceToolStatus, setVoiceToolStatus] = useState(null);
+  const voiceToolTimerRef = useRef(null);
+
+  const handleVoiceToolStart = useCallback((data) => {
+    if (voiceToolTimerRef.current) clearTimeout(voiceToolTimerRef.current);
+    setVoiceToolStatus({
+      active: true,
+      name: data.tool,
+      label: data.label || `Executing ${data.tool}...`,
+      completed: false,
+    });
+  }, []);
+
+  const handleVoiceToolComplete = useCallback((data) => {
+    setVoiceToolStatus({
+      active: true,
+      name: data.tool,
+      label: data.label || "Completed!",
+      completed: true,
+    });
+    if (voiceToolTimerRef.current) clearTimeout(voiceToolTimerRef.current);
+    voiceToolTimerRef.current = setTimeout(() => {
+      setVoiceToolStatus(null);
+    }, 2400);
+  }, []);
+
   // Gemini Live duplex voice WebSocket
   const {
     isConnected: isVoiceWsConnected,
@@ -281,6 +308,8 @@ const AskCopilotSection = ({
     onAiTranscript: handleVoiceAiText,
     onUserTranscript: handleVoiceUserTranscript,
     onTurnComplete: handleVoiceTurnComplete,
+    onToolStart: handleVoiceToolStart,
+    onToolComplete: handleVoiceToolComplete,
   });
 
   const handleEndLiveCall = useCallback(() => {
@@ -1045,6 +1074,7 @@ const AskCopilotSection = ({
               onEndCall={handleEndLiveCall}
               liveTranscript={liveSpeechTranscript}
               isAISpeaking={isSpeaking}
+              activeToolStatus={voiceToolStatus}
               onClose={onClose}
               voiceAutoSpeak={voiceAutoSpeak}
               onToggleVoiceAutoSpeak={() => setVoiceAutoSpeak((prev) => !prev)}
