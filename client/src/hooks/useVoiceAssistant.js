@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 // Resample Float32 from srcRate to 16kHz for Gemini input
 function resampleTo16k(float32, srcRate) {
@@ -49,7 +49,18 @@ function createPcmPlayer(audioCtx) {
     return { queuePcm };
 }
 
-export const useVoiceAssistant = (userId, storeId) => {
+export const useVoiceAssistant = (userId, storeId, options = {}) => {
+    const { onAiText, onAiTranscript, onUserTranscript, onTurnComplete } = options;
+    const onAiTextRef = useRef(onAiText);
+    const onAiTranscriptRef = useRef(onAiTranscript);
+    const onUserTranscriptRef = useRef(onUserTranscript);
+    const onTurnCompleteRef = useRef(onTurnComplete);
+
+    onAiTextRef.current = onAiText;
+    onAiTranscriptRef.current = onAiTranscript;
+    onUserTranscriptRef.current = onUserTranscript;
+    onTurnCompleteRef.current = onTurnComplete;
+
     const [isConnected, setIsConnected] = useState(false);
     const [isReady, setIsReady]         = useState(false);
     const [isRecording, setIsRecording] = useState(false);
@@ -112,6 +123,14 @@ export const useVoiceAssistant = (userId, storeId) => {
                         setIsReady(true);
                     } else if (msg.type === 'audio_received') {
                         console.log('[Voice] Backend forwarded audio to Gemini', msg.chunks, 'chunks');
+                    } else if (msg.type === 'ai_text') {
+                        onAiTextRef.current?.(msg.text);
+                    } else if (msg.type === 'ai_transcript') {
+                        onAiTranscriptRef.current?.(msg.text);
+                    } else if (msg.type === 'user_transcript') {
+                        onUserTranscriptRef.current?.(msg.text);
+                    } else if (msg.type === 'turn_complete') {
+                        onTurnCompleteRef.current?.();
                     }
                 } catch (_) {}
             }

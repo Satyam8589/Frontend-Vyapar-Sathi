@@ -180,6 +180,85 @@ const AskCopilotSection = ({
   const messagesEndRef = useRef(null);
   const modalRef = useRef(null);
 
+  // Live call synchronization refs
+  const isLiveCallActiveRef = useRef(false);
+  const liveUserMsgIdRef = useRef(null);
+  const liveAiMsgIdRef = useRef(null);
+  const liveSilenceTimerRef = useRef(null);
+
+  useEffect(() => {
+    isLiveCallActiveRef.current = isLiveCallActive;
+  }, [isLiveCallActive]);
+
+  // Live assistant text streaming handler from WebSocket
+  const handleVoiceAiText = useCallback((chunk) => {
+    if (!chunk) return;
+    setLiveSpeechTranscript(chunk);
+    setShowSuggestions(false);
+    const aiId = liveAiMsgIdRef.current || `assistant-voice-${Date.now()}`;
+    liveAiMsgIdRef.current = aiId;
+    setMessages((prev) => {
+      const exists = prev.some((m) => m.id === aiId);
+      if (exists) {
+        return prev.map((m) =>
+          m.id === aiId ? { ...m, text: `${m.text || ""}${chunk}` } : m
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: aiId,
+          role: "assistant",
+          text: chunk,
+          timestamp: Date.now(),
+          streaming: true,
+          meta: null,
+          error: "",
+        },
+      ];
+    });
+  }, []);
+
+  // Live user speech transcript handler from WebSocket (if server provides it)
+  const handleVoiceUserTranscript = useCallback((userText) => {
+    if (!userText) return;
+    setLiveSpeechTranscript(userText);
+    setShowSuggestions(false);
+    const userId = liveUserMsgIdRef.current || `user-voice-${Date.now()}`;
+    liveUserMsgIdRef.current = userId;
+    setMessages((prev) => {
+      const exists = prev.some((m) => m.id === userId);
+      if (exists) {
+        return prev.map((m) =>
+          m.id === userId ? { ...m, text: userText } : m
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: userId,
+          role: "user",
+          text: userText,
+          timestamp: Date.now(),
+        },
+      ];
+    });
+  }, []);
+
+  // Turn completion handler from WebSocket
+  const handleVoiceTurnComplete = useCallback(() => {
+    if (liveAiMsgIdRef.current) {
+      const currentId = liveAiMsgIdRef.current;
+      setMessages((prev) =>
+        prev.map((m) => (m.id === currentId ? { ...m, streaming: false } : m))
+      );
+      liveAiMsgIdRef.current = null;
+    }
+    if (liveUserMsgIdRef.current) {
+      liveUserMsgIdRef.current = null;
+    }
+  }, []);
+
   // Accumulate the LLM's reasoning trace (tool calls + results) for the
   // current assistant message so the user can see *why* the answer was
   // produced, not just the answer itself.
@@ -197,32 +276,71 @@ const AskCopilotSection = ({
     startRecording: startVoiceWsRecording,
     stopRecording: stopVoiceWsRecording,
     toggleMute: toggleVoiceWsMute,
-  } = useVoiceAssistant(user?.uid, storeId);
-
-  const handleToggleLiveCall = useCallback(() => {
-    if (isLiveCallActive || isVoiceWsConnected) {
-      setIsLiveCallActive(false);
-      disconnectVoiceWs();
-      if (recognitionRef.current && isListening) {
-        recognitionRef.current.stop();
-        setIsListening(false);
-      }
-    } else {
-      setIsLiveCallActive(true);
-      connectVoiceWs();
-    }
-  }, [isLiveCallActive, isVoiceWsConnected, disconnectVoiceWs, isListening, connectVoiceWs]);
+  } = useVoiceAssistant(user?.uid, storeId, {
+    onAiText: handleVoiceAiText,
+    onAiTranscript: handleVoiceAiText,
+    onUserTranscript: handleVoiceUserTranscript,
+    onTurnComplete: handleVoiceTurnComplete,
+  });
 
   const handleEndLiveCall = useCallback(() => {
     setIsLiveCallActive(false);
+    isLiveCallActiveRef.current = false;
     disconnectVoiceWs();
+
     if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (_) {}
       setIsListening(false);
     }
+
+    if (liveSilenceTimerRef.current) {
+      clearTimeout(liveSilenceTimerRef.current);
+      liveSilenceTimerRef.current = null;
+    }
+
+    // Ensure any open in-flight assistant or user message during call is cleanly finalized
+    if (liveAiMsgIdRef.current) {
+      const aiId = liveAiMsgIdRef.current;
+      setMessages((prev) =>
+        prev.map((m) => (m.id === aiId ? { ...m, streaming: false } : m))
+      );
+      liveAiMsgIdRef.current = null;
+    }
+    liveUserMsgIdRef.current = null;
+    setLiveSpeechTranscript("");
   }, [disconnectVoiceWs, isListening]);
 
-  // Setup browser speech recognition for word-by-word user voice input
+  const handleToggleLiveCall = useCallback(() => {
+    if (isLiveCallActive || isVoiceWsConnected) {
+      handleEndLiveCall();
+    } else {
+      setIsLiveCallActive(true);
+      isLiveCallActiveRef.current = true;
+      setShowSuggestions(false);
+      connectVoiceWs();
+
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch (e) {
+          console.warn("Could not start speech recognition on call open:", e);
+        }
+      }
+    }
+  }, [isLiveCallActive, isVoiceWsConnected, handleEndLiveCall, connectVoiceWs]);
+
+  // Synchronize ref for AI speech status to prevent microphone echo loop
+  const isSpeakingRef = useRef(false);
+  const isRestartingRef = useRef(false);
+
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
+
+  // Setup browser speech recognition for real-time user voice input in both Live Call & normal chat
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition =
@@ -235,13 +353,89 @@ const AskCopilotSection = ({
         recognition.lang = "en-IN";
 
         recognition.onresult = (event) => {
-          let currentSpoken = "";
-          for (let i = 0; i < event.results.length; i++) {
-            currentSpoken += event.results[i][0].transcript;
+          // If the AI is currently speaking out loud, ignore mic input to avoid echo loops
+          if (isSpeakingRef.current) {
+            return;
           }
-          setLiveSpeechTranscript(currentSpoken);
-          if (currentSpoken) {
-            setMessage(currentSpoken);
+
+          let latestFinal = "";
+          let latestInterim = "";
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0]?.transcript || "";
+            if (event.results[i].isFinal) {
+              latestFinal += transcript;
+            } else {
+              latestInterim += transcript;
+            }
+          }
+
+          const activeText = (latestFinal || latestInterim).trim();
+          if (!activeText) return;
+
+          setLiveSpeechTranscript(activeText);
+
+          if (isLiveCallActiveRef.current) {
+            setShowSuggestions(false);
+
+            if (latestFinal.trim()) {
+              const finalText = latestFinal.trim();
+              const activeUserId = liveUserMsgIdRef.current || `user-voice-${Date.now()}`;
+              setMessages((prev) => {
+                const exists = prev.some((m) => m.id === activeUserId);
+                if (exists) {
+                  return prev.map((m) =>
+                    m.id === activeUserId ? { ...m, text: finalText } : m
+                  );
+                }
+                return [
+                  ...prev,
+                  {
+                    id: activeUserId,
+                    role: "user",
+                    text: finalText,
+                    timestamp: Date.now(),
+                  },
+                ];
+              });
+              // Utterance finalized: reset live user message ID so next spoken phrase starts a new clean turn
+              liveUserMsgIdRef.current = null;
+            } else if (latestInterim.trim()) {
+              const interimText = latestInterim.trim();
+              const activeUserId = liveUserMsgIdRef.current || `user-voice-${Date.now()}`;
+              liveUserMsgIdRef.current = activeUserId;
+
+              setMessages((prev) => {
+                const exists = prev.some((m) => m.id === activeUserId);
+                if (exists) {
+                  return prev.map((m) =>
+                    m.id === activeUserId ? { ...m, text: interimText } : m
+                  );
+                }
+                return [
+                  ...prev,
+                  {
+                    id: activeUserId,
+                    role: "user",
+                    text: interimText,
+                    timestamp: Date.now(),
+                  },
+                ];
+              });
+            }
+
+            // User pause / silence timer as fallback to finalize turn
+            if (liveSilenceTimerRef.current) {
+              clearTimeout(liveSilenceTimerRef.current);
+            }
+            liveSilenceTimerRef.current = setTimeout(() => {
+              if (liveUserMsgIdRef.current) {
+                liveUserMsgIdRef.current = null;
+              }
+            }, 1800);
+          } else {
+            // NORMAL CHAT MODE: put into message input box
+            setMessage(activeText);
             if (textareaRef.current) {
               textareaRef.current.style.height = "auto";
               textareaRef.current.style.height = `${Math.min(
@@ -253,12 +447,36 @@ const AskCopilotSection = ({
         };
 
         recognition.onerror = (event) => {
-          console.error("Speech recognition error:", event.error);
+          // Benign browser speech events: 'no-speech', 'aborted', 'network'
+          if (event.error === "no-speech" || event.error === "aborted") {
+            return;
+          }
+          if (event.error === "network") {
+            // Handled gracefully without breaking UI
+            setIsListening(false);
+            return;
+          }
+          console.warn("Speech recognition notice:", event.error);
           setIsListening(false);
         };
 
         recognition.onend = () => {
           setIsListening(false);
+          // If in live call mode, restart with a gentle throttle to avoid network collision
+          if (isLiveCallActiveRef.current && !isRestartingRef.current) {
+            isRestartingRef.current = true;
+            setTimeout(() => {
+              isRestartingRef.current = false;
+              if (isLiveCallActiveRef.current && recognitionRef.current) {
+                try {
+                  recognitionRef.current.start();
+                  setIsListening(true);
+                } catch (_) {
+                  setIsListening(false);
+                }
+              }
+            }, 500);
+          }
         };
 
         recognitionRef.current = recognition;
