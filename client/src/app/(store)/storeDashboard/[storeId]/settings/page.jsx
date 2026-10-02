@@ -20,7 +20,7 @@ const StoreSettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-4 px-2 sm:px-3 md:px-4 max-w-7xl mx-auto">
+    <div className="min-h-screen py-4 px-1 sm:px-2 md:px-3 w-full">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Store Settings

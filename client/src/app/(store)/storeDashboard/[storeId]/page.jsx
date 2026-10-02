@@ -45,7 +45,7 @@ const InventoryContent = () => {
 
   return (
     <div className="min-h-screen pb-8 sm:pb-12">
-      <div className="w-full px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-6 max-w-7xl mx-auto">
+      <div className="w-full px-1 sm:px-2 md:px-3 py-3 sm:py-4 md:py-6">
         {/* Header Section */}
         <InventoryHeader
           storeId={storeId}

@@ -80,8 +80,8 @@ const OverviewPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 rounded-3xl">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen py-6 px-1 sm:px-2 md:px-3 rounded-3xl">
+      <div className="w-full">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">

@@ -56,7 +56,11 @@ export default function StoreLayout({ children }) {
             isDraggingCopilot ? "transition-none" : "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
           }`}
           style={{
-            padding: isResponsive ? "12px 12px 16px 12px" : "12px 16px 16px 0px",
+            padding: isResponsive
+              ? "12px 8px 16px 8px"
+              : copilotOpen
+              ? "12px 2px 16px 0px"
+              : "12px 12px 16px 0px",
             marginRight: !isResponsive && copilotOpen ? `${copilotWidth || 480}px` : "0px",
           }}
         >
