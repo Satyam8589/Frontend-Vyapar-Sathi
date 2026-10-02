@@ -19,6 +19,39 @@ const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), {
   ssr: false,
 });
 
+export const STANDARD_UNITS = [
+  "Pieces",
+  "Packs",
+  "Boxes",
+  "Bottles",
+  "Cans",
+  "Cartons",
+  "Dozens",
+  "Pouches",
+  "Sachets",
+  "Strips",
+  "Bags",
+  "Pairs",
+  "Sets",
+  "Rolls",
+  "Bundles",
+  "Jars",
+  "Tubes",
+  "kg",
+  "g",
+  "mg",
+  "Quintal",
+  "Ton",
+  "Liters",
+  "ml",
+  "Meters",
+  "cm",
+  "Feet",
+  "Inches",
+  "Sq. Feet",
+  "Sq. Meters",
+];
+
 const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   const { storeId, updateProduct } = useInventoryContext();
   const [mounted, setMounted] = useState(false);
@@ -44,6 +77,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   }, []);
 
   const [formData, setFormData] = useState(createInitialFormData);
+  const [isCustomUnit, setIsCustomUnit] = useState(false);
   const [imageOrigin, setImageOrigin] = useState("");
   const [imageUploadState, setImageUploadState] = useState({
     status: "idle",
@@ -100,6 +134,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
   useEffect(() => {
     if (isOpen) {
       setFormData(createInitialFormData());
+      setIsCustomUnit(false);
       setImageOrigin("");
       setImageUploadState({ status: "idle", error: "" });
       setScannerOpen(false);
@@ -144,6 +179,11 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         // Found in store — switch to update mode and pre-fill all fields
         setStoreProductId(storeProduct._id);
         setIsUpdateMode(true);
+        if (storeProduct.unit && !STANDARD_UNITS.includes(storeProduct.unit)) {
+          setIsCustomUnit(true);
+        } else {
+          setIsCustomUnit(false);
+        }
         setFormData((prev) => ({
           ...prev,
           barcode,
@@ -559,23 +599,95 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 />
               </div>
               <div className="col-span-7 flex flex-col gap-2">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
-                  Unit
-                </label>
-                <select
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 cursor-pointer font-semibold"
-                >
-                  <option>Pieces</option>
-                  {/* <option>ml</option>
-                  <option>g</option>
-                  <option>kg</option>
-                  <option>Liters</option>
-                  <option>Packs</option>
-                  <option>Bottles</option> */}
-                </select>
+                <div className="flex items-center justify-between min-h-[32px]">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    Unit
+                  </label>
+                  {isCustomUnit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomUnit(false);
+                        setFormData((prev) => ({
+                          ...prev,
+                          unit: STANDARD_UNITS.includes(prev.unit) && prev.unit ? prev.unit : "Pieces",
+                        }));
+                      }}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      ← Standard list
+                    </button>
+                  )}
+                </div>
+
+                {isCustomUnit ? (
+                  <div className="relative flex items-center">
+                    <input
+                      required
+                      autoFocus
+                      type="text"
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleChange}
+                      placeholder="Type custom unit (e.g. Bundle, Tray, Drum)"
+                      className="w-full px-4 py-3 bg-white border-2 border-blue-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-xs"
+                    />
+                  </div>
+                ) : (
+                  <select
+                    name="unit"
+                    value={STANDARD_UNITS.includes(formData.unit) ? formData.unit : "__custom__"}
+                    onChange={(e) => {
+                      if (e.target.value === "__custom__") {
+                        setIsCustomUnit(true);
+                        setFormData((prev) => ({ ...prev, unit: "" }));
+                      } else {
+                        setFormData((prev) => ({ ...prev, unit: e.target.value }));
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 cursor-pointer font-semibold"
+                  >
+                    <optgroup label="Count & Packaging">
+                      <option value="Pieces">Pieces (Pcs)</option>
+                      <option value="Packs">Packs (Pkts)</option>
+                      <option value="Boxes">Boxes (Box)</option>
+                      <option value="Bottles">Bottles (Btl)</option>
+                      <option value="Cans">Cans</option>
+                      <option value="Cartons">Cartons (Ctn)</option>
+                      <option value="Dozens">Dozens (Dzn)</option>
+                      <option value="Pouches">Pouches</option>
+                      <option value="Sachets">Sachets</option>
+                      <option value="Strips">Strips (Medicines)</option>
+                      <option value="Bags">Bags / Sacks</option>
+                      <option value="Pairs">Pairs</option>
+                      <option value="Sets">Sets</option>
+                      <option value="Rolls">Rolls</option>
+                      <option value="Bundles">Bundles</option>
+                      <option value="Jars">Jars</option>
+                      <option value="Tubes">Tubes</option>
+                    </optgroup>
+                    <optgroup label="Weight & Mass">
+                      <option value="kg">kg (Kilogram)</option>
+                      <option value="g">g (Gram)</option>
+                      <option value="mg">mg (Milligram)</option>
+                      <option value="Quintal">Quintal (q)</option>
+                      <option value="Ton">Ton (t)</option>
+                    </optgroup>
+                    <optgroup label="Volume & Liquids">
+                      <option value="Liters">Liters (L)</option>
+                      <option value="ml">ml (Milliliter)</option>
+                    </optgroup>
+                    <optgroup label="Length & Area">
+                      <option value="Meters">Meters (m)</option>
+                      <option value="cm">Centimeters (cm)</option>
+                      <option value="Feet">Feet (ft)</option>
+                      <option value="Inches">Inches (in)</option>
+                      <option value="Sq. Feet">Sq. Feet (sq.ft)</option>
+                      <option value="Sq. Meters">Sq. Meters (sq.m)</option>
+                    </optgroup>
+                    <option value="__custom__">✍️ Custom Unit (Type manually)...</option>
+                  </select>
+                )}
               </div>
 
               {/* Price & Exp Date */}
