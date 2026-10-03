@@ -97,7 +97,7 @@ export default function CartoonVoiceBotView({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const isBotTalking = isAISpeaking || (isConnected && isReady && !isRecording);
+  const isBotTalking = Boolean(isAISpeaking);
   const isUserTalking = isRecording && !isMuted;
 
   return (

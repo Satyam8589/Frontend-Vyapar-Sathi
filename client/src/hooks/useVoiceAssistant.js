@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+﻿import { useState, useRef, useCallback } from 'react';
 
 // Resample Float32 from srcRate to 16kHz for Gemini input
 function resampleTo16k(float32, srcRate) {

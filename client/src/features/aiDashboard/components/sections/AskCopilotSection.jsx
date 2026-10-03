@@ -193,6 +193,7 @@ const AskCopilotSection = ({
   // Live assistant text streaming handler from WebSocket
   const handleVoiceAiText = useCallback((chunk) => {
     if (!chunk) return;
+    setIsSpeaking(true);
     setLiveSpeechTranscript(chunk);
     setShowSuggestions(false);
     const aiId = liveAiMsgIdRef.current || `assistant-voice-${Date.now()}`;
@@ -247,6 +248,7 @@ const AskCopilotSection = ({
 
   // Turn completion handler from WebSocket
   const handleVoiceTurnComplete = useCallback(() => {
+    setIsSpeaking(false);
     if (liveAiMsgIdRef.current) {
       const currentId = liveAiMsgIdRef.current;
       setMessages((prev) =>
@@ -311,6 +313,13 @@ const AskCopilotSection = ({
     onToolStart: handleVoiceToolStart,
     onToolComplete: handleVoiceToolComplete,
   });
+
+  // Auto-start microphone streaming to Gemini once WebSocket is ready in Live Call mode
+  useEffect(() => {
+    if (isLiveCallActive && isVoiceWsReady && !isVoiceWsRecording && !voiceWsPermissionError) {
+      startVoiceWsRecording();
+    }
+  }, [isLiveCallActive, isVoiceWsReady, isVoiceWsRecording, voiceWsPermissionError, startVoiceWsRecording]);
 
   const handleEndLiveCall = useCallback(() => {
     setIsLiveCallActive(false);
