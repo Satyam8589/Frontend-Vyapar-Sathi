@@ -93,7 +93,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
 
         const aiWsBase = (
             process.env.NEXT_PUBLIC_AI_WS_URL ||
-            (process.env.NEXT_PUBLIC_AI_URL ? process.env.NEXT_PUBLIC_AI_URL.replace(/^http/, 'ws') : null) ||
+            (process.env.NEXT_PUBLIC_AI_URL ? process.env.NEXT_PUBLIC_AI_URL.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:') : null) ||
             'ws://localhost:8000'
         ).replace(/\/api\/?$/, '');
 
