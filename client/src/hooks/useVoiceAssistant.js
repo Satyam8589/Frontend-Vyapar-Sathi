@@ -91,9 +91,13 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             return;
         }
 
-        const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api')
-            .replace(/\/api\/?$/, '');
-        const wsUrl = new URL('/ws/voice', apiBaseUrl.replace(/^http/, 'ws'));
+        const aiWsBase = (
+            process.env.NEXT_PUBLIC_AI_WS_URL ||
+            (process.env.NEXT_PUBLIC_AI_URL ? process.env.NEXT_PUBLIC_AI_URL.replace(/^http/, 'ws') : null) ||
+            'ws://localhost:8000'
+        ).replace(/\/api\/?$/, '');
+
+        const wsUrl = new URL('/ws/voice', aiWsBase);
         wsUrl.searchParams.set('user_id', String(userId));
         wsUrl.searchParams.set('store_id', String(storeId));
 
