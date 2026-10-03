@@ -51,11 +51,14 @@ function createPcmPlayer(audioCtx) {
 
 export const useVoiceAssistant = (userId, storeId, options = {}) => {
     const { onAiText, onAiTranscript, onUserTranscript, onTurnComplete } = options;
+    const optionsRef = useRef(options);
     const onAiTextRef = useRef(onAiText);
     const onAiTranscriptRef = useRef(onAiTranscript);
     const onUserTranscriptRef = useRef(onUserTranscript);
     const onTurnCompleteRef = useRef(onTurnComplete);
 
+    // Keep all refs current on every render (no stale-closure bugs)
+    optionsRef.current = options;
     onAiTextRef.current = onAiText;
     onAiTranscriptRef.current = onAiTranscript;
     onUserTranscriptRef.current = onUserTranscript;
@@ -91,15 +94,69 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             return;
         }
 
-        const aiWsBase = (
-            process.env.NEXT_PUBLIC_AI_WS_URL ||
-            (process.env.NEXT_PUBLIC_AI_URL ? process.env.NEXT_PUBLIC_AI_URL.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:') : null) ||
-            'ws://localhost:8000'
-        ).replace(/\/api\/?$/, '');
+        // ---------------------------------------------------------------------------
+        // Build WebSocket base URL
+        //
+        // Priority:
+        //   1. NEXT_PUBLIC_AI_WS_URL  — explicit wss:// URL (best for production)
+        //   2. NEXT_PUBLIC_AI_URL     — http(s):// URL, converted to ws(s)://
+        //   3. NEXT_PUBLIC_API_URL    — Express API URL, strip /api, convert to ws(s)://
+        //   4. Hardcoded localhost fallback (dev only)
+        // ---------------------------------------------------------------------------
+        const toWsOrigin = (url) => {
+            try {
+                const u = new URL(url);
+                const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+                // Use only origin (scheme + host + port) — drop any path
+                return `${proto}//${u.host}`;
+            } catch {
+                return null;
+            }
+        };
+
+        let aiWsBase = null;
+
+        if (process.env.NEXT_PUBLIC_AI_WS_URL) {
+            // Already a ws:// or wss:// URL — strip any path, keep origin only
+            aiWsBase = toWsOrigin(process.env.NEXT_PUBLIC_AI_WS_URL.replace(/^ws/i, 'http'));
+            // toWsOrigin converted to http to parse, convert back to ws
+            if (aiWsBase) aiWsBase = aiWsBase; // already correct proto from toWsOrigin logic below
+            // Redo: parse directly
+            try {
+                const raw = process.env.NEXT_PUBLIC_AI_WS_URL.trim().replace(/\/+$/, '');
+                // Validate it starts with ws
+                if (/^wss?:\///i.test(raw)) {
+                    const u = new URL(raw);
+                    aiWsBase = `${u.protocol}//${u.host}`;
+                } else {
+                    aiWsBase = toWsOrigin(raw);
+                }
+            } catch { aiWsBase = null; }
+            console.log('[Voice] URL source: NEXT_PUBLIC_AI_WS_URL →', aiWsBase);
+        }
+
+        if (!aiWsBase && process.env.NEXT_PUBLIC_AI_URL) {
+            aiWsBase = toWsOrigin(process.env.NEXT_PUBLIC_AI_URL.trim());
+            console.log('[Voice] URL source: NEXT_PUBLIC_AI_URL →', aiWsBase);
+        }
+
+        if (!aiWsBase && process.env.NEXT_PUBLIC_API_URL) {
+            // e.g. https://backend.onrender.com/api  → wss://backend.onrender.com
+            // The AI service is separate, but this gives us at least the hostname pattern
+            aiWsBase = toWsOrigin(process.env.NEXT_PUBLIC_API_URL.trim());
+            console.warn('[Voice] Falling back to NEXT_PUBLIC_API_URL origin for WS —', aiWsBase,
+                '— Set NEXT_PUBLIC_AI_WS_URL in production for correct behaviour.');
+        }
+
+        if (!aiWsBase) {
+            aiWsBase = 'ws://localhost:8080';
+            console.warn('[Voice] No AI URL env var found. Using localhost fallback. Set NEXT_PUBLIC_AI_WS_URL in production.');
+        }
 
         const wsUrl = new URL('/ws/voice', aiWsBase);
         wsUrl.searchParams.set('user_id', String(userId));
         wsUrl.searchParams.set('store_id', String(storeId));
+        console.log('[Voice] Connecting to:', wsUrl.toString());
 
         const ws = new WebSocket(wsUrl.toString());
         ws.binaryType = 'arraybuffer';

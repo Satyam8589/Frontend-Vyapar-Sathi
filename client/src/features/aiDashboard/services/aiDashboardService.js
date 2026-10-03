@@ -233,3 +233,30 @@ export const streamClarifyResponse = async ({
     reader.releaseLock();
   }
 };
+
+// ---------------------------------------------------------------------------
+// Agent-generated files (Excel / Word / CSV / PDF stored in Cloudflare R2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch the list of agent-generated files for a store from R2.
+ * @param {string} storeId
+ * @returns {Promise<{ files: Array, total: number }>}
+ */
+export const fetchAgentFiles = async (storeId) => {
+  const response = await apiGet(`/ai/${storeId}/files`);
+  return response?.data || { files: [], total: 0 };
+};
+
+/**
+ * Request a short-lived presigned download URL for a file stored in R2.
+ * @param {string} storeId
+ * @param {string} storageKey  – the R2 object key
+ * @returns {Promise<{ download_url: string, filename: string, expires_in: number }>}
+ */
+export const fetchFileDownloadUrl = async (storeId, storageKey) => {
+  const encoded = encodeURIComponent(storageKey);
+  const response = await apiGet(`/ai/${storeId}/files/download?key=${encoded}`);
+  return response?.data || null;
+};
+

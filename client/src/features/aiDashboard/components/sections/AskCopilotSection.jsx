@@ -282,7 +282,7 @@ const AskCopilotSection = ({
     setVoiceToolStatus({
       active: true,
       name: data.tool,
-      label: data.label || "Completed!",
+      label: data.label || "Done!",
       completed: true,
     });
     if (voiceToolTimerRef.current) clearTimeout(voiceToolTimerRef.current);
