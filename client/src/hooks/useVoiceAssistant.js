@@ -50,7 +50,10 @@ function createPcmPlayer(audioCtx) {
 }
 
 export const useVoiceAssistant = (userId, storeId, options = {}) => {
-    const { onAiText, onAiTranscript, onUserTranscript, onTurnComplete } = options;
+    const { onAiText, onAiTranscript, onUserTranscript, onTurnComplete, onToolStart, onToolComplete } = options;
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
+
     const onAiTextRef = useRef(onAiText);
     const onAiTranscriptRef = useRef(onAiTranscript);
     const onUserTranscriptRef = useRef(onUserTranscript);
@@ -91,11 +94,21 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             return;
         }
 
-        const aiWsBase = (
-            process.env.NEXT_PUBLIC_AI_WS_URL ||
-            (process.env.NEXT_PUBLIC_AI_URL ? process.env.NEXT_PUBLIC_AI_URL.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:') : null) ||
-            'ws://localhost:8000'
-        ).replace(/\/api\/?$/, '');
+        let aiWsBase = process.env.NEXT_PUBLIC_AI_WS_URL;
+        if (!aiWsBase && process.env.NEXT_PUBLIC_AI_URL) {
+            aiWsBase = process.env.NEXT_PUBLIC_AI_URL.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:');
+        }
+        if (!aiWsBase && process.env.NEXT_PUBLIC_API_URL) {
+            aiWsBase = process.env.NEXT_PUBLIC_API_URL
+                .replace(/\/api\/?$/, '')
+                .replace(/^https:/i, 'wss:')
+                .replace(/^http:/i, 'ws:');
+        }
+        if (!aiWsBase && typeof window !== 'undefined' && window.location) {
+            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            aiWsBase = `${proto}//${window.location.host}`;
+        }
+        aiWsBase = (aiWsBase || 'ws://localhost:8000').replace(/\/api\/?$/, '');
 
         const wsUrl = new URL('/ws/voice', aiWsBase);
         wsUrl.searchParams.set('user_id', String(userId));
