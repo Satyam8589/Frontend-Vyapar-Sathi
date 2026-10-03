@@ -47,14 +47,29 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
   const loadDependencies = async () => {
     try {
       setFetchingData(true);
-      const [sellersRes, productsRes] = await Promise.all([
+      const [sellersResult, productsResult] = await Promise.allSettled([
         getSellers(storeId, { limit: 100 }),
         getStoreProducts(storeId)
       ]);
-      setSellers(sellersRes.sellers || []);
-      setProducts(productsRes.products || productsRes.data || []);
-    } catch (err) {
-      console.error("Failed to load sellers/products", err);
+
+      if (sellersResult.status === "fulfilled") {
+        const sellersRes = sellersResult.value;
+        setSellers(Array.isArray(sellersRes) ? sellersRes : sellersRes?.sellers || sellersRes?.data || []);
+      } else {
+        console.error("Failed to load sellers", sellersResult.reason);
+        setSellers([]);
+      }
+
+      if (productsResult.status === "fulfilled") {
+        const productsRes = productsResult.value;
+        const storeProducts = Array.isArray(productsRes)
+          ? productsRes
+          : productsRes?.products || productsRes?.data || [];
+        setProducts(storeProducts);
+      } else {
+        console.error("Failed to load store products", productsResult.reason);
+        setProducts([]);
+      }
     } finally {
       setFetchingData(false);
     }
@@ -106,7 +121,8 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
     if (field === "product") {
       const selectedProduct = products.find(p => p._id === value);
       if (selectedProduct) {
-        newItems[index].purchasePrice = selectedProduct.purchasePrice || 0;
+        newItems[index].purchasePrice =
+          selectedProduct.buyingPrice ?? selectedProduct.purchasePrice ?? 0;
       }
     }
 
@@ -249,7 +265,11 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                           onChange={e => handleItemChange(index, "product", e.target.value)}
                         >
                           <option value="">Select Product</option>
-                          {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                          {products.map(p => (
+                            <option key={p._id} value={p._id}>
+                              {p.name}{p.sku ? ` (${p.sku})` : ""}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="w-24">
