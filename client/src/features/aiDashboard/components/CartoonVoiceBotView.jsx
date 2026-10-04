@@ -543,23 +543,24 @@ export default function CartoonVoiceBotView({
         {/* 1. Mic On / Mute Button */}
         <button
           type="button"
-          onClick={isRecording ? onStopRecording : onStartRecording}
+          onClick={onToggleMute}
           className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
-          title={isRecording ? "Mute Microphone" : "Turn On Microphone"}
+          title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
         >
           <div
             className={`h-12 w-12 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
-              isRecording
-                ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-emerald-500/40 ring-4 ring-emerald-400/40"
-                : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-white/15"
+              isMuted
+                ? "bg-slate-800/90 text-rose-400 border border-rose-500/40 ring-2 ring-rose-500/20"
+                : "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-emerald-500/40 ring-4 ring-emerald-400/40"
             }`}
           >
-            {isRecording ? <Mic className="h-5 w-5 animate-pulse" /> : <MicOff className="h-5 w-5" />}
+            {isMuted ? <MicOff className="h-5 w-5 text-rose-400" /> : <Mic className="h-5 w-5 animate-pulse" />}
           </div>
           <span className="text-[11px] font-semibold text-slate-200">
-            {isRecording ? "Mic On" : "Muted"}
+            {isMuted ? "Muted" : "Mic On"}
           </span>
         </button>
+
 
         {/* 2. End Call Button */}
         <button

@@ -327,18 +327,25 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
     }, []);
 
     const toggleMute = useCallback(() => {
-        if (!isRecording) return;
+        setIsMuted((prevMuted) => {
+            const nextMuted = !prevMuted;
+            mutedRef.current = nextMuted;
 
-        const nextMuted = !isMuted;
-        mutedRef.current = nextMuted;
-        mediaStreamRef.current?.getAudioTracks().forEach(track => {
-            track.enabled = !nextMuted;
+            if (mediaStreamRef.current) {
+                mediaStreamRef.current.getAudioTracks().forEach((track) => {
+                    track.enabled = !nextMuted;
+                });
+            }
+
+            if (nextMuted && wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
+            }
+
+            console.log('[Voice] Microphone mute toggled:', nextMuted);
+            return nextMuted;
         });
-        if (nextMuted && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
-        }
-        setIsMuted(nextMuted);
-    }, [isMuted, isRecording]);
+    }, []);
+
 
     const sendTextMessage = useCallback((text) => {
         if (!text || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;

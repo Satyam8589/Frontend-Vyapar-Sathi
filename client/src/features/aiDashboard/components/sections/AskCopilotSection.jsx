@@ -362,18 +362,18 @@ const AskCopilotSection = ({
       setIsLiveCallActive(true);
       isLiveCallActiveRef.current = true;
       setShowSuggestions(false);
-      connectVoiceWs();
 
+      // Stop browser SpeechRecognition to prevent mobile chime beeps ("tiu tiu") during socket voice stream
       if (recognitionRef.current) {
         try {
-          recognitionRef.current.start();
-          setIsListening(true);
-        } catch (e) {
-          console.warn("Could not start speech recognition on call open:", e);
-        }
+          recognitionRef.current.stop();
+        } catch (_) {}
       }
+      setIsListening(false);
+      connectVoiceWs();
     }
   }, [isLiveCallActive, isVoiceWsConnected, handleEndLiveCall, connectVoiceWs]);
+
 
   // Synchronize ref for AI speech status to prevent microphone echo loop
   const isSpeakingRef = useRef(false);
@@ -505,22 +505,9 @@ const AskCopilotSection = ({
 
         recognition.onend = () => {
           setIsListening(false);
-          // If in live call mode, restart with a gentle throttle to avoid network collision
-          if (isLiveCallActiveRef.current && !isRestartingRef.current) {
-            isRestartingRef.current = true;
-            setTimeout(() => {
-              isRestartingRef.current = false;
-              if (isLiveCallActiveRef.current && recognitionRef.current) {
-                try {
-                  recognitionRef.current.start();
-                  setIsListening(true);
-                } catch (_) {
-                  setIsListening(false);
-                }
-              }
-            }, 500);
-          }
+          // Never auto-restart browser SpeechRecognition during Live Call mode to prevent mobile browser "tiu tiu" beeps
         };
+
 
         recognitionRef.current = recognition;
       }
