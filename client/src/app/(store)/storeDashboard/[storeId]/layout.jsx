@@ -16,7 +16,7 @@ import { InventoryProvider } from "@/features/inventory/context/inventoryContext
 export default function StoreLayout({ children }) {
   const pathname = usePathname();
   const isBillingPage = pathname.endsWith("/billing");
-  const { enterStorePage, exitStorePage } = useStorePageContext();
+  const { enterStorePage, exitStorePage, copilotOpen, copilotWidth, isDraggingCopilot } = useStorePageContext();
   const [isResponsive, setIsResponsive] = useState(false);
 
   useEffect(() => {
@@ -46,17 +46,22 @@ export default function StoreLayout({ children }) {
 
   return (
     <InventoryProvider>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      <div className="relative flex min-h-screen w-full">
         {/* Desktop Sidebar - Hidden on mobile */}
         {!isResponsive && <VyaparSathiSidebar />}
 
-        {/* Main Content Area */}
+        {/* Main Content Area - Slides and resizes dynamically when AI Copilot opens and resizes */}
         <main
+          className={`flex-1 w-full min-w-0 ${
+            isDraggingCopilot ? "transition-none" : "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          }`}
           style={{
-            flex: 1,
-            width: "100%",
-            minWidth: 0,
-            padding: isResponsive ? "12px 12px 16px 12px" : "12px 16px 16px 0px",
+            padding: isResponsive
+              ? "12px 8px 16px 8px"
+              : copilotOpen
+              ? "12px 2px 16px 0px"
+              : "12px 12px 16px 0px",
+            marginRight: !isResponsive && copilotOpen ? `${copilotWidth || 480}px` : "0px",
           }}
         >
           <StoreBreadcrumb isResponsive={isResponsive} />

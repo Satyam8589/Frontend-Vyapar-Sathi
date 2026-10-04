@@ -8,7 +8,11 @@ const ChatHistorySidebar = ({ storeId, onChatSelect, onChatDeleted, refreshKey =
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeChatId, setActiveChatId] = useState(getChatId());
+  const [activeChatId, setActiveChatId] = useState(null);
+
+  useEffect(() => {
+    setActiveChatId(getChatId());
+  }, []);
 
   const loadChats = async () => {
     if (!storeId) {
@@ -28,9 +32,11 @@ try {
   };
 
   useEffect(() => {
-    loadChats();
+    if (open || storeId) {
+      loadChats();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, refreshKey]);
+  }, [storeId, refreshKey, open]);
 
   const handleSelectChat = (chat) => {
     setActiveChatId(chat.chat_id);

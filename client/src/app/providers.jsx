@@ -7,7 +7,7 @@ import Background from "@/components/Background";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { StorePageProvider } from "@/features/store/context/storePageContext";
 import SwipeToCloseToast from "@/components/SwipeToCloseToast";
-import VoiceBotWrapper from "@/components/VoiceBotWrapper";
+import { FloatingChatBot } from "@/features/aiDashboard/components";
 
 export default function Providers({ children }) {
   const pathname = usePathname();
@@ -36,8 +36,8 @@ export default function Providers({ children }) {
         >
           {children}
         </div>
-        {/* Voice Assistant — inside AuthProvider so useAuth works */}
-        <VoiceBotWrapper />
+        {/* Floating AI Chatbot & Voice Assistant Widget */}
+        <FloatingChatBot />
         {/* Toast Notifications */}
         <Toaster
           position="bottom-right"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EmptyState from "./sections/EmptyState";
 import AskCopilotSection from "./sections/AskCopilotSection";
 import ChatHistorySidebar from "./ChatHistorySidebar";
@@ -8,6 +8,7 @@ import ForecastSection from "./sections/ForecastSection";
 import InsightsSection from "./sections/InsightsSection";
 import RestockSection from "./sections/RestockSection";
 import SummarySection from "./sections/SummarySection";
+import AgentFilesSection from "./sections/AgentFilesSection";
 import { getChatId, setChatId } from "@/servies/api";
 
 const AIDashboardContent = ({
@@ -50,8 +51,12 @@ const AIDashboardContent = ({
     );
   }
 
-  const [chatKey, setChatKey] = useState(getChatId());
+  const [chatKey, setChatKey] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setChatKey(getChatId());
+  }, []);
   // Bumped whenever a new chat is created or titled, so the sidebar
   // refetches its list and shows the generated title.
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
@@ -131,6 +136,8 @@ const AIDashboardContent = ({
           loading={loadingState.insights}
           error={errorState.insights}
         />
+
+        <AgentFilesSection storeId={storeId} />
       </div>
     </div>
   );

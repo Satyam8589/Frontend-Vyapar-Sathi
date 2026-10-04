@@ -48,7 +48,7 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
   }
 
   return (
-    <div className="sticky top-3 z-40 mx-auto -mb-3 w-full max-w-7xl px-2 sm:px-3 md:px-4">
+    <div className="sticky top-3 z-40 w-full -mb-3 px-1 sm:px-2 md:px-3">
       {/* Opaque layer that blocks content from showing behind breadcrumb while scrolling */}
       <div
         aria-hidden="true"

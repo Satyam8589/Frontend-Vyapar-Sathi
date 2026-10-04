@@ -20,6 +20,8 @@ import {
   XCircle,
   AlertTriangle,
   ExternalLink,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 /* =========================================================
@@ -795,239 +797,176 @@ function CodeBlock({ children, className }) {
    MARKDOWN RENDERER
 ========================================================= */
 
-function MarkdownRenderer({ content, className = "" }) {
-  return (
-    <div className={className}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeHighlight, { ignoreMissing: true }]]}
-        components={{
-          h1: ({ children }) => (
-            <h1
-              className="
-                mt-6
-                mb-4
-                border-b
-                border-slate-200
-                pb-2
-                text-2xl
-                font-bold
-                text-slate-900
-              "
-            >
-              {children}
-            </h1>
-          ),
+function MarkdownRenderer({ content, className = "", isStreaming = false }) {
+    return (
+      <div className={`prose-sm max-w-none text-slate-800 ${className}`}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[[rehypeHighlight, { ignoreMissing: true }]]}
+          components={{
+            h1: ({ children }) => (
+              <h1 className="mt-5 mb-3 border-b border-slate-200 pb-2 text-xl font-bold tracking-tight text-slate-900">
+                {children}
+              </h1>
+            ),
 
-          h2: ({ children }) => (
-            <h2 className="mt-5 mb-3 text-xl font-bold text-slate-800">
-              {children}
-            </h2>
-          ),
+            h2: ({ children }) => (
+              <h2 className="mt-4 mb-2.5 text-base font-bold text-slate-900 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-indigo-600 inline-block" />
+                {children}
+              </h2>
+            ),
 
-          h3: ({ children }) => (
-            <h3 className="mt-4 mb-2 text-lg font-semibold text-slate-800">
-              {children}
-            </h3>
-          ),
+            h3: ({ children }) => (
+              <h3 className="mt-3.5 mb-2 text-sm font-bold text-slate-800">
+                {children}
+              </h3>
+            ),
 
-          h4: ({ children }) => (
-            <h4 className="mt-3 mb-2 text-base font-semibold text-slate-700">
-              {children}
-            </h4>
-          ),
+            h4: ({ children }) => (
+              <h4 className="mt-3 mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-600">
+                {children}
+              </h4>
+            ),
 
-          p: ({ children }) => (
-            <p className="mb-3 leading-7 text-slate-700">{children}</p>
-          ),
+            p: ({ children }) => (
+              <p className="mb-2.5 leading-relaxed text-slate-700 text-sm">{children}</p>
+            ),
 
-          ul: ({ children }) => (
-            <ul className="mb-4 ml-5 list-disc space-y-1.5 text-slate-700">
-              {children}
-            </ul>
-          ),
+            ul: ({ children }) => (
+              <ul className="mb-3.5 ml-4 list-disc space-y-1 text-slate-700 text-sm marker:text-indigo-500">
+                {children}
+              </ul>
+            ),
 
-          ol: ({ children }) => (
-            <ol className="mb-4 ml-5 list-decimal space-y-1.5 text-slate-700">
-              {children}
-            </ol>
-          ),
+            ol: ({ children }) => (
+              <ol className="mb-3.5 ml-4 list-decimal space-y-1 text-slate-700 text-sm marker:font-bold marker:text-indigo-600">
+                {children}
+              </ol>
+            ),
 
-          li: ({ children }) => <li className="leading-7">{children}</li>,
+            li: ({ children }) => <li className="leading-relaxed pl-0.5">{children}</li>,
 
-          blockquote: ({ children }) => (
-            <blockquote
-              className="
-                my-4
-                border-l-4
-                border-slate-400
-                bg-slate-50
-                px-4
-                py-3
-                italic
-                text-slate-600
-              "
-            >
-              {children}
-            </blockquote>
-          ),
+            blockquote: ({ children }) => (
+              <blockquote className="my-3.5 rounded-xl border-l-4 border-indigo-500 bg-indigo-50/70 p-3 text-xs leading-relaxed text-indigo-950 shadow-sm">
+                {children}
+              </blockquote>
+            ),
 
-          code: ({ children, className }) => {
-            const isBlock =
-              typeof className === "string" && className.includes("language-");
+            code: ({ children, className: codeClassName }) => {
+              const isBlock =
+                typeof codeClassName === "string" && codeClassName.includes("language-");
 
-            if (!isBlock) {
+              if (!isBlock) {
+                return (
+                  <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-medium text-indigo-600 border border-slate-200/60">
+                    {children}
+                  </code>
+                );
+              }
+
+              return <code className={codeClassName}>{children}</code>;
+            },
+
+            pre: ({ children }) => {
+              const child = Array.isArray(children) ? children[0] : children;
+
+              if (child && typeof child === "object" && child.props) {
+                return (
+                  <CodeBlock className={child.props.className}>
+                    {child.props.children}
+                  </CodeBlock>
+                );
+              }
+
               return (
-                <code
-                  className="
-                    rounded
-                    bg-slate-100
-                    px-1.5
-                    py-0.5
-                    font-mono
-                    text-sm
-                    text-rose-600
-                  "
-                >
+                <pre className="my-3 overflow-x-auto rounded-xl bg-slate-950 p-3.5 text-xs text-slate-100 border border-slate-800 shadow-md">
                   {children}
-                </code>
+                </pre>
               );
-            }
+            },
 
-            return <code className={className}>{children}</code>;
-          },
+            table: ({ children }) => (
+              <div className="my-3.5 w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+                <table className="w-full border-collapse text-xs text-left">{children}</table>
+              </div>
+            ),
 
-          pre: ({ children }) => {
-            const child = Array.isArray(children) ? children[0] : children;
+            thead: ({ children }) => (
+              <thead className="border-b border-slate-200 bg-slate-50 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
+                {children}
+              </thead>
+            ),
 
-            if (child && typeof child === "object" && child.props) {
-              return (
-                <CodeBlock className={child.props.className}>
-                  {child.props.children}
-                </CodeBlock>
-              );
-            }
+            tbody: ({ children }) => (
+              <tbody className="divide-y divide-slate-100">{children}</tbody>
+            ),
 
-            return (
-              <pre
-                className="
-                  my-4
-                  overflow-x-auto
-                  rounded-xl
-                  bg-slate-950
-                  p-4
-                  text-slate-100
-                "
+            tr: ({ children }) => (
+              <tr className="transition-colors hover:bg-slate-50/80">{children}</tr>
+            ),
+
+            th: ({ children }) => (
+              <th className="px-3.5 py-2.5 font-semibold text-slate-800 whitespace-nowrap">
+                {children}
+              </th>
+            ),
+
+            td: ({ children }) => (
+              <td className="px-3.5 py-2.5 text-slate-700 whitespace-nowrap">
+                {children}
+              </td>
+            ),
+
+            hr: () => <hr className="my-4 border-slate-200" />,
+
+            a: ({ children, href }) => (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-blue-600 underline hover:text-blue-800 transition"
               >
                 {children}
-              </pre>
-            );
-          },
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ),
 
-          table: ({ children }) => (
-            <div
-              className="
-                my-4
-                w-full
-                min-w-0
-                max-w-full
-                overflow-x-auto
-                overscroll-x-contain
-                rounded-lg
-                border
-                border-slate-200
-              "
-            >
-              <table className="w-full border-collapse text-sm">{children}</table>
-            </div>
-          ),
+            strong: ({ children }) => (
+              <strong className="font-bold text-slate-900 bg-slate-100/80 px-1 py-0.5 rounded text-[13px]">
+                {children}
+              </strong>
+            ),
 
-          thead: ({ children }) => (
-            <thead className="border-b border-slate-200 bg-slate-100">
-              {children}
-            </thead>
-          ),
+            em: ({ children }) => (
+              <em className="italic text-slate-800 font-medium">{children}</em>
+            ),
 
-          tbody: ({ children }) => (
-            <tbody className="divide-y divide-slate-100">{children}</tbody>
-          ),
+            del: ({ children }) => (
+              <del className="text-slate-400 line-through">{children}</del>
+            ),
+          }}
+        >
+          {content || ""}
+        </ReactMarkdown>
 
-          tr: ({ children }) => (
-            <tr className="transition hover:bg-slate-50">{children}</tr>
-          ),
+        {/* Live Animated Cursor During Token Streaming */}
+        {isStreaming && (
+          <span className="inline-block w-2 h-4 ml-1.5 align-middle bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-sm animate-pulse shadow-sm" />
+        )}
+      </div>
+    );
+  }
 
-          th: ({ children }) => (
-            <th
-              className="
-                border-r
-                border-slate-200
-                px-4
-                py-3
-                text-left
-                font-semibold
-                text-slate-800
-              "
-            >
-              {children}
-            </th>
-          ),
 
-          td: ({ children }) => (
-            <td className="border-r border-slate-100 px-4 py-3 text-slate-700">
-              {children}
-            </td>
-          ),
+  /* =========================================================
+     THINKING INDICATOR
+  ========================================================= */
 
-          hr: () => <hr className="my-6 border-slate-200" />,
-
-          a: ({ children, href }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="
-                inline-flex
-                items-center
-                gap-1
-                font-medium
-                text-blue-600
-                underline
-                hover:text-blue-800
-              "
-            >
-              {children}
-
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          ),
-
-          strong: ({ children }) => (
-            <strong className="font-bold text-slate-900">{children}</strong>
-          ),
-
-          em: ({ children }) => (
-            <em className="italic text-slate-700">{children}</em>
-          ),
-
-          del: ({ children }) => (
-            <del className="text-slate-500 line-through">{children}</del>
-          ),
-        }}
-      >
-        {content || ""}
-      </ReactMarkdown>
-    </div>
-  );
-}
-
-/* =========================================================
-   THINKING INDICATOR
-========================================================= */
-
-export function ThinkingIndicator({ label = "Vyapar Sathi is thinking..." }) {
-  return (
-    <div
-      className="
+  export function ThinkingIndicator({ label = "Vyapar Sathi is thinking..." }) {
+    return (
+      <div
+        className="
         flex
         items-center
         gap-3
@@ -1039,47 +978,47 @@ export function ThinkingIndicator({ label = "Vyapar Sathi is thinking..." }) {
         py-3
         shadow-sm
       "
-    >
-      <AIAvatar streaming size={30} />
+      >
+        <AIAvatar streaming size={30} />
 
-      <span className="text-sm text-slate-500">{label}</span>
-    </div>
-  );
-}
+        <span className="text-sm text-slate-500">{label}</span>
+      </div>
+    );
+  }
 
-/* =========================================================
-   TOOL CALL CARD
-========================================================= */
+  /* =========================================================
+     TOOL CALL CARD
+  ========================================================= */
 
-const STATUS_META = {
-  running: {
-    Icon: Loader2,
-    className: "text-blue-500 animate-spin",
-    label: "Running",
-  },
-  completed: {
-    Icon: CheckCircle2,
-    className: "text-emerald-500",
-    label: "Done",
-  },
-  error: {
-    Icon: XCircle,
-    className: "text-rose-500",
-    label: "Failed",
-  },
-};
+  const STATUS_META = {
+    running: {
+      Icon: Loader2,
+      className: "text-blue-500 animate-spin",
+      label: "Running",
+    },
+    completed: {
+      Icon: CheckCircle2,
+      className: "text-emerald-500",
+      label: "Done",
+    },
+    error: {
+      Icon: XCircle,
+      className: "text-rose-500",
+      label: "Failed",
+    },
+  };
 
-export function ToolCallCard({ name, args, result, status = "completed" }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  export function ToolCallCard({ name, args, result, status = "completed" }) {
+    const [isExpanded, setIsExpanded] = useState(false);
 
-  const meta = STATUS_META[status] || STATUS_META.completed;
-  const StatusIcon = meta.Icon;
+    const meta = STATUS_META[status] || STATUS_META.completed;
+    const StatusIcon = meta.Icon;
 
-  const argEntries = args && typeof args === "object" ? Object.entries(args) : [];
+    const argEntries = args && typeof args === "object" ? Object.entries(args) : [];
 
-  return (
-    <details
-      className="
+    return (
+      <details
+        className="
         group
         w-full
         min-w-0
@@ -1092,12 +1031,12 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
         transition
         hover:border-slate-300
       "
-      onToggle={(event) => {
-        setIsExpanded(event.currentTarget.open);
-      }}
-    >
-      <summary
-        className="
+        onToggle={(event) => {
+          setIsExpanded(event.currentTarget.open);
+        }}
+      >
+        <summary
+          className="
           flex
           cursor-pointer
           list-none
@@ -1106,9 +1045,9 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
           px-3
           py-2.5
         "
-      >
-        <span
-          className="
+        >
+          <span
+            className="
             flex
             h-7
             w-7
@@ -1119,25 +1058,25 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
             bg-slate-100
             text-slate-500
           "
-        >
-          <Wrench className="h-3.5 w-3.5" />
-        </span>
-
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <code className="truncate font-mono text-xs font-medium text-slate-700">
-              {name}
-            </code>
-
-            <StatusIcon className={`h-3.5 w-3.5 flex-shrink-0 ${meta.className}`} />
+          >
+            <Wrench className="h-3.5 w-3.5" />
           </span>
 
-          {argEntries.length > 0 && (
-            <span className="mt-1 flex flex-wrap gap-1">
-              {argEntries.map(([key, value]) => (
-                <span
-                  key={key}
-                  className="
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <code className="truncate font-mono text-xs font-medium text-slate-700">
+                {name}
+              </code>
+
+              <StatusIcon className={`h-3.5 w-3.5 flex-shrink-0 ${meta.className}`} />
+            </span>
+
+            {argEntries.length > 0 && (
+              <span className="mt-1 flex flex-wrap gap-1">
+                {argEntries.map(([key, value]) => (
+                  <span
+                    key={key}
+                    className="
                     rounded
                     bg-slate-50
                     px-1.5
@@ -1146,16 +1085,16 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
                     text-[10px]
                     text-slate-500
                   "
-                >
-                  {key}: {formatValue(value)}
-                </span>
-              ))}
-            </span>
-          )}
-        </span>
+                  >
+                    {key}: {formatValue(value)}
+                  </span>
+                ))}
+              </span>
+            )}
+          </span>
 
-        <ChevronDown
-          className={`
+          <ChevronDown
+            className={`
             h-4
             w-4
             flex-shrink-0
@@ -1163,53 +1102,53 @@ export function ToolCallCard({ name, args, result, status = "completed" }) {
             transition-transform
             ${isExpanded ? "rotate-180" : ""}
           `}
-        />
-      </summary>
+          />
+        </summary>
 
-      <div className="w-full min-w-0 border-t border-slate-200 bg-slate-50/60 p-3">
-        {result !== undefined && result !== null ? (
-          <ToolResultView result={result} />
-        ) : (
-          <p className="text-xs text-slate-500">
-            {status === "running" ? "Waiting for the result…" : "No data returned."}
-          </p>
-        )}
-      </div>
-    </details>
-  );
-}
-
-/* =========================================================
-   AGENT TRACE
-
-   The reasoning strip that sits ABOVE the answer: memory
-   status chips and every tool the agent called. Collapsed
-   by default once the answer has arrived, so the trace is
-   available without competing with the response.
-========================================================= */
-
-function AgentTrace({ steps, toolCalls, isStreaming }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const total = steps.length + toolCalls.length;
-
-  if (total === 0) {
-    return null;
+        <div className="w-full min-w-0 border-t border-slate-200 bg-slate-50/60 p-3">
+          {result !== undefined && result !== null ? (
+            <ToolResultView result={result} />
+          ) : (
+            <p className="text-xs text-slate-500">
+              {status === "running" ? "Waiting for the result…" : "No data returned."}
+            </p>
+          )}
+        </div>
+      </details>
+    );
   }
 
-  const running = toolCalls.some((call) => call.status === "running");
-  const expanded = isOpen || isStreaming;
+  /* =========================================================
+     AGENT TRACE
+  
+     The reasoning strip that sits ABOVE the answer: memory
+     status chips and every tool the agent called. Collapsed
+     by default once the answer has arrived, so the trace is
+     available without competing with the response.
+  ========================================================= */
 
-  const summary = toolCalls.length
-    ? `${toolCalls.length} ${toolCalls.length === 1 ? "tool" : "tools"} used`
-    : "Context loaded";
+  function AgentTrace({ steps, toolCalls, isStreaming }) {
+    const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <div className="mb-3 w-full min-w-0">
-      <button
-        type="button"
-        onClick={() => setIsOpen((value) => !value)}
-        className="
+    const total = steps.length + toolCalls.length;
+
+    if (total === 0) {
+      return null;
+    }
+
+    const running = toolCalls.some((call) => call.status === "running");
+    const expanded = isOpen || isStreaming;
+
+    const summary = toolCalls.length
+      ? `${toolCalls.length} ${toolCalls.length === 1 ? "tool" : "tools"} used`
+      : "Context loaded";
+
+    return (
+      <div className="mb-3 w-full min-w-0">
+        <button
+          type="button"
+          onClick={() => setIsOpen((value) => !value)}
+          className="
           flex
           items-center
           gap-2
@@ -1226,32 +1165,32 @@ function AgentTrace({ steps, toolCalls, isStreaming }) {
           hover:border-slate-300
           hover:text-slate-700
         "
-      >
-        {running ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
-        ) : (
-          <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-        )}
+        >
+          {running ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+          )}
 
-        {summary}
+          {summary}
 
-        <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}
-        />
-      </button>
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
 
-      {expanded && (
-        <div className="mt-2 w-full min-w-0 space-y-2">
-          {steps.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {steps.map((step, index) => {
-                const pending =
-                  isStreaming && index === steps.length - 1 && step.endsWith("...");
+        {expanded && (
+          <div className="mt-2 w-full min-w-0 space-y-2">
+            {steps.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {steps.map((step, index) => {
+                  const pending =
+                    isStreaming && index === steps.length - 1 && step.endsWith("...");
 
-                return (
-                  <span
-                    key={step}
-                    className="
+                  return (
+                    <span
+                      key={step}
+                      className="
                       inline-flex
                       items-center
                       gap-1.5
@@ -1263,340 +1202,308 @@ function AgentTrace({ steps, toolCalls, isStreaming }) {
                       font-medium
                       text-indigo-600
                     "
-                  >
-                    {pending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Check className="h-3 w-3" />
-                    )}
-                    {step}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+                    >
+                      {pending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Check className="h-3 w-3" />
+                      )}
+                      {step}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
 
-          {toolCalls.map((call, index) => (
-            <ToolCallCard
-              key={call.key || call.id || `${call.name}-${index}`}
-              name={call.name || "Unknown tool"}
-              args={call.args || call.arguments}
-              result={call.result}
-              status={call.status || "completed"}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+            {toolCalls.map((call, index) => (
+              <ToolCallCard
+                key={call.key || call.id || `${call.name}-${index}`}
+                name={call.name || "Unknown tool"}
+                args={call.args || call.arguments}
+                result={call.result}
+                status={call.status || "completed"}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
-/* =========================================================
-   CHAT MESSAGE
-========================================================= */
+  /* =========================================================
+     CHAT MESSAGE
+  ========================================================= */
 
-export function ChatMessage({
-  message,
-  isStreaming = false,
-  onCopy,
-  onRegenerate,
-  onFeedback,
-}) {
-  const [feedback, setFeedback] = useState(null);
+  export function ChatMessage({
+    message,
+    isStreaming = false,
+    onCopy,
+    onRegenerate,
+    onFeedback,
+  }) {
+    const [feedback, setFeedback] = useState(null);
+    const [isSpeakingThis, setIsSpeakingThis] = useState(false);
 
-  const isUser = message.role === "user";
+    const isUser = message.role === "user";
 
-  /*
-    Normalize once per render, not per child. This is where
-    the "[object Object]" bug and the duplicated tool cards
-    are both neutralized.
-  */
-  const { steps, content } = useMemo(
-    () => splitStatusLines(sanitizeText(message.text)),
-    [message.text],
-  );
+    /*
+      Normalize once per render, not per child. This is where
+      the "[object Object]" bug and the duplicated tool cards
+      are both neutralized.
+    */
+    const { steps, content } = useMemo(
+      () => splitStatusLines(sanitizeText(message.text)),
+      [message.text],
+    );
 
-  const toolCalls = useMemo(
-    () => mergeToolCalls(message.meta?.tool_calls),
-    [message.meta?.tool_calls],
-  );
+    const toolCalls = useMemo(
+      () => mergeToolCalls(message.meta?.tool_calls),
+      [message.meta?.tool_calls],
+    );
 
-  const handleFeedback = (type) => {
-    setFeedback(type);
+    const handleFeedback = (type) => {
+      setFeedback(type);
 
-    if (onFeedback) {
-      onFeedback(message.id, type);
-    }
-  };
+      if (onFeedback) {
+        onFeedback(message.id, type);
+      }
+    };
 
-  const handleCopy = () => {
-    if (onCopy) {
-      onCopy(message.id);
-      return;
-    }
+    const handleCopy = () => {
+      if (onCopy) {
+        onCopy(message.id);
+        return;
+      }
 
-    if (content) {
-      navigator.clipboard.writeText(content);
-    }
-  };
+      if (content) {
+        navigator.clipboard.writeText(content);
+      }
+    };
 
-  return (
-    <div
-      /*
-        `contain: inline-size` is the real fix for the stretched
-        layout. `min-w-0` only works if EVERY ancestor also sets
-        it — one flex/grid ancestor with the default
-        `min-width: auto` anywhere up the tree and a wide table
-        pushes the whole page sideways again.
+    const handleSpeak = () => {
+      if (typeof window === "undefined" || !window.speechSynthesis) return;
+      if (isSpeakingThis) {
+        window.speechSynthesis.cancel();
+        setIsSpeakingThis(false);
+        return;
+      }
 
-        Inline-size containment makes this box's intrinsic width
-        contribution zero, so no ancestor can ever be widened by
-        what's inside a message. The box takes its width from the
-        parent, full stop.
-      */
-      style={{ contain: "inline-size" }}
-      className={`
-        flex
-        w-full
-        min-w-0
-        max-w-full
-        gap-3
-        ${isUser ? "justify-end" : "justify-start"}
-      `}
-    >
-      {!isUser && <AIAvatar streaming={isStreaming} />}
+      try {
+        window.speechSynthesis.cancel();
+        const cleanText = String(content || message.text || "")
+          .replace(/[*_#`~>-]/g, " ")
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+          .replace(/<[^>]*>/g, "")
+          .trim();
+        if (!cleanText) return;
 
-      {/*
-        Assistant messages take the full remaining width so wide
-        tool tables have room to scroll in. User bubbles stay
-        narrow. `overflow-hidden` is the hard stop: anything wider
-        than this column has to scroll inside its own box.
-      */}
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.onstart = () => setIsSpeakingThis(true);
+        utterance.onend = () => setIsSpeakingThis(false);
+        utterance.onerror = () => setIsSpeakingThis(false);
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.error("Failed to speak message:", err);
+        setIsSpeakingThis(false);
+      }
+    };
+
+    return (
       <div
-        className={`
-          min-w-0
-          overflow-hidden
-          ${isUser ? "order-first max-w-[85%]" : "w-0 max-w-full flex-1"}
-        `}
+        style={{ contain: "inline-size" }}
+        className={`flex w-full min-w-0 max-w-full ${
+          isUser ? "justify-end gap-2.5" : "justify-start"
+        }`}
       >
         {isUser ? (
-          <div
-            className="
-              rounded-2xl
-              rounded-tr-sm
-              bg-slate-900
-              px-4
-              py-3
-              text-white
-            "
-          >
-            <p className="whitespace-pre-wrap break-words text-sm leading-7">
-              {sanitizeText(message.text)}
-            </p>
-          </div>
-        ) : (
-          <div className="w-full min-w-0 px-1">
-            {/* REASONING TRACE — always above the answer */}
-
-            <AgentTrace
-              steps={steps}
-              toolCalls={toolCalls}
-              isStreaming={isStreaming}
-            />
-
-            {/* ANSWER */}
-
-            {content ? (
-              <MarkdownRenderer content={content} className="break-words text-sm" />
-            ) : isStreaming ? (
-              <div className="flex items-center gap-2 py-1 text-sm text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Generating response...
+          <>
+            <div className="max-w-[85%] min-w-0">
+              <div className="rounded-2xl rounded-tr-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 px-4 py-3 text-white shadow-md shadow-indigo-500/10">
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                  {sanitizeText(message.text)}
+                </p>
               </div>
-            ) : null}
+              {message.timestamp && (
+                <p className="mt-1 text-right text-[10px] text-slate-400 pr-1">
+                  {formatTimestamp(message.timestamp)}
+                </p>
+              )}
+            </div>
 
-            {/* ERROR */}
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 shadow-sm">
+              <User className="h-5 w-5" />
+            </div>
+          </>
+        ) : (
+          <div className="w-full min-w-0 max-w-full flex flex-col gap-2">
+            {/* Header row: Blue circle sign (AIAvatar) + Title directly above the content */}
+            <div className="flex items-center gap-2.5 px-0.5">
+              <AIAvatar streaming={isStreaming} size={28} />
+              <span className="text-xs font-bold text-slate-800 tracking-tight">
+                Vyapar Sathi AI
+              </span>
+              {isStreaming ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200/60">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
+                  Generating...
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                  Copilot
+                </span>
+              )}
+            </div>
 
-            {message.error && (
-              <div
-                className="
-                  mt-3
-                  flex
-                  items-start
-                  gap-2.5
-                  rounded-xl
-                  border
-                  border-amber-200
-                  bg-amber-50
-                  px-3
-                  py-2.5
-                "
-              >
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+            {/* Chat content container: Full width directly below the blue circle sign */}
+            <div className="w-full min-w-0 max-w-full rounded-2xl bg-white/95 border border-slate-200/80 p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] backdrop-blur-sm">
+              {/* REASONING TRACE */}
+              <AgentTrace
+                steps={steps}
+                toolCalls={toolCalls}
+                isStreaming={isStreaming}
+              />
 
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-amber-800">
-                    The response finished early
-                  </p>
+              {/* ANSWER */}
+              {content ? (
+                <MarkdownRenderer
+                  content={content}
+                  className="break-words text-sm"
+                  isStreaming={isStreaming}
+                />
+              ) : isStreaming ? (
+                <div className="flex items-center gap-2.5 py-1.5 text-sm text-slate-500 font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                  <span>Vyapar AI is analyzing and generating response...</span>
+                </div>
+              ) : null}
 
-                  <p className="mt-0.5 break-words text-xs text-amber-700">
-                    {sanitizeText(message.error)}
-                  </p>
+              {/* ERROR */}
+              {message.error && (
+                <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-amber-800">
+                      The response finished early
+                    </p>
+                    <p className="mt-0.5 break-words text-xs text-amber-700">
+                      {sanitizeText(message.error)}
+                    </p>
+                    {onRegenerate && (
+                      <button
+                        type="button"
+                        onClick={() => onRegenerate(message.id)}
+                        className="mt-2 text-xs font-medium text-amber-800 underline hover:text-amber-900"
+                      >
+                        Try again
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ACTION BUTTONS & TIMESTAMP */}
+            <div className="flex items-center justify-between px-1">
+              {!isStreaming && content ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleSpeak}
+                    className={`rounded-lg p-1.5 transition ${
+                      isSpeakingThis
+                        ? "bg-indigo-100 text-indigo-600 animate-pulse"
+                        : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    }`}
+                    title={isSpeakingThis ? "Stop speaking" : "Read aloud"}
+                  >
+                    {isSpeakingThis ? (
+                      <VolumeX className="h-3.5 w-3.5" />
+                    ) : (
+                      <Volume2 className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    title="Copy response"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
 
                   {onRegenerate && (
                     <button
                       type="button"
                       onClick={() => onRegenerate(message.id)}
-                      className="
-                        mt-2
-                        text-xs
-                        font-medium
-                        text-amber-800
-                        underline
-                        hover:text-amber-900
-                      "
+                      className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      title="Regenerate response"
                     >
-                      Try again
+                      <RotateCcw className="h-3.5 w-3.5" />
                     </button>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleFeedback("like")}
+                    className={`rounded-lg p-1.5 transition ${
+                      feedback === "like"
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    }`}
+                    title="Good response"
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFeedback("dislike")}
+                    className={`rounded-lg p-1.5 transition ${
+                      feedback === "dislike"
+                        ? "bg-rose-50 text-rose-600"
+                        : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    }`}
+                    title="Bad response"
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              </div>
-            )}
+              ) : <div />}
+
+              {message.timestamp && (
+                <p className="text-[10px] text-slate-400">
+                  {formatTimestamp(message.timestamp)}
+                </p>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* ACTION BUTTONS */}
-
-        {!isUser && !isStreaming && content && (
-          <div className="mt-2 flex items-center gap-1 px-1">
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="
-                rounded-lg
-                p-1.5
-                text-slate-400
-                transition
-                hover:bg-slate-100
-                hover:text-slate-700
-              "
-              title="Copy response"
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-
-            {onRegenerate && (
-              <button
-                type="button"
-                onClick={() => onRegenerate(message.id)}
-                className="
-                  rounded-lg
-                  p-1.5
-                  text-slate-400
-                  transition
-                  hover:bg-slate-100
-                  hover:text-slate-700
-                "
-                title="Regenerate response"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => handleFeedback("like")}
-              className={`
-                rounded-lg
-                p-1.5
-                transition
-                ${
-                  feedback === "like"
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                }
-              `}
-              title="Good response"
-            >
-              <ThumbsUp className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleFeedback("dislike")}
-              className={`
-                rounded-lg
-                p-1.5
-                transition
-                ${
-                  feedback === "dislike"
-                    ? "bg-rose-50 text-rose-600"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                }
-              `}
-              title="Bad response"
-            >
-              <ThumbsDown className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* TIMESTAMP */}
-
-        {message.timestamp && (
-          <p
-            className={`
-              mt-1.5
-              text-xs
-              text-slate-400
-              ${isUser ? "text-right" : "text-left px-1"}
-            `}
-          >
-            {formatTimestamp(message.timestamp)}
-          </p>
         )}
       </div>
+    );
+  }
 
-      {isUser && (
-        <div
-          className="
-            flex
-            h-9
-            w-9
-            flex-shrink-0
-            items-center
-            justify-center
-            rounded-xl
-            bg-slate-100
-            text-slate-600
-          "
-        >
-          <User className="h-5 w-5" />
-        </div>
-      )}
-    </div>
-  );
-}
+  /* =========================================================
+     TIMESTAMP HELPER
+  ========================================================= */
 
-/* =========================================================
-   TIMESTAMP HELPER
-========================================================= */
+  function formatTimestamp(timestamp) {
+    try {
+      const date = new Date(timestamp);
 
-function formatTimestamp(timestamp) {
-  try {
-    const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
 
-    if (Number.isNaN(date.getTime())) {
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
       return "";
     }
-
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
   }
-}
 
-export default ChatMessage;
+  export default ChatMessage;
