@@ -28,11 +28,11 @@ export const metadata = {
   authors: [{ name: "Vyapar Sakha Team" }],
   icons: {
     icon: [
-      { url: "/images/logo/vs_logo_updated.svg", type: "image/svg+xml" },
+      { url: "/images/logo/vyapar-sakha-version2-logo.svg", type: "image/svg+xml" },
       { url: "/images/logo/vyapar sakha logo png.ico", sizes: "any" }
     ],
-    shortcut: "/images/logo/vyapar sakha logo png.ico",
-    apple: "/images/logo/vs_logo_updated.svg",
+    shortcut: "/images/logo/vyapar-sakha-version2-logo.svg",
+    apple: "/images/logo/vyapar-sakha-version2-logo.svg",
   },
   manifest: "/manifest.json",
   openGraph: {
@@ -40,7 +40,7 @@ export const metadata = {
     description:
       "Manage your shop, inventory, and sales effortlessly with Vyapar Sakha.",
     type: "website",
-    image: "/images/logo/vs_logo_updated.svg",
+    image: "/images/logo/vyapar-sakha-version2-logo.svg",
   },
 };
 
@@ -50,14 +50,14 @@ export default function RootLayout({ children }) {
       <head>
         <link
           rel="icon"
-          href="/images/logo/vs_logo_updated.svg"
+          href="/images/logo/vyapar-sakha-version2-logo.svg"
           type="image/svg+xml"
         />
         <link
           rel="shortcut icon"
-          href="/images/logo/vyapar sakha logo png.ico"
+          href="/images/logo/vyapar-sakha-version2-logo.svg"
         />
-        <link rel="apple-touch-icon" href="/images/logo/vs_logo_updated.svg" />
+        <link rel="apple-touch-icon" href="/images/logo/vyapar-sakha-version2-logo.svg" />
         <meta name="theme-color" content="#1e40af" />
       </head>
       <body

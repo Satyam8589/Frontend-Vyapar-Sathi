@@ -11,7 +11,7 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose }) {
           <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-0.5 shadow-md shadow-indigo-500/20 ring-2 ring-indigo-500/10">
             <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center p-1">
               <img
-                src="/images/logo/vs_logo_updated.svg"
+                src="/images/logo/vyapar-sakha-version2-logo.svg"
                 alt="Vyapar Sakha Logo"
                 className="h-full w-full object-contain"
               />

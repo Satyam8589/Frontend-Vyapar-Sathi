@@ -5,7 +5,7 @@ const RUNTIME_CACHE = `vyapar-sakha-runtime-${CACHE_VERSION}`;
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
-  '/images/logo/vs_logo_updated.svg'
+  '/images/logo/vyapar-sakha-version2-logo.svg'
 ];
 
 self.addEventListener('install', (event) => {

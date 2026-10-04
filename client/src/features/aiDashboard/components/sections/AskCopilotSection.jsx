@@ -1105,7 +1105,7 @@ const AskCopilotSection = ({
                     <div className="relative h-20 w-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-1 shadow-xl shadow-indigo-500/30 ring-4 ring-indigo-500/20 flex items-center justify-center">
                       <div className="h-full w-full rounded-[20px] bg-white flex items-center justify-center p-2 overflow-hidden">
                         <img
-                          src="/images/logo/vs_logo_updated.svg"
+                          src="/images/logo/vyapar-sakha-version2-logo.svg"
                           alt="Vyapar Sakha Logo"
                           className="h-full w-full object-contain"
                         />
