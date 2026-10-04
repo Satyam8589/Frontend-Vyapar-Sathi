@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getBuyers, createBuyer, updateBuyer, deleteBuyer } from '../services/buyerService';
+import { useAgentRefresh } from '@/hooks/useAgentRefresh';
 
 export const useBuyerPage = () => {
   const { storeId } = useParams();
@@ -40,9 +41,12 @@ export const useBuyerPage = () => {
     }
   }, [storeId, search, statusFilter, page]);
 
+  // Auto-refresh when AI agent mutates buyers
+  const { refreshKey } = useAgentRefresh('buyers');
+
   useEffect(() => {
     fetchBuyers();
-  }, [fetchBuyers]);
+  }, [fetchBuyers, refreshKey]);
 
   const handleAddBuyer = async (data) => {
     try {

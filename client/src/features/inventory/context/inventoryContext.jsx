@@ -6,6 +6,7 @@ import { useAuthContext } from '@/features/auth/context/AuthContext';
 import * as inventoryService from '../services/inventoryService';
 import { fetchStoreById } from '@/features/storeDashboard/services/storeDashboardService';
 import { showSuccess, showError } from '@/utils/toast';
+import { onAgentRefresh } from '@/servies/agentEventBus';
 
 const InventoryContext = createContext(null);
 
@@ -58,6 +59,16 @@ export const InventoryProvider = ({ children }) => {
     fetchStoreDetails();
     fetchProducts();
   }, [fetchStoreDetails, fetchProducts]);
+
+  // Auto-refresh when the AI agent mutates products or inventory
+  useEffect(() => {
+    const unsub = onAgentRefresh(({ section }) => {
+      if (section === 'products' || section === 'inventory' || section === '*') {
+        fetchProducts();
+      }
+    });
+    return unsub;
+  }, [fetchProducts]);
 
   // Add a new product
   const addProduct = async (productData) => {

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import VyaparSathiSidebar from "@/features/inventory/components/InventorySidebar";
 import StoreBreadcrumb from "@/features/store/components/StoreBreadcrumb";
 import StoreSidebarDrawer from "@/features/store/components/StoreSidebarDrawer";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { InventoryProvider } from "@/features/inventory/context/inventoryContext";
+import { useAgentNavigation } from "@/hooks/useAgentNavigation";
 
 /**
  * Store Dashboard Layout - Conditional sidebar
@@ -18,6 +19,10 @@ export default function StoreLayout({ children }) {
   const isBillingPage = pathname.endsWith("/billing");
   const { enterStorePage, exitStorePage, copilotOpen, copilotWidth, isDraggingCopilot } = useStorePageContext();
   const [isResponsive, setIsResponsive] = useState(false);
+  const { storeId } = useParams();
+
+  // Allow the AI agent to navigate to different store pages
+  useAgentNavigation(storeId);
 
   useEffect(() => {
     // When entering store dashboard, set store page context

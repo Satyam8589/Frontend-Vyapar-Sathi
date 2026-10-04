@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from "../../services/aiDashboardService";
 import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
+import { emitAgentRefresh, emitAgentNavigate } from "@/servies/agentEventBus";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
@@ -283,6 +284,17 @@ const AskCopilotSection = ({
     });
   }, []);
 
+  // Map voice tool names to refresh sections (mirrors backend MUTATION_TOOL_MAP)
+  const VOICE_MUTATION_SECTIONS = {
+    tool_create_product: "products", tool_update_product: "products",
+    tool_delete_product: "products", tool_adjust_stock: "inventory",
+    tool_create_purchase: "purchases", tool_update_purchase: "purchases",
+    tool_delete_purchase: "purchases", tool_receive_purchase: "purchases",
+    tool_create_seller: "sellers", tool_update_seller: "sellers", tool_delete_seller: "sellers",
+    tool_create_buyer: "buyers", tool_update_buyer: "buyers", tool_delete_buyer: "buyers",
+    tool_create_expense: "expenses", tool_update_expense: "expenses", tool_delete_expense: "expenses",
+  };
+
   const handleVoiceToolComplete = useCallback((data) => {
     setVoiceToolStatus({
       active: true,
@@ -294,7 +306,19 @@ const AskCopilotSection = ({
     voiceToolTimerRef.current = setTimeout(() => {
       setVoiceToolStatus(null);
     }, 2400);
+
+    // Emit refresh if the voice tool mutated backend data
+    const section = VOICE_MUTATION_SECTIONS[data.tool];
+    if (section) {
+      emitAgentRefresh(section);
+    }
+    
+    // Emit navigation if the agent wants to navigate
+    if (data.tool === "tool_navigate_page" && data.args?.route) {
+      emitAgentNavigate(data.args.route);
+    }
   }, []);
+
 
   // Gemini Live duplex voice WebSocket
   const {
@@ -817,6 +841,18 @@ const AskCopilotSection = ({
                 isSubmitting: false,
               });
             }
+
+            if (event === "navigate") {
+              // Agent wants to navigate to a different page
+              if (payload?.route) {
+                emitAgentNavigate(payload.route);
+              }
+            }
+
+            if (event === "refresh") {
+              // Agent mutated backend data — tell subscribed page components to re-fetch
+              emitAgentRefresh(payload?.section || "*");
+            }
           },
         });
       } catch (streamError) {
@@ -921,6 +957,16 @@ const AskCopilotSection = ({
                 isSubmitting: false,
               });
               return;
+            }
+
+            if (event === "navigate") {
+              if (payload?.route) {
+                emitAgentNavigate(payload.route);
+              }
+            }
+
+            if (event === "refresh") {
+              emitAgentRefresh(payload?.section || "*");
             }
           },
         });
