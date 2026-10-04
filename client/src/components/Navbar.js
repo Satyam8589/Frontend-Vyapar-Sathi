@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import PageLoader from "@/components/PageLoader";
+import NotificationBell from "@/features/notification/components/NotificationBell";
 
 const NAV_ITEMS = [
   {
@@ -164,7 +165,8 @@ export default function Navbar() {
             )}
 
             {!isLoading && isAuthenticated && (
-              <div className="relative">
+              <div className="flex items-center gap-4 relative">
+                {isStorePage && <NotificationBell />}
                 <button
                   onClick={() => {
                     setProfileMenuOpen(!profileMenuOpen);

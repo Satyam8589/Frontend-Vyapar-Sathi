@@ -22,6 +22,7 @@ import {
   useInventoryPageLogic,
   useInventoryStats,
 } from "@/features/inventory/hooks";
+import DashboardAlertWidget from "@/features/notification/components/DashboardAlertWidget";
 
 /**
  * Inventory Page Content - Uses hooks for logic separation
@@ -56,6 +57,9 @@ const InventoryContent = () => {
 
         {/* Error Alert */}
         <InventoryErrorAlert error={error} />
+
+        {/* Dashboard Alert Widget */}
+        <DashboardAlertWidget />
 
         {/* Inventory Stats Summary */}
         <InventoryStats stats={stats} />

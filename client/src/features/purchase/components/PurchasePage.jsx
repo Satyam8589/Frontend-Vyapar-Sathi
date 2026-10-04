@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { usePurchasePage } from "../hooks/usePurchasePage";
 
 import PurchaseFormModal from "./PurchaseFormModal";
@@ -18,6 +19,7 @@ const SkeletonRow = () => (
 );
 
 export default function PurchasePage() {
+  const router = useRouter();
   const {
     storeId,
     purchases, loading, error,
@@ -53,16 +55,48 @@ export default function PurchasePage() {
                 Purchase Management
               </h1>
             </div>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="sm:hidden">Add</span>
-              <span className="hidden sm:inline">Add Purchase</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push(`/storeDashboard/${storeId}/purchases/analytics`)}
+                className="flex-shrink-0 py-2 sm:py-2.5 px-3 sm:px-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                title="View Purchase Analytics"
+              >
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="hidden sm:inline">Analytics</span>
+              </button>
+              <button
+                onClick={() => router.push(`/storeDashboard/${storeId}/purchases/orders`)}
+                className="flex-shrink-0 py-2 sm:py-2.5 px-3 sm:px-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                title="Manage Purchase Orders"
+              >
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span className="hidden sm:inline">Purchase Orders</span>
+              </button>
+              <button
+                onClick={() => router.push(`/storeDashboard/${storeId}/purchases/grns`)}
+                className="flex-shrink-0 py-2 sm:py-2.5 px-3 sm:px-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                title="Manage GRNs"
+              >
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span className="hidden sm:inline">GRNs</span>
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="sm:hidden">Add</span>
+                <span className="hidden sm:inline">Add Purchase</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -143,7 +177,11 @@ export default function PurchasePage() {
                   </tr>
                 ) : (
                   purchases.map((purchase) => (
-                    <tr key={purchase._id} className="hover:bg-slate-50/80 transition-colors group cursor-pointer">
+                    <tr 
+                      key={purchase._id} 
+                      className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                      onClick={() => router.push(`/storeDashboard/${storeId}/purchases/${purchase._id}`)}
+                    >
                       <td className="px-4 py-3 sm:py-4 font-bold text-slate-800">
                         {purchase.invoiceNumber}
                       </td>

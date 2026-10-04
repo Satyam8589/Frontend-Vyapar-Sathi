@@ -448,6 +448,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
           setImageOrigin("");
           setImageUploadState({ status: "idle", error: "" });
           setResolveStatus(null);
+          onClose();
         }
       }
     }
@@ -478,7 +479,7 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
         />
       )}
 
-      <div className="fixed top-0 inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      <div className="fixed top-0 inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
         {/* Backdrop */}
         <div
           className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-fade-in"
