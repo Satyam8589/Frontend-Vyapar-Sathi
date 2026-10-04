@@ -27,10 +27,7 @@ export const metadata = {
   ],
   authors: [{ name: "Vyapar Sakha Team" }],
   icons: {
-    icon: [
-      { url: "/images/logo/vyapar-sakha-version2-logo.svg", type: "image/svg+xml" },
-      { url: "/images/logo/vyapar sakha logo png.ico", sizes: "any" }
-    ],
+    icon: "/images/logo/vyapar-sakha-version2-logo.svg",
     shortcut: "/images/logo/vyapar-sakha-version2-logo.svg",
     apple: "/images/logo/vyapar-sakha-version2-logo.svg",
   },
@@ -52,10 +49,12 @@ export default function RootLayout({ children }) {
           rel="icon"
           href="/images/logo/vyapar-sakha-version2-logo.svg"
           type="image/svg+xml"
+          sizes="any"
         />
         <link
           rel="shortcut icon"
           href="/images/logo/vyapar-sakha-version2-logo.svg"
+          type="image/svg+xml"
         />
         <link rel="apple-touch-icon" href="/images/logo/vyapar-sakha-version2-logo.svg" />
         <meta name="theme-color" content="#1e40af" />
