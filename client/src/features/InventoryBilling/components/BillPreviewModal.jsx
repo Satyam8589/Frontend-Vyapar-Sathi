@@ -6,6 +6,17 @@ import { X, Printer, Download } from "lucide-react";
 import { downloadBillPDF } from "../utils/pdfGenerator";
 import { showSuccess, showError } from "@/utils/toast";
 
+const formatAddress = (addr) => {
+  if (!addr) return "";
+  if (typeof addr === "string") return addr;
+  if (typeof addr === "object") {
+    if (addr.fullAddress) return addr.fullAddress;
+    const parts = [addr.street, addr.city, addr.state, addr.pincode, addr.country].filter(Boolean);
+    return parts.join(", ") || "";
+  }
+  return String(addr);
+};
+
 export const BillPreviewModal = () => {
   const { showBillPreview, generatedBill, closeBillPreview, printBill } =
     useBillPayment();
@@ -54,9 +65,9 @@ export const BillPreviewModal = () => {
               <h3 className="text-lg md:text-2xl font-bold text-gray-900">
                 {storeInfo?.name || "Store Name"}
               </h3>
-              {storeInfo?.address && (
+              {formatAddress(storeInfo?.address) && (
                 <p className="text-xs md:text-sm text-gray-600 mt-1">
-                  {storeInfo.address}
+                  {formatAddress(storeInfo.address)}
                 </p>
               )}
               {storeInfo?.phone && (

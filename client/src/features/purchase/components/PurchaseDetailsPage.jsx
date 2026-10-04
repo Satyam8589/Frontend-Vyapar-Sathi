@@ -12,6 +12,17 @@ import PurchasePaymentModal from "./PurchasePaymentModal";
 const currencyFormat = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v || 0);
 
+const formatAddress = (addr) => {
+  if (!addr) return "";
+  if (typeof addr === "string") return addr;
+  if (typeof addr === "object") {
+    if (addr.fullAddress) return addr.fullAddress;
+    const parts = [addr.street, addr.city, addr.state, addr.pincode, addr.country].filter(Boolean);
+    return parts.join(", ") || "";
+  }
+  return String(addr);
+};
+
 export default function PurchaseDetailsPage({ storeId, purchaseId }) {
   const router = useRouter();
   const [purchase, setPurchase] = useState(null);
@@ -251,7 +262,7 @@ export default function PurchaseDetailsPage({ storeId, purchaseId }) {
             </div>
             <div className="text-right">
               <h2 className="text-xl font-bold text-slate-800">{store?.name || "VyaparSathi Store"}</h2>
-              {store?.address && <p className="text-slate-600 mt-1">{store.address}</p>}
+              {formatAddress(store?.address) && <p className="text-slate-600 mt-1">{formatAddress(store.address)}</p>}
               {store?.phone && <p className="text-slate-600">Ph: {store.phone}</p>}
               {store?.email && <p className="text-slate-600">Email: {store.email}</p>}
             </div>
@@ -298,9 +309,9 @@ export default function PurchaseDetailsPage({ storeId, purchaseId }) {
                     <span className="text-slate-500 font-medium w-16">Email:</span> {purchase.seller.email}
                   </p>
                 )}
-                {purchase.seller.address && (
+                {formatAddress(purchase.seller.address) && (
                   <p className="flex items-center gap-2">
-                    <span className="text-slate-500 font-medium w-16">Address:</span> {purchase.seller.address}
+                    <span className="text-slate-500 font-medium w-16">Address:</span> {formatAddress(purchase.seller.address)}
                   </p>
                 )}
                 {purchase.seller.gstNumber && (
@@ -475,8 +486,8 @@ export default function PurchaseDetailsPage({ storeId, purchaseId }) {
                 <div key={payment._id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-slate-800 text-base">Payment #{paymentsHistory.length - idx}</h3>
-                    <p className="text-sm text-slate-500">Date: {new Date(payment.date).toLocaleDateString('en-GB')}</p>
-                    <p className="text-sm text-slate-500 mt-1">Mode: <span className="font-medium text-slate-700 capitalize">{payment.paymentMode.replace('_', ' ')}</span></p>
+                    <p className="text-sm text-slate-500">Date: {new Date(payment.paymentDate).toLocaleDateString('en-GB')}</p>
+                    <p className="text-sm text-slate-500 mt-1">Mode: <span className="font-medium text-slate-700">{payment.paymentMethod}</span></p>
                     {payment.notes && <p className="text-sm text-slate-500">Notes: <span className="text-slate-600">{payment.notes}</span></p>}
                   </div>
                   <div className="text-right">

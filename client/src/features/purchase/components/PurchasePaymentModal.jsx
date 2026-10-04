@@ -4,9 +4,9 @@ import Modal from '@/components/ui/Modal';
 
 export default function PurchasePaymentModal({ isOpen, onClose, onSubmit, loading, purchase }) {
   const [amount, setAmount] = useState('');
-  const [paymentMode, setPaymentMode] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [notes, setNotes] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
 
   if (!isOpen || !purchase) return null;
 
@@ -20,12 +20,12 @@ export default function PurchasePaymentModal({ isOpen, onClose, onSubmit, loadin
       alert("Payment amount cannot exceed the due amount.");
       return;
     }
-    
+
     onSubmit({
       amount: numAmount,
-      paymentMode,
+      paymentMethod,   // matches backend field name & Payment model enum
       notes,
-      date
+      paymentDate      // matches backend field name
     });
   };
 
@@ -60,16 +60,17 @@ export default function PurchasePaymentModal({ isOpen, onClose, onSubmit, loadin
             <label className="block text-sm font-semibold text-slate-700 mb-1">
               Payment Mode
             </label>
+            {/* Values MUST match Payment model enum: Cash | UPI | Card | Bank Transfer | Other */}
             <select
-              value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value)}
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="cash">Cash</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="upi">UPI</option>
-              <option value="cheque">Cheque</option>
-              <option value="card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="UPI">UPI</option>
+              <option value="Card">Card</option>
+              <option value="Other">Other (Cheque / DD)</option>
             </select>
           </div>
           <div>
@@ -79,8 +80,8 @@ export default function PurchasePaymentModal({ isOpen, onClose, onSubmit, loadin
             <input
               type="date"
               required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -120,4 +121,3 @@ export default function PurchasePaymentModal({ isOpen, onClose, onSubmit, loadin
     </Modal>
   );
 }
-

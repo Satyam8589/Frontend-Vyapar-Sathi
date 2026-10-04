@@ -19,7 +19,7 @@ const EMPTY_ITEM = {
 export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, storeId, initialData = null }) {
   const { addProduct } = useInventoryContext();
   const [mounted, setMounted] = useState(false);
-  
+
   // Data for selects
   const [sellers, setSellers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -30,7 +30,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
   const [searchResults, setSearchResults] = useState([]);
   const [isNewProductOpen, setIsNewProductOpen] = useState(false);
   const [newProductItemIndex, setNewProductItemIndex] = useState(null);
-  
+
   // Form State
   const [seller, setSeller] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
@@ -38,12 +38,12 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
   const [items, setItems] = useState([]);
   const [pendingItem, setPendingItem] = useState({ ...EMPTY_ITEM });
   const [selectedProductId, setSelectedProductId] = useState("");
-  
+
   const [overallDiscount, setOverallDiscount] = useState(0);
   const [overallTax, setOverallTax] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [notes, setNotes] = useState("");
-  
+
   const [errors, setErrors] = useState({});
 
   useEffect(() => setMounted(true), []);
@@ -55,23 +55,23 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
         setSeller(initialData.seller?._id || initialData.seller || "");
         setInvoiceNumber(initialData.invoiceNumber || generateInvoiceNumber());
         setPurchaseDate(
-          initialData.purchaseDate 
-            ? new Date(initialData.purchaseDate).toISOString().split('T')[0] 
+          initialData.purchaseDate
+            ? new Date(initialData.purchaseDate).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0]
         );
-        
+
         const loadedItems = (initialData.items || []).map((item, idx) => ({
           ...item,
           product: item.product?._id || item.product,
           id: item._id || Date.now() + idx
         }));
         setItems(loadedItems);
-        
+
         setOverallDiscount(initialData.discount || 0);
         setOverallTax(initialData.tax || 0);
         setPaidAmount(initialData.paidAmount || 0);
         setNotes(initialData.notes || "");
-        
+
         setPendingItem({ ...EMPTY_ITEM });
         setSelectedProductId("");
         setProductSearch("");
@@ -168,7 +168,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
     if (!seller) e.seller = "Seller is required";
     if (!invoiceNumber.trim()) e.invoiceNumber = "Invoice number is required";
     if (!purchaseDate) e.purchaseDate = "Purchase date is required";
-    
+
     if (items.length === 0) e.items = "At least one item is required";
     items.forEach((item, index) => {
       if (!item.product) e[`item_${index}_product`] = "Product required";
@@ -182,7 +182,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
   const handlePendingItemChange = (field, value) => {
     let numVal = value;
     if (["quantity", "purchasePrice", "discount", "tax"].includes(field)) {
-       numVal = parseFloat(value) || 0;
+      numVal = parseFloat(value) || 0;
     }
     const newPending = { ...pendingItem, [field]: numVal };
 
@@ -220,7 +220,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
     const newItems = [...items];
     let numVal = value;
     if (["quantity", "purchasePrice", "discount", "tax"].includes(field)) {
-       numVal = parseFloat(value) || 0;
+      numVal = parseFloat(value) || 0;
     }
     newItems[index][field] = numVal;
 
@@ -236,7 +236,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
 
   const addPendingItem = () => {
     if (!selectedProductId) return;
-    
+
     // Check if duplicate
     const existingIndex = items.findIndex(item => item.product === selectedProductId);
     if (existingIndex >= 0) {
@@ -244,20 +244,20 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
       const newItems = [...items];
       const existing = newItems[existingIndex];
       const newQty = existing.quantity + (pendingItem.quantity || 1);
-      
+
       existing.quantity = newQty;
       // Recalculate subtotal
       const base = newQty * existing.purchasePrice;
       const discounted = base - existing.discount;
       const taxed = discounted + existing.tax;
       existing.subtotal = Math.max(0, taxed);
-      
+
       setItems(newItems);
     } else {
       // Add new
       setItems([...items, { ...pendingItem, id: Date.now() }]);
     }
-    
+
     // Reset pending
     setSelectedProductId("");
     setPendingItem({ ...EMPTY_ITEM });
@@ -408,15 +408,14 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
       setErrors({ submit: userMsg });
       import('@/utils/toast').then(({ showError }) => {
         showError(userMsg);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   };
 
   if (!mounted || !isOpen) return null;
 
   const inputClass = (field) =>
-    `w-full px-3 py-2 rounded border text-sm text-slate-800 bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500 ${
-      errors[field] ? "border-red-400" : "border-slate-200"
+    `w-full px-3 py-2 rounded border text-sm text-slate-800 bg-white transition-all outline-none focus:ring-2 focus:ring-blue-500 ${errors[field] ? "border-red-400" : "border-slate-200"
     }`;
 
   return ReactDOM.createPortal(
@@ -449,9 +448,9 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Seller *</label>
-                  <select 
-                    className={inputClass("seller")} 
-                    value={seller} 
+                  <select
+                    className={inputClass("seller")}
+                    value={seller}
                     onChange={e => setSeller(e.target.value)}
                   >
                     <option value="">Select Seller</option>
@@ -460,28 +459,28 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Invoice Number *</label>
-                  <input 
-                    type="text" 
-                    className={`${inputClass("invoiceNumber")} bg-slate-100 cursor-not-allowed`} 
-                    value={invoiceNumber} 
+                  <input
+                    type="text"
+                    className={`${inputClass("invoiceNumber")} bg-slate-100 cursor-not-allowed`}
+                    value={invoiceNumber}
                     readOnly
                     placeholder="INV-XXXX"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Purchase Date *</label>
-                  <input 
-                    type="date" 
-                    className={inputClass("purchaseDate")} 
-                    value={purchaseDate} 
-                    onChange={e => setPurchaseDate(e.target.value)} 
+                  <input
+                    type="date"
+                    className={inputClass("purchaseDate")}
+                    value={purchaseDate}
+                    onChange={e => setPurchaseDate(e.target.value)}
                   />
                 </div>
               </div>
 
               {/* Product Search & Select */}
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                <div className="px-4 py-3 bg-slate-100 border-b flex justify-between items-center">
+                {/* <div className="px-4 py-3 bg-slate-100 border-b flex justify-between items-center">
                   <h3 className="font-semibold text-sm text-slate-800">Search & Select Product</h3>
                   <button
                     type="button"
@@ -491,7 +490,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                     + New Product
                   </button>
-                </div>
+                </div> */}
                 <div className="p-4 space-y-4">
                   <div className="flex gap-2">
                     <input
@@ -501,7 +500,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                       placeholder="Search product by name, SKU, barcode..."
                       className="flex-1 px-3 py-2 rounded border border-slate-200 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <select 
+                    <select
                       className={`${inputClass("productSelect")} flex-1`}
                       value={selectedProductId}
                       onChange={e => handleProductSelect(e.target.value)}
@@ -514,7 +513,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                       ))}
                     </select>
                   </div>
-                  
+
                   {isSearching && (
                     <p className="text-xs text-blue-600">Searching products...</p>
                   )}
@@ -576,7 +575,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                             <div className="text-xs font-semibold text-slate-500 mb-1">Subtotal</div>
                             <div className="font-bold text-lg text-slate-800">₹{(pendingItem.subtotal || 0).toFixed(2)}</div>
                           </div>
-                          <button 
+                          <button
                             type="button"
                             onClick={addPendingItem}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded shadow-sm transition"
@@ -623,7 +622,7 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                         <div className="w-24 font-bold text-sm text-right text-slate-800">
                           ₹{(item.subtotal || 0).toFixed(2)}
                         </div>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => removeItem(index)}
                           className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition"
@@ -643,16 +642,16 @@ export default function PurchaseFormModal({ isOpen, onClose, onSubmit, loading, 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Notes / Remarks</label>
-                    <textarea 
-                      className={inputClass("notes")} 
-                      rows={3} 
-                      value={notes} 
-                      onChange={e => setNotes(e.target.value)} 
+                    <textarea
+                      className={inputClass("notes")}
+                      rows={3}
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
                       placeholder="Add any notes here..."
                     />
                   </div>
                 </div>
-                
+
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Subtotal:</span>

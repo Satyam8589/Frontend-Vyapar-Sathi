@@ -30,6 +30,17 @@ ChartJS.register(
 const currencyFormat = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v || 0);
 
+const formatAddress = (addr) => {
+  if (!addr) return "";
+  if (typeof addr === "string") return addr;
+  if (typeof addr === "object") {
+    if (addr.fullAddress) return addr.fullAddress;
+    const parts = [addr.street, addr.city, addr.state, addr.pincode, addr.country].filter(Boolean);
+    return parts.join(", ") || "";
+  }
+  return String(addr);
+};
+
 const StatCard = ({ label, value, color, icon }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-5 py-4 flex items-center gap-4">
     <div className={`h-11 w-11 rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-lg ${color}`}>
@@ -242,7 +253,7 @@ export default function SellerDetailsPage() {
               </div>
               <div className="flex flex-col pb-4 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Address</span>
-                <span className="font-semibold text-slate-800 mt-1">{seller.address || "Not Provided"}</span>
+                <span className="font-semibold text-slate-800 mt-1">{formatAddress(seller.address) || "Not Provided"}</span>
               </div>
               <div className="flex flex-col pb-4 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Status</span>

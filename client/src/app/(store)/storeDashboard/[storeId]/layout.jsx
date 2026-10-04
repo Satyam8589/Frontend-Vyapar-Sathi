@@ -46,13 +46,13 @@ export default function StoreLayout({ children }) {
 
   return (
     <InventoryProvider>
-      <div className="relative flex min-h-screen w-full">
-        {/* Desktop Sidebar - Hidden on mobile */}
-        {!isResponsive && <VyaparSathiSidebar />}
+      <div className="relative flex min-h-screen w-full print:block">
+        {/* Desktop Sidebar - Hidden on mobile and on print */}
+        {!isResponsive && <div className="print:hidden"><VyaparSathiSidebar /></div>}
 
         {/* Main Content Area - Slides and resizes dynamically when AI Copilot opens and resizes */}
         <main
-          className={`flex-1 w-full min-w-0 ${
+          className={`flex-1 w-full min-w-0 print:!m-0 print:!p-0 print:!w-full ${
             isDraggingCopilot ? "transition-none" : "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
           }`}
           style={{
@@ -64,14 +64,17 @@ export default function StoreLayout({ children }) {
             marginRight: !isResponsive && copilotOpen ? `${copilotWidth || 480}px` : "0px",
           }}
         >
-          <StoreBreadcrumb isResponsive={isResponsive} />
+          {/* Breadcrumb - hidden when printing */}
+          <div className="print:hidden">
+            <StoreBreadcrumb isResponsive={isResponsive} />
+          </div>
 
           {children}
         </main>
       </div>
 
-      {/* Mobile Sidebar Drawer - Only on mobile */}
-      {isResponsive && <StoreSidebarDrawer />}
+      {/* Mobile Sidebar Drawer - Only on mobile, never on print */}
+      {isResponsive && <div className="print:hidden"><StoreSidebarDrawer /></div>}
     </InventoryProvider>
   );
 }

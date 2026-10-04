@@ -6,6 +6,17 @@ import ReactDOM from "react-dom";
 const currencyFormat = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v || 0);
 
+const formatAddress = (addr) => {
+  if (!addr) return "";
+  if (typeof addr === "string") return addr;
+  if (typeof addr === "object") {
+    if (addr.fullAddress) return addr.fullAddress;
+    const parts = [addr.street, addr.city, addr.state, addr.pincode, addr.country].filter(Boolean);
+    return parts.join(", ") || "";
+  }
+  return String(addr);
+};
+
 export default function SellerDetailModal({ isOpen, onClose, seller, onEdit }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -66,7 +77,7 @@ export default function SellerDetailModal({ isOpen, onClose, seller, onEdit }) {
           {[
             { label: "Phone", value: seller.phone, icon: "📞" },
             { label: "Email", value: seller.email || "—", icon: "📧" },
-            { label: "Address", value: seller.address || "—", icon: "📍" },
+            { label: "Address", value: formatAddress(seller.address) || "—", icon: "📍" },
             { label: "GSTIN", value: seller.GSTIN || "—", icon: "🏢" },
           ].map((row) => (
             <div key={row.label} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
