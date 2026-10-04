@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 // Resample Float32 from srcRate to 16kHz for Gemini input
 function resampleTo16k(float32, srcRate) {
@@ -24,6 +24,17 @@ function float32ToInt16(float32) {
     }
     return int16;
 }
+
+// Compute RMS volume of Float32 audio buffer for VAD (Voice Activity Detection)
+function computeRms(float32) {
+    if (!float32 || float32.length === 0) return 0;
+    let sum = 0;
+    for (let i = 0; i < float32.length; i++) {
+        sum += float32[i] * float32[i];
+    }
+    return Math.sqrt(sum / float32.length);
+}
+
 
 // Play raw 16-bit PCM using AudioContext
 function createPcmPlayer(audioCtx) {
@@ -70,6 +81,9 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
     const [isMuted, setIsMuted]         = useState(false);
     const [permissionError, setPermissionError] = useState('');
 
+    const SILENCE_THRESHOLD = 0.008; // Audio RMS threshold for voice detection
+    const AUTO_END_SILENCE_MS = 1400; // Silence duration (ms) after speech to auto-end turn
+
     const wsRef          = useRef(null);
     const audioCtxRef    = useRef(null);
     const pcmPlayerRef   = useRef(null);
@@ -77,6 +91,9 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
     const processorRef   = useRef(null);
     const sourceRef      = useRef(null);
     const mutedRef       = useRef(false);
+    const hasSpokenRef   = useRef(false);
+    const silenceStartRef = useRef(null);
+    const sentChunksCountRef = useRef(0);
 
     const getAudioCtx = () => {
         if (!audioCtxRef.current) {
@@ -94,20 +111,10 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             return;
         }
 
-        // ---------------------------------------------------------------------------
-        // Build WebSocket base URL
-        //
-        // Priority:
-        //   1. NEXT_PUBLIC_AI_WS_URL  — explicit wss:// URL (best for production)
-        //   2. NEXT_PUBLIC_AI_URL     — http(s):// URL, converted to ws(s)://
-        //   3. NEXT_PUBLIC_API_URL    — Express API URL, strip /api, convert to ws(s)://
-        //   4. Hardcoded localhost fallback (dev only)
-        // ---------------------------------------------------------------------------
         const toWsOrigin = (url) => {
             try {
                 const u = new URL(url);
                 const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
-                // Use only origin (scheme + host + port) — drop any path
                 return `${proto}//${u.host}`;
             } catch {
                 return null;
@@ -117,14 +124,8 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         let aiWsBase = null;
 
         if (process.env.NEXT_PUBLIC_AI_WS_URL) {
-            // Already a ws:// or wss:// URL — strip any path, keep origin only
-            aiWsBase = toWsOrigin(process.env.NEXT_PUBLIC_AI_WS_URL.replace(/^ws/i, 'http'));
-            // toWsOrigin converted to http to parse, convert back to ws
-            if (aiWsBase) aiWsBase = aiWsBase; // already correct proto from toWsOrigin logic below
-            // Redo: parse directly
             try {
                 const raw = process.env.NEXT_PUBLIC_AI_WS_URL.trim().replace(/\/+$/, '');
-                // Validate it starts with ws
                 if (/^wss?:\///i.test(raw)) {
                     const u = new URL(raw);
                     aiWsBase = `${u.protocol}//${u.host}`;
@@ -141,16 +142,13 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         }
 
         if (!aiWsBase && process.env.NEXT_PUBLIC_API_URL) {
-            // e.g. https://backend.onrender.com/api  → wss://backend.onrender.com
-            // The AI service is separate, but this gives us at least the hostname pattern
             aiWsBase = toWsOrigin(process.env.NEXT_PUBLIC_API_URL.trim());
-            console.warn('[Voice] Falling back to NEXT_PUBLIC_API_URL origin for WS —', aiWsBase,
-                '— Set NEXT_PUBLIC_AI_WS_URL in production for correct behaviour.');
+            console.warn('[Voice] Falling back to NEXT_PUBLIC_API_URL origin for WS —', aiWsBase);
         }
 
         if (!aiWsBase) {
             aiWsBase = 'ws://localhost:8080';
-            console.warn('[Voice] No AI URL env var found. Using localhost fallback. Set NEXT_PUBLIC_AI_WS_URL in production.');
+            console.warn('[Voice] No AI URL env var found. Using localhost fallback.');
         }
 
         const wsUrl = new URL('/ws/voice', aiWsBase);
@@ -165,13 +163,11 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         ws.onopen = () => {
             console.log('[Voice] WS connected — waiting for Gemini setup...');
             setIsConnected(true);
-            // Resume AudioContext after user gesture
             getAudioCtx();
         };
 
         ws.onmessage = (event) => {
             if (event.data instanceof ArrayBuffer) {
-                // Raw PCM from Gemini — play it
                 if (pcmPlayerRef.current) {
                     const int16 = new Int16Array(event.data);
                     pcmPlayerRef.current.queuePcm(int16);
@@ -234,6 +230,9 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         mediaStreamRef.current = null;
         setIsRecording(false);
         mutedRef.current = false;
+        hasSpokenRef.current = false;
+        silenceStartRef.current = null;
+        sentChunksCountRef.current = 0;
         setIsMuted(false);
     }
 
@@ -264,16 +263,49 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             const source = ctx.createMediaStreamSource(stream);
             sourceRef.current = source;
 
+            hasSpokenRef.current = false;
+            silenceStartRef.current = null;
+            sentChunksCountRef.current = 0;
+
             const processor = ctx.createScriptProcessor(2048, 1, 1);
             processor.onaudioprocess = (e) => {
                 if (mutedRef.current) return;
                 if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
                 const raw = e.inputBuffer.getChannelData(0);
                 const resampled = resampleTo16k(raw, ctx.sampleRate);
+                const rms = computeRms(resampled);
+                const isVoiceActive = rms >= SILENCE_THRESHOLD;
+                const now = Date.now();
+
+                if (isVoiceActive) {
+                    hasSpokenRef.current = true;
+                    silenceStartRef.current = null;
+                } else if (hasSpokenRef.current) {
+                    if (!silenceStartRef.current) {
+                        silenceStartRef.current = now;
+                    } else if (now - silenceStartRef.current > AUTO_END_SILENCE_MS) {
+                        console.log('[Voice] VAD: Silence threshold reached after speech. Auto-ending turn.');
+                        wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
+                        hasSpokenRef.current = false;
+                        silenceStartRef.current = null;
+                        return;
+                    }
+                }
+
+                // Skip sending continuous background silence before user speaks
+                if (!hasSpokenRef.current && !isVoiceActive) {
+                    return;
+                }
+
                 const pcm = float32ToInt16(resampled);
                 const payload = pcm.buffer.slice(0);
                 wsRef.current.send(payload);
-                console.log('[Voice] Sent audio chunk', payload.byteLength);
+
+                sentChunksCountRef.current += 1;
+                if (sentChunksCountRef.current === 1 || sentChunksCountRef.current % 25 === 0) {
+                    console.log('[Voice] Sent audio chunk', sentChunksCountRef.current, 'RMS:', rms.toFixed(4));
+                }
             };
 
             source.connect(processor);
@@ -282,7 +314,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             setIsRecording(true);
             mutedRef.current = false;
             setIsMuted(false);
-            console.log('[Voice] Recording started');
+            console.log('[Voice] Recording started with VAD');
         } catch (err) {
             console.error('[Voice] Mic error:', err);
             setPermissionError('Microphone permission is blocked. Please enable the microphone for this site in the browser settings and try again.');
