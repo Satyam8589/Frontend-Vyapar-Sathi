@@ -92,7 +92,7 @@ export default function PurchaseOrderListPage() {
         </div>
         
         <Link
-          to={`/storeDashboard/${storeId}/purchases/orders/new`}
+          href={`/storeDashboard/${storeId}/purchases/orders/new`}
           className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium"
         >
           <Plus className="h-4 w-4" />
@@ -194,7 +194,7 @@ export default function PurchaseOrderListPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link
-                        to={`/storeDashboard/${storeId}/purchases/orders/${po._id}`}
+                        href={`/storeDashboard/${storeId}/purchases/orders/${po._id}`}
                         className="text-indigo-600 hover:text-indigo-900 font-medium text-sm flex justify-end items-center gap-1"
                       >
                         <Eye className="h-4 w-4" />

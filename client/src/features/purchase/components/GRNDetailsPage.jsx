@@ -47,7 +47,7 @@ export default function GRNDetailsPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">GRN Not Found</h2>
-        <Link to={`/storeDashboard/${storeId}/purchases/grns`} className="text-indigo-600 hover:underline mt-4 inline-block">
+        <Link href={`/storeDashboard/${storeId}/purchases/grns`} className="text-indigo-600 hover:underline mt-4 inline-block">
           Return to GRN List
         </Link>
       </div>
@@ -63,7 +63,7 @@ export default function GRNDetailsPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link
-          to={`/storeDashboard/${storeId}/purchases/grns`}
+          href={`/storeDashboard/${storeId}/purchases/grns`}
           className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 shadow-sm print:hidden"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -182,7 +182,7 @@ export default function GRNDetailsPage() {
               {grn.purchaseOrder && (
                 <div>
                   <span className="block text-gray-500 text-xs uppercase tracking-wider font-semibold mb-1">Linked PO</span>
-                  <Link to={`/storeDashboard/${storeId}/purchases/orders/${grn.purchaseOrder._id}`} className="font-medium text-indigo-600 hover:underline flex items-center gap-2">
+                  <Link href={`/storeDashboard/${storeId}/purchases/orders/${grn.purchaseOrder._id}`} className="font-medium text-indigo-600 hover:underline flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     {grn.purchaseOrder.poNumber}
                   </Link>
@@ -192,7 +192,7 @@ export default function GRNDetailsPage() {
               {grn.linkedPurchase && (
                 <div>
                   <span className="block text-gray-500 text-xs uppercase tracking-wider font-semibold mb-1">Linked Purchase</span>
-                  <Link to={`/storeDashboard/${storeId}/purchases/${grn.linkedPurchase._id}`} className="font-medium text-indigo-600 hover:underline flex items-center gap-2">
+                  <Link href={`/storeDashboard/${storeId}/purchases/${grn.linkedPurchase._id}`} className="font-medium text-indigo-600 hover:underline flex items-center gap-2">
                     <Truck className="h-4 w-4" />
                     {grn.linkedPurchase.invoiceNumber}
                   </Link>

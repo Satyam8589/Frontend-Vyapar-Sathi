@@ -110,7 +110,7 @@ export default function GRNListPage() {
                       </td>
                       <td className="px-6 py-4">
                         {grn.purchaseOrder ? (
-                          <Link to={`/storeDashboard/${storeId}/purchases/orders/${grn.purchaseOrder._id}`} className="font-medium text-indigo-600 hover:underline flex items-center gap-1">
+                          <Link href={`/storeDashboard/${storeId}/purchases/orders/${grn.purchaseOrder._id}`} className="font-medium text-indigo-600 hover:underline flex items-center gap-1">
                             <FileText className="h-3.5 w-3.5" />
                             {grn.purchaseOrder.poNumber}
                           </Link>
@@ -137,7 +137,7 @@ export default function GRNListPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <Link
-                          to={`/storeDashboard/${storeId}/purchases/grns/${grn._id}`}
+                          href={`/storeDashboard/${storeId}/purchases/grns/${grn._id}`}
                           className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors"
                         >
                           View Details

@@ -149,7 +149,7 @@ export default function PurchaseOrderDetailsPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900">Purchase Order Not Found</h2>
-        <Link to={`/storeDashboard/${storeId}/purchases/orders`} className="text-indigo-600 hover:underline mt-4 inline-block">
+        <Link href={`/storeDashboard/${storeId}/purchases/orders`} className="text-indigo-600 hover:underline mt-4 inline-block">
           Return to Purchase Orders
         </Link>
       </div>
@@ -178,7 +178,7 @@ export default function PurchaseOrderDetailsPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link
-          to={`/storeDashboard/${storeId}/purchases/orders`}
+          href={`/storeDashboard/${storeId}/purchases/orders`}
           className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 shadow-sm print:hidden"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -320,7 +320,7 @@ export default function PurchaseOrderDetailsPage() {
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-gray-900 print:text-black">{currencyFormat(purchase.grandTotal)}</div>
-                      <Link to={`/storeDashboard/${storeId}/purchases/${purchase._id}`} className="text-indigo-600 text-sm font-medium hover:underline print:hidden">
+                      <Link href={`/storeDashboard/${storeId}/purchases/${purchase._id}`} className="text-indigo-600 text-sm font-medium hover:underline print:hidden">
                         View Purchase
                       </Link>
                     </div>
