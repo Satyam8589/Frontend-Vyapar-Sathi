@@ -466,10 +466,10 @@ export default function VyaparSathiSidebar({
             wordBreak: "break-word",
           }}
           onClick={() => setShowFullName(!showFullName)}
-          title={currentStore?.name || "VyaparSathi"}
+          title={currentStore?.name || "VyaparSakha"}
         >
           <span style={{ color: "#fff" }}>
-            {currentStore?.name || "VyaparSathi"}
+            {currentStore?.name || "VyaparSakha"}
           </span>
         </span>
       </div>

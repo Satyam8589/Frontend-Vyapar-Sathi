@@ -112,7 +112,7 @@ export default function Navbar() {
             <div className="w-12 h-12 md:w-14 md:h-14 transition-transform group-hover:scale-105 flex-shrink-0">
               <Image
                 src="/images/logo/vs_logo.png"
-                alt="Vyapar Sathi"
+                alt="Vyapar Sakha"
                 width={256}
                 height={256}
                 priority

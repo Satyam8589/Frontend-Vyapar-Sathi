@@ -963,7 +963,7 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
      THINKING INDICATOR
   ========================================================= */
 
-  export function ThinkingIndicator({ label = "Vyapar Sathi is thinking..." }) {
+  export function ThinkingIndicator({ label = "Vyapar Sakha is thinking..." }) {
     return (
       <div
         className="
@@ -1342,7 +1342,7 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
             <div className="flex items-center gap-2.5 px-0.5">
               <AIAvatar streaming={isStreaming} size={28} />
               <span className="text-xs font-bold text-slate-800 tracking-tight">
-                Vyapar Sathi AI
+                Vyapar Sakha AI
               </span>
               {isStreaming ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200/60">

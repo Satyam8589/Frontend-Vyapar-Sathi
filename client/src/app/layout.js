@@ -14,18 +14,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Vyapar Sathi — Smart Business Management for Indian Retailers",
+  title: "Vyapar Sakha — Smart Business Management for Indian Retailers",
   description:
-    "Vyapar Sathi helps Indian shop owners manage inventory, track sales, and grow their business — all in one place. Simple, fast, and built for Bharat.",
+    "Vyapar Sakha helps Indian shop owners manage inventory, track sales, and grow their business — all in one place. Simple, fast, and built for Bharat.",
   keywords: [
-    "vyapar sathi",
+    "vyapar sakha",
     "business management",
     "inventory",
     "Indian retail",
     "shop management",
     "GST billing",
   ],
-  authors: [{ name: "Vyapar Sathi Team" }],
+  authors: [{ name: "Vyapar Sakha Team" }],
   icons: {
     icon: "/vs_logo.ico",
     shortcut: "/vs_logo.ico",
@@ -33,9 +33,9 @@ export const metadata = {
   },
   manifest: "/manifest.json",
   openGraph: {
-    title: "Vyapar Sathi — Smart Business Management",
+    title: "Vyapar Sakha — Smart Business Management",
     description:
-      "Manage your shop, inventory, and sales effortlessly with Vyapar Sathi.",
+      "Manage your shop, inventory, and sales effortlessly with Vyapar Sakha.",
     type: "website",
     image: "/images/logo/vs_logo.png",
   },

@@ -1106,7 +1106,7 @@ const AskCopilotSection = ({
                       <div className="h-full w-full rounded-[20px] bg-white flex items-center justify-center p-2 overflow-hidden">
                         <img
                           src="/images/logo/vs_logo.png"
-                          alt="Vyapar Sathi Logo"
+                          alt="Vyapar Sakha Logo"
                           className="h-full w-full object-contain"
                         />
                       </div>
@@ -1118,7 +1118,7 @@ const AskCopilotSection = ({
                   <div className="space-y-2 max-w-md">
                     <h2 className="text-3xl font-black tracking-tight">
                       <span className="bg-gradient-to-r from-slate-800 via-indigo-900 to-blue-700 bg-clip-text text-transparent">
-                        Ask Vyapar Sathi
+                        Ask Vyapar Sakha
                       </span>
                     </h2>
                   </div>

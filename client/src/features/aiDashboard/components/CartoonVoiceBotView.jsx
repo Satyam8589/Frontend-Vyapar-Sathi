@@ -209,7 +209,7 @@ export default function CartoonVoiceBotView({
               <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center p-1 overflow-hidden">
                 <img
                   src="/images/logo/vs_logo.png"
-                  alt="Vyapar Sathi Logo"
+                  alt="Vyapar Sakha Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
@@ -222,7 +222,7 @@ export default function CartoonVoiceBotView({
 
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-white leading-tight">Vyapar Sathi</h2>
+              <h2 className="text-sm font-bold text-white leading-tight">Vyapar Sakha</h2>
               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-300 border border-amber-400/30">
                 AI Voice + Vision
               </span>
@@ -384,7 +384,7 @@ export default function CartoonVoiceBotView({
                 <div className="h-full w-full rounded-[7px] bg-white flex items-center justify-center p-0.5 overflow-hidden">
                   <img
                     src="/images/logo/vs_logo.png"
-                    alt="Vyapar Sathi Logo"
+                    alt="Vyapar Sakha Logo"
                     className="h-full w-full object-contain"
                   />
                 </div>
