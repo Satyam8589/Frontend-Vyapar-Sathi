@@ -1,7 +1,7 @@
 {
-  "name": "Vyapar Sathi — Smart Business Management",
-  "short_name": "Vyapar Sathi",
-  "description": "Vyapar Sathi helps Indian shop owners manage inventory, track sales, and grow their business — all in one place. Simple, fast, and built for Bharat.",
+  "name": "Vyapar Sakha — Smart Business Management",
+  "short_name": "Vyapar Sakha",
+  "description": "Vyapar Sakha helps Indian shop owners manage inventory, track sales, and grow their business — all in one place. Simple, fast, and built for Bharat.",
   "start_url": "/",
   "display": "standalone",
   "scope": "/",
@@ -10,27 +10,15 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/images/logo/vs_logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/images/logo/vs_logo_updated.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/images/logo/vs_logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/images/logo/vs_logo.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/images/logo/vs_logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/images/logo/vs_logo_updated.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
       "purpose": "maskable"
     }
   ],
@@ -43,9 +31,9 @@
       "url": "/storeDashboard",
       "icons": [
         {
-          "src": "/images/logo/vs_logo.png",
+          "src": "/images/logo/vs_logo_updated.svg",
           "sizes": "192x192",
-          "type": "image/png"
+          "type": "image/svg+xml"
         }
       ]
     }
