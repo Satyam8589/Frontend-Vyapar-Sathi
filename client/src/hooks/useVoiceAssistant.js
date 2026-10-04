@@ -340,6 +340,31 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         setIsMuted(nextMuted);
     }, [isMuted, isRecording]);
 
+    const sendTextMessage = useCallback((text) => {
+        if (!text || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        wsRef.current.send(JSON.stringify({
+            type: 'user_text',
+            text: text.trim(),
+        }));
+    }, []);
+
+    const sendImageInput = useCallback((base64Data, mimeType = 'image/jpeg', textCaption = '') => {
+        if (!base64Data || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        let cleanB64 = base64Data;
+        let finalMime = mimeType;
+        if (base64Data.startsWith('data:')) {
+            const parts = base64Data.split(',');
+            finalMime = parts[0].split(';')[0].replace('data:', '') || mimeType;
+            cleanB64 = parts[1];
+        }
+        wsRef.current.send(JSON.stringify({
+            type: 'image_input',
+            mime_type: finalMime,
+            data: cleanB64,
+            text: textCaption ? textCaption.trim() : '',
+        }));
+    }, []);
+
     return {
         isConnected,
         isReady,
@@ -351,5 +376,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         startRecording,
         stopRecording,
         toggleMute,
+        sendTextMessage,
+        sendImageInput,
     };
 };

@@ -32,9 +32,11 @@ try {
   };
 
   useEffect(() => {
-    loadChats();
+    if (open || storeId) {
+      loadChats();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId, refreshKey]);
+  }, [storeId, refreshKey, open]);
 
   const handleSelectChat = (chat) => {
     setActiveChatId(chat.chat_id);

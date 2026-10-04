@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Mic,
   MicOff,
@@ -11,6 +11,9 @@ import {
   Star,
   X,
   Zap,
+  Send,
+  Image as ImageIcon,
+  Paperclip,
 } from "lucide-react";
 
 export default function CartoonVoiceBotView({
@@ -23,6 +26,8 @@ export default function CartoonVoiceBotView({
   onStopRecording,
   onToggleMute,
   onEndCall,
+  onSendTextMessage,
+  onSendImageInput,
   liveTranscript = "",
   isAISpeaking = false,
   activeToolStatus = null,
@@ -32,6 +37,13 @@ export default function CartoonVoiceBotView({
   const [callDuration, setCallDuration] = useState(0);
   const [isBlinking, setIsBlinking] = useState(false);
   const [entrancePhase, setEntrancePhase] = useState("portal");
+
+  // Multimodal Text & Image Input States
+  const [inputText, setInputText] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState(null);
+  const [selectedMime, setSelectedMime] = useState("image/jpeg");
+  const fileInputRef = useRef(null);
 
   // Call timer (starts once ready)
   useEffect(() => {
@@ -70,6 +82,32 @@ export default function CartoonVoiceBotView({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedMime(file.type || "image/jpeg");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      setSelectedImagePreview(result);
+      setSelectedImage(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSend = () => {
+    if (selectedImage) {
+      onSendImageInput?.(selectedImage, selectedMime, inputText);
+      setSelectedImage(null);
+      setSelectedImagePreview(null);
+      setInputText("");
+    } else if (inputText.trim()) {
+      onSendTextMessage?.(inputText);
+      setInputText("");
+    }
   };
 
   const isBotTalking = Boolean(isAISpeaking);
@@ -133,9 +171,16 @@ export default function CartoonVoiceBotView({
         }
       `}</style>
 
-      {/* ------------------------------------------------------------- */}
-      {/* AMBIENT NEON GLOW PARTICLES                                    */}
-      {/* ------------------------------------------------------------- */}
+      {/* Hidden File Input for Bill/Image Upload */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImageSelect}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Ambient Neon Glow */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[22rem] h-[22rem] bg-gradient-to-tr from-blue-600/30 via-indigo-600/35 to-violet-500/25 rounded-full blur-[90px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-10 left-4 w-60 h-60 bg-emerald-500/15 rounded-full blur-[80px] pointer-events-none" />
       <div className="absolute top-1/3 right-4 w-56 h-56 bg-amber-500/15 rounded-full blur-[70px] pointer-events-none" />
@@ -179,11 +224,11 @@ export default function CartoonVoiceBotView({
             <div className="flex items-center gap-1.5">
               <h2 className="text-sm font-bold text-white leading-tight">Vyapar Sathi</h2>
               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-300 border border-amber-400/30">
-                AI Voice
+                AI Voice + Vision
               </span>
             </div>
             <p className="text-[10px] font-semibold text-emerald-400 leading-tight flex items-center gap-1">
-              <span>Live Voice Partner</span>
+              <span>Live Partner</span>
               <span className="h-1 w-1 rounded-full bg-emerald-400" />
               <span className="text-indigo-200 font-medium">
                 {permissionError
@@ -350,9 +395,7 @@ export default function CartoonVoiceBotView({
           <div className="w-32 h-3 mt-2 rounded-full bg-indigo-500/20 blur-md animate-pulse" />
         </div>
 
-        {/* ------------------------------------------------------------- */}
-        {/* ACTIVE TOOL EXECUTION BADGE                                   */}
-        {/* ------------------------------------------------------------- */}
+        {/* ACTIVE TOOL EXECUTION BADGE */}
         {activeToolStatus?.active && (
           <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/50 shadow-md text-white text-xs font-bold z-20">
             <span className="relative flex h-2 w-2 shrink-0">
@@ -370,9 +413,7 @@ export default function CartoonVoiceBotView({
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
-        {/* LIVE TRANSCRIPT SPEECH BUBBLE                                 */}
-        {/* ------------------------------------------------------------- */}
+        {/* LIVE TRANSCRIPT SPEECH BUBBLE */}
         <div className="mt-3 w-full max-w-sm px-3 z-10">
           <div className="relative rounded-2xl bg-white/[0.07] border border-white/15 p-3 backdrop-blur-md text-center shadow-lg">
             {liveTranscript ? (
@@ -385,11 +426,11 @@ export default function CartoonVoiceBotView({
               </p>
             ) : isUserTalking ? (
               <p className="text-xs sm:text-sm font-semibold text-emerald-300 animate-pulse">
-                "Listening... Speak naturally!"
+                "Listening... Speak, type, or upload bill image!"
               </p>
             ) : (
               <p className="text-xs text-indigo-200">
-                Speak directly into your mic — Vyapar Sathi AI is listening.
+                Speak into mic, upload paper bill image, or type text below.
               </p>
             )}
           </div>
@@ -427,26 +468,95 @@ export default function CartoonVoiceBotView({
       </div>
 
       {/* ------------------------------------------------------------- */}
+      {/* MULTIMODAL INPUT BAR (TEXT + IMAGE ATTACHMENT)                */}
+      {/* ------------------------------------------------------------- */}
+      <div className="relative z-20 px-4 pt-2 pb-1 border-t border-white/[0.08] backdrop-blur-md bg-slate-950/70 flex flex-col gap-2">
+        {/* Image Attachment Preview Badge */}
+        {selectedImagePreview && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-900/60 border border-indigo-400/40 w-fit self-start text-xs text-indigo-200">
+            <img
+              src={selectedImagePreview}
+              alt="Attached Bill"
+              className="h-7 w-7 rounded object-cover border border-white/30"
+            />
+            <span className="font-semibold text-[11px]">Bill image attached</span>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedImage(null);
+                setSelectedImagePreview(null);
+              }}
+              className="p-0.5 rounded-full hover:bg-white/20 text-slate-300 hover:text-white"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          {/* Bill Photo Upload Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/15 text-indigo-200 hover:text-white transition flex items-center justify-center shrink-0"
+            title="Upload Supplier Bill Photo or Image"
+          >
+            <ImageIcon className="h-4 w-4 text-cyan-400" />
+          </button>
+
+          {/* Text Input Box */}
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder={
+              selectedImage
+                ? "Add instruction for bill image..."
+                : "Type message or ask anything..."
+            }
+            className="flex-1 px-3 py-2 rounded-xl bg-white/[0.08] border border-white/15 text-xs text-white placeholder-indigo-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+          />
+
+          {/* Send Button */}
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!inputText.trim() && !selectedImage}
+            className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white disabled:opacity-40 disabled:hover:from-cyan-500 transition flex items-center justify-center shrink-0 shadow-md shadow-cyan-500/20"
+            title="Send Text / Image to Gemini Realtime"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------- */}
       {/* SIMPLIFIED 2-BUTTON CONTROLS BAR (MIC TOGGLE + END CALL)      */}
       {/* ------------------------------------------------------------- */}
-      <div className="relative z-20 px-8 py-4 border-t border-white/[0.08] backdrop-blur-lg bg-black/50 flex items-center justify-center gap-8">
+      <div className="relative z-20 px-8 py-3 backdrop-blur-lg bg-black/60 flex items-center justify-center gap-8 border-t border-white/[0.05]">
         {/* 1. Mic On / Mute Button */}
         <button
           type="button"
           onClick={isRecording ? onStopRecording : onStartRecording}
-          className="flex flex-col items-center gap-1.5 group transition-transform active:scale-95"
+          className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
           title={isRecording ? "Mute Microphone" : "Turn On Microphone"}
         >
           <div
-            className={`h-14 w-14 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
+            className={`h-12 w-12 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
               isRecording
                 ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-emerald-500/40 ring-4 ring-emerald-400/40"
                 : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-white/15"
             }`}
           >
-            {isRecording ? <Mic className="h-6 w-6 animate-pulse" /> : <MicOff className="h-6 w-6" />}
+            {isRecording ? <Mic className="h-5 w-5 animate-pulse" /> : <MicOff className="h-5 w-5" />}
           </div>
-          <span className="text-xs font-semibold text-slate-200">
+          <span className="text-[11px] font-semibold text-slate-200">
             {isRecording ? "Mic On" : "Muted"}
           </span>
         </button>
@@ -455,13 +565,13 @@ export default function CartoonVoiceBotView({
         <button
           type="button"
           onClick={onEndCall}
-          className="flex flex-col items-center gap-1.5 group transition-transform active:scale-95"
+          className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
           title="End Live Call"
         >
-          <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-rose-600 via-red-600 to-rose-500 text-white shadow-xl shadow-rose-600/50 flex items-center justify-center hover:scale-105 hover:from-rose-500 hover:to-red-500 ring-4 ring-rose-500/30 transition-all">
-            <PhoneOff className="h-6 w-6 stroke-[2.5]" />
+          <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-rose-600 via-red-600 to-rose-500 text-white shadow-xl shadow-rose-600/50 flex items-center justify-center hover:scale-105 hover:from-rose-500 hover:to-red-500 ring-4 ring-rose-500/30 transition-all">
+            <PhoneOff className="h-5 w-5 stroke-[2.5]" />
           </div>
-          <span className="text-xs font-bold text-rose-300">End Call</span>
+          <span className="text-[11px] font-bold text-rose-300">End Call</span>
         </button>
       </div>
     </div>

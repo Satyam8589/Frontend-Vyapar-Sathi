@@ -305,6 +305,8 @@ const AskCopilotSection = ({
     startRecording: startVoiceWsRecording,
     stopRecording: stopVoiceWsRecording,
     toggleMute: toggleVoiceWsMute,
+    sendTextMessage: sendVoiceWsTextMessage,
+    sendImageInput: sendVoiceWsImageInput,
   } = useVoiceAssistant(user?.uid, storeId, {
     onAiText: handleVoiceAiText,
     onAiTranscript: handleVoiceAiText,
@@ -1081,6 +1083,8 @@ const AskCopilotSection = ({
               onStopRecording={stopVoiceWsRecording}
               onToggleMute={toggleVoiceWsMute}
               onEndCall={handleEndLiveCall}
+              onSendTextMessage={sendVoiceWsTextMessage}
+              onSendImageInput={sendVoiceWsImageInput}
               liveTranscript={liveSpeechTranscript}
               isAISpeaking={isSpeaking}
               activeToolStatus={voiceToolStatus}
