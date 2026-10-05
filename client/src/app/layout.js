@@ -27,9 +27,9 @@ export const metadata = {
   ],
   authors: [{ name: "Vyapar Sakha Team" }],
   icons: {
-    icon: "/vs_logo.ico",
-    shortcut: "/vs_logo.ico",
-    apple: "/images/logo/vs_logo.png",
+    icon: "/images/logo/vyapar-sakha-version2-logo.svg",
+    shortcut: "/images/logo/vyapar-sakha-version2-logo.svg",
+    apple: "/images/logo/vyapar-sakha-version2-logo.svg",
   },
   manifest: "/manifest.json",
   openGraph: {
@@ -37,29 +37,28 @@ export const metadata = {
     description:
       "Manage your shop, inventory, and sales effortlessly with Vyapar Sakha.",
     type: "website",
-    image: "/images/logo/vs_logo.png",
+    image: "/images/logo/vyapar-sakha-version2-logo.svg",
   },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      {/* <head>
+      <head>
         <link
           rel="icon"
-          href="/images/logo/vs_logo.png"
-          type="image/png"
-          sizes="32x32 64x64"
+          href="/images/logo/vyapar-sakha-version2-logo.svg"
+          type="image/svg+xml"
+          sizes="any"
         />
         <link
-          rel="icon"
-          href="/images/logo/vs_logo.png"
-          type="image/png"
-          sizes="192x192 256x256"
+          rel="shortcut icon"
+          href="/images/logo/vyapar-sakha-version2-logo.svg"
+          type="image/svg+xml"
         />
-        <link rel="apple-touch-icon" href="/images/logo/vs_logo.png" />
+        <link rel="apple-touch-icon" href="/images/logo/vyapar-sakha-version2-logo.svg" />
         <meta name="theme-color" content="#1e40af" />
-      </head> */}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

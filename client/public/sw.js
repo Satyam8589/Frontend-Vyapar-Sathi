@@ -1,11 +1,11 @@
 const CACHE_VERSION = 'v1';
-const STATIC_CACHE = `vyapar-sathi-static-${CACHE_VERSION}`;
-const RUNTIME_CACHE = `vyapar-sathi-runtime-${CACHE_VERSION}`;
+const STATIC_CACHE = `vyapar-sakha-static-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `vyapar-sakha-runtime-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
   '/',
   '/manifest.json',
-  '/images/logo/vs_logo.png'
+  '/images/logo/vyapar-sakha-version2-logo.svg'
 ];
 
 self.addEventListener('install', (event) => {

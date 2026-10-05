@@ -208,7 +208,7 @@ export default function CartoonVoiceBotView({
             <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-[1.5px] shadow-md shadow-indigo-500/30">
               <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center p-1 overflow-hidden">
                 <img
-                  src="/images/logo/vs_logo.png"
+                  src="/images/logo/vyapar-sakha-version2-logo.svg"
                   alt="Vyapar Sakha Logo"
                   className="h-full w-full object-contain"
                 />
@@ -383,7 +383,7 @@ export default function CartoonVoiceBotView({
               <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-amber-400 via-indigo-600 to-blue-500 p-[1px] shadow-md">
                 <div className="h-full w-full rounded-[7px] bg-white flex items-center justify-center p-0.5 overflow-hidden">
                   <img
-                    src="/images/logo/vs_logo.png"
+                    src="/images/logo/vyapar-sakha-version2-logo.svg"
                     alt="Vyapar Sakha Logo"
                     className="h-full w-full object-contain"
                   />
