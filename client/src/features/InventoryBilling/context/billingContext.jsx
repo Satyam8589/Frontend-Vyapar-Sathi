@@ -428,6 +428,38 @@ export const BillingProvider = ({ children }) => {
     };
   }, [addProductByBarcode, addProductManually, setScannedBarcode]);
 
+  // Handle agent voice billing commands
+  useEffect(() => {
+    const handleAgentAdd = (e) => {
+      const { barcode, quantity } = e.detail;
+      if (barcode) {
+        // We add by barcode, which handles adding 1 quantity.
+        // If they requested more, we might need a small delay or loop, but let's just do it manually if possible.
+        // Since addProductByBarcode just adds 1, let's just call it. For multiple, we could call it multiple times.
+        const addMultiple = async () => {
+           for (let i = 0; i < (quantity || 1); i++) {
+              await addProductByBarcode(barcode);
+           }
+        };
+        addMultiple();
+      }
+    };
+
+    const handleAgentGenerate = (e) => {
+      const { paymentMethod } = e.detail || {};
+      processBillRef.current?.(paymentMethod || "cash");
+    };
+
+    window.addEventListener("agent:billing:add", handleAgentAdd);
+    window.addEventListener("agent:billing:generate", handleAgentGenerate);
+
+    return () => {
+      window.removeEventListener("agent:billing:add", handleAgentAdd);
+      window.removeEventListener("agent:billing:generate", handleAgentGenerate);
+    };
+  }, [addProductByBarcode]);
+
+
   // Remove product from bill
   const removeProduct = useCallback((productId) => {
     setBilledProducts((prev) => prev.filter((p) => p._id !== productId));

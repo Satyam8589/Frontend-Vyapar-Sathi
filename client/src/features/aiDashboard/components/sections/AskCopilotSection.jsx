@@ -317,6 +317,22 @@ const AskCopilotSection = ({
     if (data.tool === "tool_navigate_page" && data.args?.route) {
       emitAgentNavigate(data.args.route);
     }
+    
+    // Emit voice billing events
+    if (data.tool === "tool_add_billing_item" && data.result?.success) {
+      window.dispatchEvent(
+        new CustomEvent("agent:billing:add", { 
+          detail: { barcode: data.result.barcode, quantity: data.args.quantity } 
+        })
+      );
+    }
+    if (data.tool === "tool_generate_bill") {
+      window.dispatchEvent(
+        new CustomEvent("agent:billing:generate", { 
+          detail: { paymentMethod: data.args?.payment_method || "cash" } 
+        })
+      );
+    }
   }, []);
 
 
@@ -853,6 +869,14 @@ const AskCopilotSection = ({
               // Agent mutated backend data — tell subscribed page components to re-fetch
               emitAgentRefresh(payload?.section || "*");
             }
+
+            if (event === "billing_add") {
+              window.dispatchEvent(new CustomEvent("agent:billing:add", { detail: payload }));
+            }
+
+            if (event === "billing_generate") {
+              window.dispatchEvent(new CustomEvent("agent:billing:generate", { detail: payload }));
+            }
           },
         });
       } catch (streamError) {
@@ -967,6 +991,14 @@ const AskCopilotSection = ({
 
             if (event === "refresh") {
               emitAgentRefresh(payload?.section || "*");
+            }
+
+            if (event === "billing_add") {
+              window.dispatchEvent(new CustomEvent("agent:billing:add", { detail: payload }));
+            }
+
+            if (event === "billing_generate") {
+              agentEventBus.dispatchEvent(new CustomEvent("agent:billing:generate", { detail: payload }));
             }
           },
         });
