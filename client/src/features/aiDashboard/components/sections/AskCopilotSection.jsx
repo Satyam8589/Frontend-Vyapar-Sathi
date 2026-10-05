@@ -314,8 +314,8 @@ const AskCopilotSection = ({
     }
     
     // Emit navigation if the agent wants to navigate
-    if (data.tool === "tool_navigate_page" && data.args?.route) {
-      emitAgentNavigate(data.args.route);
+    if (data.tool === "tool_navigate_page" && data.args?.page) {
+      emitAgentNavigate(data.args.page);
     }
     
     // Emit voice billing events
@@ -860,8 +860,8 @@ const AskCopilotSection = ({
 
             if (event === "navigate") {
               // Agent wants to navigate to a different page
-              if (payload?.route) {
-                emitAgentNavigate(payload.route);
+              if (payload?.page) {
+                emitAgentNavigate(payload.page);
               }
             }
 
@@ -984,8 +984,8 @@ const AskCopilotSection = ({
             }
 
             if (event === "navigate") {
-              if (payload?.route) {
-                emitAgentNavigate(payload.route);
+              if (payload?.page) {
+                emitAgentNavigate(payload.page);
               }
             }
 

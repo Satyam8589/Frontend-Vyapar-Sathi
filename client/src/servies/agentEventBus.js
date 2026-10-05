@@ -13,8 +13,8 @@
  *        | "expenses" | "analytics" | "overview" | "*" (all)
  *
  *   2. "agent:navigate" — emitted when the agent wants the app to
- *      navigate to a different page.  Payload: { route: string }
- *      Example routes: "/storeDashboard/:storeId/analytics"
+ *      navigate to a different page.  Payload: { page: string }
+ *      Example pages: "analytics", "sellers", "billing"
  *
  * Usage in a React component:
  *
@@ -43,12 +43,12 @@ export function emitAgentRefresh(section = "*") {
 
 /**
  * Emit a navigation command.
- * @param {string} route  The absolute path to navigate to.
+ * @param {string} page  The name of the page to navigate to.
  */
-export function emitAgentNavigate(route) {
-  if (typeof window === "undefined" || !route) return;
+export function emitAgentNavigate(page) {
+  if (typeof window === "undefined" || !page) return;
   window.dispatchEvent(
-    new CustomEvent(NAVIGATE_EVENT, { detail: { route } })
+    new CustomEvent(NAVIGATE_EVENT, { detail: { page } })
   );
 }
 
@@ -66,7 +66,7 @@ export function onAgentRefresh(handler) {
 
 /**
  * Subscribe to agent navigation events.
- * @param {(payload: { route: string }) => void} handler
+ * @param {(payload: { page: string }) => void} handler
  * @returns {() => void}  Unsubscribe function.
  */
 export function onAgentNavigate(handler) {

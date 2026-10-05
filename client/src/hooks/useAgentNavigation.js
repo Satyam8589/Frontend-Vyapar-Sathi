@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * useAgentNavigation.js
@@ -9,17 +9,16 @@
  * Mount this ONCE in a high-level layout component so navigation works
  * regardless of which page the user is currently on.
  *
- * The route payload from the agent is a path template that may contain
- * ":storeId" placeholders. Pass the current storeId so they get resolved.
+ * The page payload from the agent is simply the name of the section.
  *
- * Example agent route payloads:
- *   "/storeDashboard/:storeId/analytics"
- *   "/storeDashboard/:storeId/sellers"
- *   "/storeDashboard/:storeId/purchases"
- *   "/storeDashboard/:storeId/buyers"
- *   "/storeDashboard/:storeId/billing"
- *   "/storeDashboard/:storeId/overview"
- *   "/storeDashboard/:storeId/ai-dashboard"
+ * Example agent page payloads:
+ *   "analytics"
+ *   "sellers"
+ *   "purchases"
+ *   "buyers"
+ *   "billing"
+ *   "overview"
+ *   "ai-dashboard"
  */
 
 import { useEffect } from "react";
@@ -35,10 +34,12 @@ export function useAgentNavigation(storeId) {
   useEffect(() => {
     if (!storeId) return;
 
-    const unsub = onAgentNavigate(({ route }) => {
-      if (!route) return;
-      // Replace :storeId placeholder with the actual store ID
-      const resolved = route.replace(":storeId", storeId);
+    const unsub = onAgentNavigate(({ page }) => {
+      if (!page) return;
+      
+      // Clean up the page string just in case
+      const cleanPage = page.replace(/^\/+/, '');
+      const resolved = `/storeDashboard/${storeId}/${cleanPage}`;
       router.push(resolved);
     });
 
