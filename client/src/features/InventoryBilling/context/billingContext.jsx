@@ -30,6 +30,8 @@ import {
   saveSyncMetadata,
   getOfflineProducts 
 } from "../utils/db";
+import { createBuyer } from "@/features/buyer/services/buyerService";
+import { emitAgentRefresh } from "@/servies/agentEventBus";
 
 const BillingContext = createContext(null);
 
@@ -192,6 +194,11 @@ export const BillingProvider = ({ children }) => {
   const [userContext, setUserContext] = useState({ role: null, permissions: [] });
   const [billedProducts, setBilledProducts] = useState([]);
   const [discount, setDiscount] = useState({ type: "fixed", value: 0 }); // { type: 'percent' | 'fixed', value: number }
+  const [customerDetails, setCustomerDetails] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
 
   // Offline billing - use ref for processBill to avoid circular dependency
   const processBillRef = useRef(null);
@@ -521,8 +528,49 @@ export const BillingProvider = ({ children }) => {
         setLoading(true);
         setError(null);
 
+        let buyerId = null;
+
+        // Auto-register/update buyer in DB if customer info provided
+        if ((customerDetails.name && customerDetails.name.trim() !== "Walk-in Customer") || (customerDetails.phone && customerDetails.phone.trim())) {
+          try {
+            const savedBuyer = await createBuyer(storeId, {
+              name: customerDetails.name?.trim() || "Walk-in Customer",
+              phone: customerDetails.phone?.trim() || "N/A",
+              email: customerDetails.email?.trim() || "",
+              totalSales: calculateTotal(),
+              totalPaid: calculateTotal(),
+              totalDue: 0,
+            });
+            buyerId = savedBuyer?._id || savedBuyer?.data?._id || null;
+            emitAgentRefresh("buyers");
+          } catch (buyerErr) {
+            console.warn("Auto buyer creation info:", buyerErr?.message);
+          }
+        }
+
         const billData = {
           storeId,
+          buyerId,
+          storeInfo: {
+            name: currentStore?.name || currentStore?.storeName || "Vyapar Sakha Store",
+            address: currentStore?.address || currentStore?.location || "",
+            phone: currentStore?.phone || currentStore?.mobile || currentStore?.contact || currentStore?.owner?.phone || user?.phone || "",
+            email: currentStore?.email || currentStore?.owner?.email || user?.email || "",
+            gstin: currentStore?.gstin || currentStore?.gstNumber || "",
+          },
+          customerName: customerDetails.name || "Walk-in Customer",
+          customerPhone: customerDetails.phone || "",
+          customerEmail: customerDetails.email || "",
+          customer: {
+            name: customerDetails.name || "Walk-in Customer",
+            phone: customerDetails.phone || "",
+            email: customerDetails.email || "",
+          },
+          user: {
+            id: user?.uid || user?._id || "",
+            name: user?.displayName || user?.name || "Staff",
+            email: user?.email || "",
+          },
           products: billedProducts.map((p) => ({
             productId: p._id,
             name: p.name,
@@ -589,6 +637,7 @@ export const BillingProvider = ({ children }) => {
         // Clear the bill
         setBilledProducts([]);
         setDiscount({ type: "fixed", value: 0 });
+        setCustomerDetails({ name: "", phone: "", email: "" });
 
         return bill || { ...billData, offline: true };
       } catch (err) {
@@ -601,7 +650,7 @@ export const BillingProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [billedProducts, storeId, user?.uid, calculateTotal, saveBillOffline, clearSession],
+    [billedProducts, storeId, user?.uid, calculateTotal, saveBillOffline, clearSession, customerDetails],
   );
 
   // Set ref for offline billing hook
@@ -614,6 +663,7 @@ export const BillingProvider = ({ children }) => {
     setBilledProducts([]);
     setScannedBarcode("");
     setDiscount({ type: "fixed", value: 0 });
+    setCustomerDetails({ name: "", phone: "", email: "" });
     await clearSession();
     showSuccess("Bill cleared");
   }, [clearSession]);
@@ -632,6 +682,8 @@ export const BillingProvider = ({ children }) => {
       lastBillData,
       manualProductOpen,
       setManualProductOpen,
+      customerDetails,
+      setCustomerDetails,
       // Real-time sync
       syncEnabled,
       syncStatus,
@@ -663,6 +715,7 @@ export const BillingProvider = ({ children }) => {
       storeProducts,
       lastBillData,
       manualProductOpen,
+      customerDetails,
       syncEnabled,
       syncStatus,
       sessionId,
