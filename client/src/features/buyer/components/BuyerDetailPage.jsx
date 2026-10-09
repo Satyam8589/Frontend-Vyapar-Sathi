@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getBuyerPurchases, updateBuyer, deleteBuyer, updateBuyerSale, deleteBuyerSale, sendBuyerSaleEmail } from "../services/buyerService";
 import BuyerFormModal from "./BuyerFormModal";
 import { PurchasedItemsCell } from "./PurchasedItemsModal";
-import { downloadBillPDF, printBillPDF } from "@/features/InventoryBilling/utils/pdfGenerator";
+import { getBillPDFBlob, downloadBillPDF, printBillPDF } from "@/features/InventoryBilling/utils/pdfGenerator";
 import { showSuccess, showError } from "@/utils/toast";
 
 const currencyFormat = (v) =>
@@ -40,7 +40,12 @@ export default function BuyerDetailPage() {
   const handleOpenSendEmail = (sale) => {
     const defaultEmail = buyer?.email || sale.customerEmail || "";
     setTargetEmail(defaultEmail);
-    setEmailModalSale(sale);
+    // Enrich with storeInfo exactly like the print button does
+    const enrichedSale = {
+      ...sale,
+      storeInfo: typeof sale.store === "object" ? sale.store : (buyerData?.store || buyer?.store || null),
+    };
+    setEmailModalSale(enrichedSale);
   };
 
   const handleSendEmailSubmit = async (e) => {
@@ -52,7 +57,22 @@ export default function BuyerDetailPage() {
     try {
       setEmailLoading(true);
       setEmailSendingSaleId(emailModalSale._id);
-      await sendBuyerSaleEmail(storeId, emailModalSale._id, targetEmail.trim());
+
+      // Generate the exact same PDF shown in bill history / print
+      // (uses same enriched sale object with storeInfo as the print button)
+      let pdfBase64 = null;
+      try {
+        const blob = getBillPDFBlob(emailModalSale);
+        const buffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        pdfBase64 = btoa(binary);
+      } catch (pdfErr) {
+        console.warn("[EMAIL] PDF generation failed, sending without attachment:", pdfErr.message);
+      }
+
+      await sendBuyerSaleEmail(storeId, emailModalSale._id, targetEmail.trim(), pdfBase64);
       showSuccess(`Tax invoice email sent successfully to ${targetEmail.trim()}!`);
       setEmailModalSale(null);
     } catch (err) {
