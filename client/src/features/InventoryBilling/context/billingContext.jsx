@@ -33,7 +33,7 @@ import {
 import { createBuyer } from "@/features/buyer/services/buyerService";
 import { emitAgentRefresh } from "@/servies/agentEventBus";
 
-const BillingContext = createContext(null);
+export const BillingContext = createContext(null);
 
 export const BillingProvider = ({ children }) => {
   const { user } = useAuthContext();
@@ -632,7 +632,8 @@ export const BillingProvider = ({ children }) => {
         }
 
         // Save bill data for PDF download / preview
-        setLastBillData(billData);
+        // Merge server response (has _id, billNumber) with local billData (has full details)
+        setLastBillData(bill ? { ...billData, ...bill } : billData);
 
         // Clear the bill
         setBilledProducts([]);
@@ -744,8 +745,5 @@ export const BillingProvider = ({ children }) => {
 
 export const useBillingContext = () => {
   const context = useContext(BillingContext);
-  if (!context) {
-    throw new Error("useBillingContext must be used within BillingProvider");
-  }
-  return context;
+  return context || {};
 };

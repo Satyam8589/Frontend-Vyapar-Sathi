@@ -284,7 +284,7 @@ export const PurchasedItemsCell = ({ storeId, sale = {}, buyerName = "" }) => {
         onClose={() => setModalOpen(false)}
         storeId={storeId}
         saleId={sale._id}
-        billNumber={sale.billNumber || sale._id?.slice(-8)?.toUpperCase()}
+        billNumber={sale.billNumber || (sale._id ? String(sale._id).slice(-8).toUpperCase() : undefined)}
         date={sale.completedAt}
         totalAmount={sale.totalAmount}
         paymentStatus={sale.paymentStatus}

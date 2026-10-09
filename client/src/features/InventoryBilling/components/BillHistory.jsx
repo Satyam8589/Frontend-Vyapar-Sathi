@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { getBillHistory } from "../services/billingService";
 import { downloadBillPDF } from "../utils/pdfGenerator";
+import { BillingContext } from "../context/billingContext";
 import { useParams } from "next/navigation";
 import { showError } from "@/utils/toast";
 import {
@@ -45,6 +46,8 @@ const YEARS = Array.from({ length: 3 }, (_, i) => CURRENT_YEAR - i);
 export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
   const params = useParams();
   const storeId = params.storeId;
+  const billingContext = useContext(BillingContext);
+  const currentStore = billingContext?.currentStore || null;
 
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +195,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
             <div>
               <div className="flex items-center gap-3">
                 <p className="font-mono text-xs font-medium text-gray-400">
-                  #{bill._id.slice(-8).toUpperCase()}
+                  #{String(bill._id || "").slice(-8).toUpperCase()}
                 </p>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
@@ -229,7 +232,11 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  downloadBillPDF(bill);
+                  downloadBillPDF({
+                    ...bill,
+                    storeInfo: bill.storeInfo || (typeof bill.store === "object" ? bill.store : null) || currentStore,
+                    currentStore: currentStore,
+                  });
                 }}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-100 bg-white text-gray-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                 title="Download PDF"
