@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth } from '@/config/firebase';
 
 // Session ID management (legacy — kept for backwards compatibility)
 const SESSION_STORAGE_KEY = 'copilot_session_id';
@@ -71,7 +72,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor with Silent Token Refresh & Automatic Retry
 api.interceptors.response.use(
   (response) => {
     // Capture session ID from response headers
@@ -81,10 +82,32 @@ api.interceptors.response.use(
     }
     return response.data;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access - token invalid/expired
-      if (typeof window !== 'undefined') {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 Unauthorized - Silent token refresh & retry before forcing login redirect
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      if (auth && auth.currentUser) {
+        try {
+          console.log('[API INTERCEPTOR] Token expired (401). Attempting silent token refresh via Firebase...');
+          const freshToken = await auth.currentUser.getIdToken(true);
+
+          if (freshToken) {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('authToken', freshToken);
+            }
+            originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+            return api(originalRequest);
+          }
+        } catch (refreshErr) {
+          console.error('[API INTERCEPTOR] Silent token refresh failed:', refreshErr);
+        }
+      }
+
+      // If refresh was impossible (user signed out or session revoked), redirect to login
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         localStorage.removeItem('authToken');
         window.location.href = '/login';
       }
@@ -92,7 +115,6 @@ api.interceptors.response.use(
       // Handle forbidden - user not registered in database
       const message = error.response?.data?.message || 'Access forbidden';
       if (message.includes('not registered') || message.includes('complete registration')) {
-        // Redirect to signup/register page if user hasn't completed registration
         if (typeof window !== 'undefined') {
           localStorage.removeItem('authToken');
           window.location.href = '/signUp';
