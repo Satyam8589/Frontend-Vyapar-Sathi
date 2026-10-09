@@ -26,18 +26,35 @@ export const useInventoryStats = () => {
       ];
     }
 
+    const getProductQuantity = (p) => {
+      const q = p?.quantity ?? p?.qty ?? 0;
+      const val = Number(q);
+      return isNaN(val) ? 0 : val;
+    };
+
+    const getProductSellingPrice = (p) => {
+      const price = p?.sellingPrice ?? p?.price ?? p?.salesPrice ?? p?.mrp ?? p?.costPrice ?? 0;
+      const val = Number(price);
+      return isNaN(val) ? 0 : val;
+    };
+
     const lowStockCount = products.filter(
-      (p) => (p.quantity || p.qty) <= threshold && (p.quantity || p.qty) > 0
+      (p) => {
+        const qty = getProductQuantity(p);
+        return qty <= threshold && qty > 0;
+      }
     ).length;
 
     const outOfStockCount = products.filter(
-      (p) => (p.quantity || p.qty) === 0
+      (p) => getProductQuantity(p) === 0
     ).length;
 
     const totalValue = products.reduce(
-      (acc, p) => acc + p.price * (p.quantity || p.qty || 0),
+      (acc, p) => acc + (getProductSellingPrice(p) * getProductQuantity(p)),
       0
     );
+
+    const formattedValue = isNaN(totalValue) ? 0 : totalValue;
 
     return [
       {
@@ -57,7 +74,7 @@ export const useInventoryStats = () => {
       },
       {
         label: 'Total Value',
-        value: `${currencySymbol}${totalValue.toLocaleString()}`,
+        value: `${currencySymbol}${formattedValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         color: 'emerald',
       },
     ];
