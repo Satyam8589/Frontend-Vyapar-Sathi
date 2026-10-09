@@ -14,6 +14,9 @@ import {
   Send,
   Image as ImageIcon,
   Paperclip,
+  ShoppingCart,
+  CheckCircle2,
+  Package,
 } from "lucide-react";
 
 export default function CartoonVoiceBotView({
@@ -395,8 +398,47 @@ export default function CartoonVoiceBotView({
           <div className="w-32 h-3 mt-2 rounded-full bg-indigo-500/20 blur-md animate-pulse" />
         </div>
 
-        {/* ACTIVE TOOL EXECUTION BADGE */}
-        {activeToolStatus?.active && (
+        {/* BILLING / PRODUCT ADDED VISUAL CONFIRMATION CARD */}
+        {activeToolStatus?.active && (activeToolStatus.name === "tool_add_billing_item" || activeToolStatus.name === "tool_generate_bill") ? (
+          <div className="mt-2 w-full max-w-sm px-3 z-20 animate-in fade-in zoom-in duration-300">
+            <div className="relative rounded-2xl bg-gradient-to-r from-emerald-950/90 via-slate-900/95 to-teal-950/90 border border-emerald-400/40 p-3 shadow-xl backdrop-blur-md">
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 text-emerald-300 shadow-inner">
+                    <ShoppingCart className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold text-white leading-tight">
+                        {activeToolStatus.result?.message?.replace(/^Added \d+ x /, '') || activeToolStatus.args?.product_name || "Product"}
+                      </span>
+                      {activeToolStatus.completed && activeToolStatus.result?.success && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          ✓ Added to Bill
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-300">
+                      <span>Qty: <strong className="text-white">{activeToolStatus.args?.quantity || activeToolStatus.result?.quantity || 1}</strong></span>
+                      {activeToolStatus.result?.price ? (
+                        <span>Rate: <strong className="text-emerald-300">₹{activeToolStatus.result.price}</strong></span>
+                      ) : null}
+                      {activeToolStatus.result?.price ? (
+                        <span>Total: <strong className="text-emerald-400 font-bold">₹{((activeToolStatus.args?.quantity || activeToolStatus.result?.quantity || 1) * activeToolStatus.result.price).toFixed(2)}</strong></span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {activeToolStatus.result?.error && (
+                <div className="mt-2 text-[11px] font-semibold text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded-lg">
+                  ⚠️ {activeToolStatus.result.error}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeToolStatus?.active && (
           <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/50 shadow-md text-white text-xs font-bold z-20">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />

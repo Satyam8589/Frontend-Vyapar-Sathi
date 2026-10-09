@@ -281,6 +281,7 @@ const AskCopilotSection = ({
       name: data.tool,
       label: data.label || `Executing ${data.tool}...`,
       completed: false,
+      args: data.args,
     });
   }, []);
 
@@ -301,11 +302,13 @@ const AskCopilotSection = ({
       name: data.tool,
       label: data.label || "Done!",
       completed: true,
+      args: data.args,
+      result: data.result,
     });
     if (voiceToolTimerRef.current) clearTimeout(voiceToolTimerRef.current);
     voiceToolTimerRef.current = setTimeout(() => {
       setVoiceToolStatus(null);
-    }, 2400);
+    }, 5000);
 
     // Emit refresh if the voice tool mutated backend data
     const section = VOICE_MUTATION_SECTIONS[data.tool];
