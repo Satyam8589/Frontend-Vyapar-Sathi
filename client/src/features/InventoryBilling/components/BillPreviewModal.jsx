@@ -40,7 +40,8 @@ export const BillPreviewModal = () => {
   if (!showBillPreview || (!generatedBill && !lastBillData)) return null;
 
   const bill = lastBillData || generatedBill || {};
-  const { products, totalAmount, billNumber, billedAt, paymentMethod, customerPhone } = bill;
+  const { products, totalAmount, billNumber, billedAt, customerPhone } = bill;
+  const paymentMethod = (bill.paymentMethod || bill.paymentMode || (bill.paymentId ? bill.paymentId.split("-")[0] : null) || "CASH").toUpperCase();
 
   const isValid = (val) => {
     if (val === null || val === undefined) return false;
@@ -48,9 +49,35 @@ export const BillPreviewModal = () => {
     return s !== "" && s !== "N/A" && s !== "n/a" && s !== "undefined" && s !== "null";
   };
 
+  const formatStoreAddressWithPin = (store) => {
+    if (!store) return "";
+    let addr = store.address || store.location || store.fullAddress || "";
+    let pincode = store.pincode || store.pinCode || store.zipCode || store.zip || "";
+
+    if (typeof addr === "object" && addr !== null) {
+      if (addr.pincode) pincode = addr.pincode;
+      if (addr.fullAddress) {
+        addr = addr.fullAddress;
+      } else {
+        const parts = [addr.street, addr.city, addr.state, addr.country].filter(isValid);
+        addr = parts.join(", ");
+      }
+    }
+
+    addr = String(addr || "").trim();
+    pincode = String(pincode || "").trim();
+
+    if (isValid(addr) && isValid(pincode) && !addr.includes(pincode)) {
+      return `${addr} - ${pincode}`;
+    }
+    if (isValid(addr)) return addr;
+    if (isValid(pincode)) return `PIN: ${pincode}`;
+    return "";
+  };
+
   const storeInfo = bill.storeInfo || bill.store || currentStore || {};
   const storeName = storeInfo?.name || storeInfo?.storeName || currentStore?.name || "Vyapar Sakha Store";
-  const storeAddress = storeInfo?.address || storeInfo?.location || currentStore?.address || "";
+  const storeAddressStr = formatStoreAddressWithPin(storeInfo) || formatStoreAddressWithPin(currentStore);
   const storePhone = storeInfo?.phone || storeInfo?.mobile || storeInfo?.contact || storeInfo?.owner?.phone || currentStore?.phone || authUser?.phone || "";
   const storeEmail = storeInfo?.email || storeInfo?.owner?.email || currentStore?.email || authUser?.email || "";
   const storeGstin = storeInfo?.gstin || storeInfo?.gstNumber || currentStore?.gstin || "";
@@ -61,7 +88,12 @@ export const BillPreviewModal = () => {
 
   const handleDownloadPDF = () => {
     if (bill) {
-      downloadBillPDF(bill);
+      const fullBillData = {
+        ...bill,
+        storeInfo: storeInfo || currentStore,
+        currentStore: currentStore,
+      };
+      downloadBillPDF(fullBillData);
       showSuccess("Tax Invoice PDF downloaded!");
     } else {
       showError("Bill data not available");
@@ -70,7 +102,12 @@ export const BillPreviewModal = () => {
 
   const handlePrintPDF = () => {
     if (bill) {
-      printBillPDF(bill);
+      const fullBillData = {
+        ...bill,
+        storeInfo: storeInfo || currentStore,
+        currentStore: currentStore,
+      };
+      printBillPDF(fullBillData);
     } else {
       showError("Bill data not available");
     }
@@ -127,11 +164,13 @@ export const BillPreviewModal = () => {
                 <span>Official Tax Invoice</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{storeName}</h3>
-              {isValid(storeAddress) && <p className="text-xs text-slate-500 mt-0.5">{storeAddress}</p>}
-              {(isValid(storePhone) || isValid(storeGstin)) && (
-                <p className="text-xs text-slate-500">
-                  {isValid(storePhone) && <span>Phone: {storePhone} </span>}
-                  {isValid(storePhone) && isValid(storeGstin) && <span>• </span>}
+              {isValid(storeAddressStr) && <p className="text-xs text-slate-500 font-medium mt-0.5">{storeAddressStr}</p>}
+              {(isValid(storePhone) || isValid(storeEmail) || isValid(storeGstin)) && (
+                <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center justify-center flex-wrap gap-x-2">
+                  {isValid(storePhone) && <span>Phone: <strong className="text-slate-700">{storePhone}</strong></span>}
+                  {isValid(storePhone) && isValid(storeEmail) && <span>•</span>}
+                  {isValid(storeEmail) && <span>Email: <strong className="text-slate-700">{storeEmail}</strong></span>}
+                  {(isValid(storePhone) || isValid(storeEmail)) && isValid(storeGstin) && <span>•</span>}
                   {isValid(storeGstin) && <span>GSTIN: <strong className="text-slate-700">{storeGstin}</strong></span>}
                 </p>
               )}
@@ -141,7 +180,7 @@ export const BillPreviewModal = () => {
             <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/80">
               <div>
                 <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Invoice Details</p>
-                <p className="font-bold text-slate-900 mt-0.5">#{billNumber || bill._id?.slice(-8) || "N/A"}</p>
+                <p className="font-bold text-slate-900 mt-0.5">#{billNumber || (bill._id ? String(bill._id).slice(-8) : "N/A")}</p>
                 <p className="text-slate-600 mt-0.5">{formattedDate}</p>
                 <p className="text-slate-600 font-medium">Mode: <span className="font-bold text-slate-900">{paymentMethod || "CASH"}</span></p>
                 {isValid(storePhone) && (
@@ -193,28 +232,74 @@ export const BillPreviewModal = () => {
             </div>
 
             {/* Financial Summary & Total in Words */}
-            <div className="border-t border-slate-200 pt-3 space-y-2">
-              <div className="flex justify-between items-center text-xs text-slate-500">
-                <span>Total Items ({products?.length || 0}):</span>
-                <span className="font-semibold text-slate-800">{totalQty} Units</span>
+            {(() => {
+              const subtotalVal = products?.reduce((sum, p) => sum + Number((p.price || 0) * (p.quantity || 1)), 0) || Number(bill?.subtotal || grandTotal);
+              const discVal = (typeof bill.discount === "object" && bill.discount?.amount) ||
+                (typeof bill.discount === "object" && bill.discount?.type === "percent" ? (subtotalVal * (bill.discount?.value || 0)) / 100 : (bill.discount?.value || 0)) ||
+                (typeof bill.discount === "number" ? bill.discount : 0) ||
+                (typeof bill.discountAmount === "number" ? bill.discountAmount : 0) ||
+                (subtotalVal > grandTotal + 0.01 ? subtotalVal - grandTotal : 0);
+
+              const finalGrandTotal = Math.max(0, subtotalVal - discVal);
+
+              return (
+                <div className="border-t border-slate-200 pt-3 space-y-1.5">
+                  <div className="flex justify-between items-center text-xs text-slate-500">
+                    <span>Total Items ({products?.length || 0}):</span>
+                    <span className="font-semibold text-slate-800">{totalQty} Units</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs text-slate-600">
+                    <span>Subtotal:</span>
+                    <span className="font-semibold text-slate-800">₹{subtotalVal.toFixed(2)}</span>
+                  </div>
+
+                  {discVal > 0 && (
+                    <div className="flex justify-between items-center text-xs text-emerald-600 font-bold">
+                      <span>Discount Applied:</span>
+                      <span>- ₹{discVal.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-1.5 border-t border-slate-100">
+                    <span>Grand Total:</span>
+                    <span className="text-xl font-black text-emerald-600">₹{finalGrandTotal.toFixed(2)}</span>
+                  </div>
+
+                  {/* Total Amount in Words Banner */}
+                  <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200/60 text-xs">
+                    <span className="text-[10px] font-bold uppercase text-emerald-800 tracking-wider">Amount in Words:</span>
+                    <p className="font-semibold text-emerald-900 mt-0.5">{numberToWords(finalGrandTotal)}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Terms & Conditions & Authorized Signatory Block */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 pt-3 border-t border-slate-200 text-xs">
+              <div className="text-[10px] text-slate-500 space-y-0.5 max-w-sm">
+                <p className="font-bold text-slate-700">Terms & Conditions:</p>
+                <p>1. All sales are final. Goods once sold will not be returned.</p>
+                <p>2. Payments received via cash/UPI/card as indicated.</p>
+                <p>3. This is an official computer-generated tax invoice.</p>
               </div>
 
-              <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-1">
-                <span>Grand Total:</span>
-                <span className="text-xl font-black text-emerald-600">₹{grandTotal.toFixed(2)}</span>
-              </div>
-
-              {/* Total Amount in Words Banner */}
-              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200/60 text-xs">
-                <span className="text-[10px] font-bold uppercase text-emerald-800 tracking-wider">Amount in Words:</span>
-                <p className="font-semibold text-emerald-900 mt-0.5">{numberToWords(grandTotal)}</p>
+              <div className="text-center w-full sm:w-auto min-w-[170px] flex flex-col items-center self-end">
+                <img
+                  src="/stamp.png"
+                  alt="Official Store Stamp"
+                  className="w-24 h-24 object-contain -mb-1 opacity-90 transition-transform hover:scale-105"
+                />
+                <div className="border-t border-slate-300 w-full pt-1">
+                  <p className="font-bold text-xs text-slate-900">For VyparSakha</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Authorized Signatory</p>
+                </div>
               </div>
             </div>
 
             {/* Footer Compliance Notice */}
-            <div className="text-center text-[10px] text-slate-400 border-t border-dashed border-slate-200 pt-3 space-y-0.5">
-              <p className="font-medium text-slate-600">Thank you for shopping with {storeName}!</p>
-              <p>This is a computer-generated tax invoice. Goods once sold are non-refundable.</p>
+            <div className="text-center text-[10px] text-slate-400 border-t border-dashed border-slate-200 pt-2 space-y-0.5">
+              <p className="font-medium text-slate-600">Thank you for shopping with {storeName}! Visit again!</p>
             </div>
           </div>
         </div>

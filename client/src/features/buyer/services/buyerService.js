@@ -60,3 +60,8 @@ export const deleteBuyerSale = async (storeId, saleId) => {
   const response = await apiDelete(`/buyers/${storeId}/sales/${saleId}`);
   return response.data;
 };
+
+export const sendBuyerSaleEmail = async (storeId, saleId, email) => {
+  const response = await apiPost(`/buyers/${storeId}/sales/${saleId}/send-email`, { email });
+  return response;
+};

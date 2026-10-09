@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { getBuyerPurchases, updateBuyer, deleteBuyer, updateBuyerSale, deleteBuyerSale } from "../services/buyerService";
+import { getBuyerPurchases, updateBuyer, deleteBuyer, updateBuyerSale, deleteBuyerSale, sendBuyerSaleEmail } from "../services/buyerService";
 import BuyerFormModal from "./BuyerFormModal";
 import { PurchasedItemsCell } from "./PurchasedItemsModal";
 import { downloadBillPDF, printBillPDF } from "@/features/InventoryBilling/utils/pdfGenerator";
@@ -30,6 +30,38 @@ export default function BuyerDetailPage() {
   const [editSaleItem, setEditSaleItem] = useState(null);
   const [saleForm, setSaleForm] = useState({ paymentStatus: "paid", paidAmount: 0, paymentMethod: "cash" });
   const [saleLoading, setSaleLoading] = useState(false);
+
+  // Send Email Modal State
+  const [emailModalSale, setEmailModalSale] = useState(null);
+  const [targetEmail, setTargetEmail] = useState("");
+  const [emailSendingSaleId, setEmailSendingSaleId] = useState(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  const handleOpenSendEmail = (sale) => {
+    const defaultEmail = buyer?.email || sale.customerEmail || "";
+    setTargetEmail(defaultEmail);
+    setEmailModalSale(sale);
+  };
+
+  const handleSendEmailSubmit = async (e) => {
+    e.preventDefault();
+    if (!emailModalSale || !targetEmail.trim()) {
+      showError("Please enter a valid email address");
+      return;
+    }
+    try {
+      setEmailLoading(true);
+      setEmailSendingSaleId(emailModalSale._id);
+      await sendBuyerSaleEmail(storeId, emailModalSale._id, targetEmail.trim());
+      showSuccess(`Tax invoice email sent successfully to ${targetEmail.trim()}!`);
+      setEmailModalSale(null);
+    } catch (err) {
+      showError(err.message || "Failed to send invoice email");
+    } finally {
+      setEmailLoading(false);
+      setEmailSendingSaleId(null);
+    }
+  };
 
   const fetchDetails = useCallback(async () => {
     if (!storeId || !buyerId) return;
@@ -164,7 +196,7 @@ export default function BuyerDetailPage() {
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditSaleItem(null)} />
           <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
-              <h3 className="font-bold text-base">Edit Transaction #{editSaleItem.billNumber || editSaleItem._id?.slice(-8)}</h3>
+              <h3 className="font-bold text-base">Edit Transaction #{editSaleItem.billNumber || (editSaleItem._id ? String(editSaleItem._id).slice(-8) : "")}</h3>
               <button onClick={() => setEditSaleItem(null)} className="text-white/80 hover:text-white">✕</button>
             </div>
             <form onSubmit={handleSaveSaleSubmit} className="p-6 space-y-4 text-xs font-medium text-slate-700">
@@ -232,6 +264,71 @@ export default function BuyerDetailPage() {
                   className="px-5 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50"
                 >
                   {saleLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Tax Invoice Email Modal */}
+      {emailModalSale && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEmailModalSale(null)} />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <h3 className="font-bold text-base">Send Tax Invoice Email</h3>
+              </div>
+              <button onClick={() => setEmailModalSale(null)} className="text-white/80 hover:text-white font-bold text-sm">✕</button>
+            </div>
+
+            <form onSubmit={handleSendEmailSubmit} className="p-6 space-y-4 text-xs font-medium text-slate-700">
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Transaction Summary</p>
+                <p className="font-bold text-slate-900 text-sm">Invoice #{emailModalSale.billNumber || (emailModalSale._id ? String(emailModalSale._id).slice(-8).toUpperCase() : "")}</p>
+                <p className="text-slate-600 font-semibold">Total Amount: <span className="text-emerald-700 font-bold">{currencyFormat(emailModalSale.totalAmount)}</span></p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Recipient Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={targetEmail}
+                  onChange={(e) => setTargetEmail(e.target.value)}
+                  placeholder="e.g. customer@example.com"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-900 font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">A clean, official tax invoice email will be sent directly to this address.</p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEmailModalSale(null)}
+                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={emailLoading}
+                  className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-600/20 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {emailLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Sending Email...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📧 Send Tax Invoice Email</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -392,7 +489,7 @@ export default function BuyerDetailPage() {
                   purchases.map((sale) => (
                     <tr key={sale._id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-4 py-3.5 font-mono font-bold text-slate-900">
-                        #{sale.billNumber || sale._id?.slice(-8)?.toUpperCase()}
+                        #{sale.billNumber || (sale._id ? String(sale._id).slice(-8).toUpperCase() : "")}
                       </td>
                       <td className="px-4 py-3.5 text-slate-600 font-medium">
                         {sale.completedAt
@@ -431,6 +528,34 @@ export default function BuyerDetailPage() {
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
+                          {/* Send Tax Invoice Email Icon */}
+                          <button
+                            onClick={() => handleOpenSendEmail(sale)}
+                            disabled={emailSendingSaleId === sale._id}
+                            className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                            title={buyer?.email || sale.customerEmail ? `Send Invoice Email to ${buyer?.email || sale.customerEmail}` : "Send Tax Invoice to Buyer Email"}
+                          >
+                            {emailSendingSaleId === sale._id ? (
+                              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </button>
+                          {/* Print Invoice */}
+                          <button
+                            onClick={() => printBillPDF({
+                              ...sale,
+                              storeInfo: typeof sale.store === "object" ? sale.store : (buyerData?.store || buyer?.store || null)
+                            })}
+                            className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Print Invoice"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                          </button>
                           {/* Edit Transaction */}
                           <button
                             onClick={() => handleOpenEditSale(sale)}
@@ -449,26 +574,6 @@ export default function BuyerDetailPage() {
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                          {/* Print Invoice */}
-                          <button
-                            onClick={() => printBillPDF(sale)}
-                            className="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Print Invoice"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                          </button>
-                          {/* Download Invoice PDF */}
-                          <button
-                            onClick={() => downloadBillPDF(sale)}
-                            className="p-1.5 text-slate-600 hover:text-blue-700 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Download PDF"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
                           </button>
                         </div>
