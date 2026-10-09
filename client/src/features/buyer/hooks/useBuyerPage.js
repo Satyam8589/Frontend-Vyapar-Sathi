@@ -24,15 +24,19 @@ export const useBuyerPage = () => {
   const fetchBuyers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getBuyers(storeId, {
+      const rawData = await getBuyers(storeId, {
         search,
         status: statusFilter,
         page,
         limit: 15,
       });
-      setBuyers(data.buyers || []);
-      setTotalPages(data.totalPages || 1);
-      setTotal(data.total || 0);
+      const buyersList = rawData?.buyers || rawData?.data?.buyers || (Array.isArray(rawData) ? rawData : []);
+      const totalCount = rawData?.total ?? rawData?.data?.total ?? buyersList.length;
+      const pagesCount = rawData?.totalPages ?? rawData?.data?.totalPages ?? 1;
+
+      setBuyers(buyersList);
+      setTotalPages(pagesCount);
+      setTotal(totalCount);
       setError('');
     } catch (err) {
       setError(err.message || 'Failed to fetch buyers');

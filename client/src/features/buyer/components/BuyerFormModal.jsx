@@ -7,8 +7,6 @@ const EMPTY_FORM = {
   name: "",
   phone: "",
   email: "",
-  address: "",
-  GSTIN: "",
   status: "active",
 };
 
@@ -29,8 +27,6 @@ export default function BuyerFormModal({ isOpen, onClose, onSubmit, loading, buy
               name: buyer.name || "",
               phone: buyer.phone || "",
               email: buyer.email || "",
-              address: buyer.address || "",
-              GSTIN: buyer.GSTIN || "",
               status: buyer.status || "active",
             }
           : EMPTY_FORM
@@ -75,7 +71,7 @@ export default function BuyerFormModal({ isOpen, onClose, onSubmit, loading, buy
     }`;
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 select-none">
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
         onClick={!loading ? onClose : undefined}
@@ -147,29 +143,6 @@ export default function BuyerFormModal({ isOpen, onClose, onSubmit, loading, buy
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Address</label>
-              <textarea
-                className={inputClass("address")}
-                rows={2}
-                value={form.address}
-                onChange={(e) => handleChange("address", e.target.value)}
-                placeholder="Full address"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">GSTIN</label>
-              <input
-                type="text"
-                className={inputClass("GSTIN")}
-                value={form.GSTIN}
-                onChange={(e) => handleChange("GSTIN", e.target.value.toUpperCase())}
-                placeholder="GST number (optional)"
-                maxLength={15}
-              />
-            </div>
-
-            <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">Status</label>
               <select
                 className={inputClass("status")}
