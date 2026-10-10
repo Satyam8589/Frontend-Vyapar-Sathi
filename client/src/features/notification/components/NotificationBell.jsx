@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import * as PusherPushNotifications from '@pusher/push-notifications-web';
 import { Bell, AlertCircle, AlertTriangle, Info, CheckCircle2, ShoppingCart, ArrowLeftRight, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import api from "@/servies/api";
 
 const getNotificationIcon = (type) => {
@@ -89,10 +90,10 @@ export default function NotificationBell() {
   };
 
   useEffect(() => {
-    // Check if notifications are already allowed, auto-register Pusher Beams
+    // Check if notifications are already allowed, auto-register Pusher Beams silently
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
-        enablePushNotifications();
+        enablePushNotifications(false);
       } else if (Notification.permission === 'default') {
         const pref = localStorage.getItem('pushNotificationPreference');
         if (pref !== 'disabled') {
@@ -102,7 +103,7 @@ export default function NotificationBell() {
     }
   }, [storeId]);
 
-  const enablePushNotifications = async () => {
+  const enablePushNotifications = async (isUserInitiated = false) => {
     try {
       if (typeof window !== 'undefined' && 'Notification' in window) {
         let perm = Notification.permission;
@@ -113,7 +114,12 @@ export default function NotificationBell() {
         }
         
         if (perm === 'denied') {
-          alert("Your browser is blocking notifications. Please click the lock icon next to your URL bar, change Notifications to 'Allow', and refresh the page.");
+          if (isUserInitiated) {
+            toast.error(
+              "Notifications are blocked. Click the lock icon next to the URL bar, set Notifications to 'Allow', then refresh.",
+              { duration: 6000 }
+            );
+          }
           setShowPushModal(false);
           return;
         }
@@ -140,10 +146,26 @@ export default function NotificationBell() {
       }
       await beamsClient.setDeviceInterests(interests);
       console.log('[Pusher Beams] Registered and subscribed to interests:', interests);
+      if (isUserInitiated) {
+        toast.success("Push notifications enabled!");
+      }
     } catch (e) {
-      console.error('Pusher Beams initialization error:', e);
-      alert('Error enabling notifications: ' + e.message + '\n\nPlease ensure notifications are allowed in your browser settings (Lock icon next to URL).');
-      // Revert preference if it failed so they can try again later
+      console.warn('Pusher Beams initialization error:', e);
+      if (isUserInitiated) {
+        const msg = e?.message || "";
+        if (msg.includes("permission denied")) {
+          toast.error(
+            "Browser push denied. If using Brave, enable 'Google services for push messaging' in settings. Also check Windows notifications.",
+            { duration: 6000 }
+          );
+        } else {
+          toast.error(
+            `Could not enable push notifications: ${e.message}`,
+            { duration: 6000 }
+          );
+        }
+      }
+      // Revert preference so the user can try again later if needed
       localStorage.removeItem('pushNotificationPreference');
     }
   };
@@ -391,7 +413,7 @@ export default function NotificationBell() {
                   Not Now
                 </button>
                 <button 
-                  onClick={enablePushNotifications}
+                  onClick={() => enablePushNotifications(true)}
                   className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
                 >
                   Enable
