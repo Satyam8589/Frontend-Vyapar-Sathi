@@ -24,6 +24,12 @@ export const metadata = {
     "Indian retail",
     "shop management",
     "GST billing",
+    "Stock Management",
+    "AI Automation",
+    "AI agent for manage store",
+    "AI for grow business",
+    "AI agent",
+    "AI for Indian Retailer"
   ],
   authors: [{ name: "Vyapar Sakha Team" }],
   icons: {
