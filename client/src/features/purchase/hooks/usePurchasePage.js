@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getPurchases, createPurchase, getPurchaseById, updatePurchase, deletePurchase } from '../services/purchaseService';
+import { useAgentRefresh } from '@/hooks/useAgentRefresh';
 
 export const usePurchasePage = () => {
   const { storeId } = useParams();
@@ -17,6 +18,9 @@ export const usePurchasePage = () => {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Auto-refresh when the AI agent mutates purchases
+  const { refreshKey } = useAgentRefresh('purchases');
 
   const fetchPurchases = useCallback(async () => {
     try {
@@ -40,7 +44,7 @@ export const usePurchasePage = () => {
 
   useEffect(() => {
     fetchPurchases();
-  }, [fetchPurchases]);
+  }, [fetchPurchases, refreshKey]);
 
   const handleAddPurchase = async (data) => {
     try {

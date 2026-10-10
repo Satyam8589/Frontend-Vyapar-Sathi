@@ -32,6 +32,7 @@ const BillingContent = () => {
           <BillingHeader
             storeId={storeId}
             storeName={currentStore?.name}
+            currentStore={currentStore}
             isMobile={isMobile}
           />
         )}

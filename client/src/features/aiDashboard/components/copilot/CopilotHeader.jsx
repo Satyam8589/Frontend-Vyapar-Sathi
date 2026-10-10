@@ -11,8 +11,8 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose }) {
           <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-0.5 shadow-md shadow-indigo-500/20 ring-2 ring-indigo-500/10">
             <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center p-1">
               <img
-                src="/images/logo/vs_logo.png"
-                alt="Vyapar Sathi Logo"
+                src="/images/logo/vyapar-sakha-version2-logo.svg"
+                alt="Vyapar Sakha Logo"
                 className="h-full w-full object-contain"
               />
             </div>
@@ -22,7 +22,7 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose }) {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-slate-800 text-sm sm:text-base tracking-tight">
-              Vyapar Sathi
+              Vyapar Sakha
             </h3>
             <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 border border-indigo-100">
               AI Copilot

@@ -33,7 +33,7 @@ const PageLoader = ({ message = 'Loading...' }) => {
         {/* Brand logo mark */}
         <div className="flex flex-col items-center gap-1">
           <span className="text-xl font-black tracking-tight text-slate-900">
-            Vyapar<span className="text-amber-500">Sathi</span>
+            Vyapar<span className="text-amber-500">Sakha</span>
           </span>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{message}</p>
         </div>

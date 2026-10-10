@@ -26,6 +26,11 @@ export const getBuyerById = async (storeId, buyerId) => {
   return response.data;
 };
 
+export const getBuyerPurchases = async (storeId, buyerId) => {
+  const response = await apiGet(`/buyers/${storeId}/${buyerId}/purchases`);
+  return response.data;
+};
+
 export const createBuyer = async (storeId, data) => {
   const response = await apiPost(`/buyers/${storeId}`, data);
   return response.data;
@@ -39,4 +44,24 @@ export const updateBuyer = async (storeId, buyerId, data) => {
 export const deleteBuyer = async (storeId, buyerId) => {
   const response = await apiDelete(`/buyers/${storeId}/${buyerId}`);
   return response.data;
+};
+
+export const getBuyerSaleById = async (storeId, saleId) => {
+  const response = await apiGet(`/buyers/${storeId}/sales/${saleId}`);
+  return response.data;
+};
+
+export const updateBuyerSale = async (storeId, saleId, data) => {
+  const response = await apiPut(`/buyers/${storeId}/sales/${saleId}`, data);
+  return response.data;
+};
+
+export const deleteBuyerSale = async (storeId, saleId) => {
+  const response = await apiDelete(`/buyers/${storeId}/sales/${saleId}`);
+  return response.data;
+};
+
+export const sendBuyerSaleEmail = async (storeId, saleId, email, pdfBase64 = null) => {
+  const response = await apiPost(`/buyers/${storeId}/sales/${saleId}/send-email`, { email, pdfBase64 });
+  return response;
 };

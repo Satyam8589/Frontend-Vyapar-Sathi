@@ -10,6 +10,7 @@ import {
   updateSeller,
   deleteSeller,
 } from "../services/sellerService";
+import { useAgentRefresh } from "@/hooks/useAgentRefresh";
 
 /**
  * Custom hook for Seller page state and logic
@@ -77,9 +78,12 @@ export function useSellerPage() {
     }
   }, [storeId]);
 
+  // Auto-refresh when the AI agent mutates sellers
+  const { refreshKey } = useAgentRefresh('sellers');
+
   useEffect(() => {
     fetchSellers();
-  }, [fetchSellers]);
+  }, [fetchSellers, refreshKey]);
 
   useEffect(() => {
     fetchStats();

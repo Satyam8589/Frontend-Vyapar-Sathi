@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from "../../services/aiDashboardService";
 import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
+import { emitAgentRefresh, emitAgentNavigate } from "@/servies/agentEventBus";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
@@ -280,8 +281,20 @@ const AskCopilotSection = ({
       name: data.tool,
       label: data.label || `Executing ${data.tool}...`,
       completed: false,
+      args: data.args,
     });
   }, []);
+
+  // Map voice tool names to refresh sections (mirrors backend MUTATION_TOOL_MAP)
+  const VOICE_MUTATION_SECTIONS = {
+    tool_create_product: "products", tool_update_product: "products",
+    tool_delete_product: "products", tool_adjust_stock: "inventory",
+    tool_create_purchase: "purchases", tool_update_purchase: "purchases",
+    tool_delete_purchase: "purchases", tool_receive_purchase: "purchases",
+    tool_create_seller: "sellers", tool_update_seller: "sellers", tool_delete_seller: "sellers",
+    tool_create_buyer: "buyers", tool_update_buyer: "buyers", tool_delete_buyer: "buyers",
+    tool_create_expense: "expenses", tool_update_expense: "expenses", tool_delete_expense: "expenses",
+  };
 
   const handleVoiceToolComplete = useCallback((data) => {
     setVoiceToolStatus({
@@ -289,12 +302,42 @@ const AskCopilotSection = ({
       name: data.tool,
       label: data.label || "Done!",
       completed: true,
+      args: data.args,
+      result: data.result,
     });
     if (voiceToolTimerRef.current) clearTimeout(voiceToolTimerRef.current);
     voiceToolTimerRef.current = setTimeout(() => {
       setVoiceToolStatus(null);
-    }, 2400);
+    }, 5000);
+
+    // Emit refresh if the voice tool mutated backend data
+    const section = VOICE_MUTATION_SECTIONS[data.tool];
+    if (section) {
+      emitAgentRefresh(section);
+    }
+    
+    // Emit navigation if the agent wants to navigate
+    if (data.tool === "tool_navigate_page" && data.args?.page) {
+      emitAgentNavigate(data.args.page);
+    }
+    
+    // Emit voice billing events
+    if (data.tool === "tool_add_billing_item" && data.result?.success) {
+      window.dispatchEvent(
+        new CustomEvent("agent:billing:add", { 
+          detail: { barcode: data.result.barcode, quantity: data.args.quantity } 
+        })
+      );
+    }
+    if (data.tool === "tool_generate_bill") {
+      window.dispatchEvent(
+        new CustomEvent("agent:billing:generate", { 
+          detail: { paymentMethod: data.args?.payment_method || "cash" } 
+        })
+      );
+    }
   }, []);
+
 
   // Gemini Live duplex voice WebSocket
   const {
@@ -362,18 +405,18 @@ const AskCopilotSection = ({
       setIsLiveCallActive(true);
       isLiveCallActiveRef.current = true;
       setShowSuggestions(false);
-      connectVoiceWs();
 
+      // Stop browser SpeechRecognition to prevent mobile chime beeps ("tiu tiu") during socket voice stream
       if (recognitionRef.current) {
         try {
-          recognitionRef.current.start();
-          setIsListening(true);
-        } catch (e) {
-          console.warn("Could not start speech recognition on call open:", e);
-        }
+          recognitionRef.current.stop();
+        } catch (_) {}
       }
+      setIsListening(false);
+      connectVoiceWs();
     }
   }, [isLiveCallActive, isVoiceWsConnected, handleEndLiveCall, connectVoiceWs]);
+
 
   // Synchronize ref for AI speech status to prevent microphone echo loop
   const isSpeakingRef = useRef(false);
@@ -505,22 +548,9 @@ const AskCopilotSection = ({
 
         recognition.onend = () => {
           setIsListening(false);
-          // If in live call mode, restart with a gentle throttle to avoid network collision
-          if (isLiveCallActiveRef.current && !isRestartingRef.current) {
-            isRestartingRef.current = true;
-            setTimeout(() => {
-              isRestartingRef.current = false;
-              if (isLiveCallActiveRef.current && recognitionRef.current) {
-                try {
-                  recognitionRef.current.start();
-                  setIsListening(true);
-                } catch (_) {
-                  setIsListening(false);
-                }
-              }
-            }, 500);
-          }
+          // Never auto-restart browser SpeechRecognition during Live Call mode to prevent mobile browser "tiu tiu" beeps
         };
+
 
         recognitionRef.current = recognition;
       }
@@ -830,6 +860,26 @@ const AskCopilotSection = ({
                 isSubmitting: false,
               });
             }
+
+            if (event === "navigate") {
+              // Agent wants to navigate to a different page
+              if (payload?.page) {
+                emitAgentNavigate(payload.page);
+              }
+            }
+
+            if (event === "refresh") {
+              // Agent mutated backend data — tell subscribed page components to re-fetch
+              emitAgentRefresh(payload?.section || "*");
+            }
+
+            if (event === "billing_add") {
+              window.dispatchEvent(new CustomEvent("agent:billing:add", { detail: payload }));
+            }
+
+            if (event === "billing_generate") {
+              window.dispatchEvent(new CustomEvent("agent:billing:generate", { detail: payload }));
+            }
           },
         });
       } catch (streamError) {
@@ -934,6 +984,24 @@ const AskCopilotSection = ({
                 isSubmitting: false,
               });
               return;
+            }
+
+            if (event === "navigate") {
+              if (payload?.page) {
+                emitAgentNavigate(payload.page);
+              }
+            }
+
+            if (event === "refresh") {
+              emitAgentRefresh(payload?.section || "*");
+            }
+
+            if (event === "billing_add") {
+              window.dispatchEvent(new CustomEvent("agent:billing:add", { detail: payload }));
+            }
+
+            if (event === "billing_generate") {
+              agentEventBus.dispatchEvent(new CustomEvent("agent:billing:generate", { detail: payload }));
             }
           },
         });
@@ -1118,8 +1186,8 @@ const AskCopilotSection = ({
                     <div className="relative h-20 w-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-1 shadow-xl shadow-indigo-500/30 ring-4 ring-indigo-500/20 flex items-center justify-center">
                       <div className="h-full w-full rounded-[20px] bg-white flex items-center justify-center p-2 overflow-hidden">
                         <img
-                          src="/images/logo/vs_logo.png"
-                          alt="Vyapar Sathi Logo"
+                          src="/images/logo/vyapar-sakha-version2-logo.svg"
+                          alt="Vyapar Sakha Logo"
                           className="h-full w-full object-contain"
                         />
                       </div>
@@ -1131,7 +1199,7 @@ const AskCopilotSection = ({
                   <div className="space-y-2 max-w-md">
                     <h2 className="text-3xl font-black tracking-tight">
                       <span className="bg-gradient-to-r from-slate-800 via-indigo-900 to-blue-700 bg-clip-text text-transparent">
-                        Ask Vyapar Sathi
+                        Ask Vyapar Sakha
                       </span>
                     </h2>
                   </div>

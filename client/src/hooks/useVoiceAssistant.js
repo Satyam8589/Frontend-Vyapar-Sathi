@@ -36,13 +36,26 @@ function computeRms(float32) {
 }
 
 
-// Play raw 16-bit PCM using AudioContext
+// Play raw 16-bit PCM using AudioContext with jitter buffer & seamless queueing
 function createPcmPlayer(audioCtx) {
     let nextPlayTime = 0;
+    const activeSources = new Set();
 
-    function queuePcm(int16Array) {
+    // Accumulator for small PCM chunks to reduce Web Audio node allocations
+    let pendingBytes = new Uint8Array(0);
+    let flushTimer = null;
+    const MIN_FLUSH_BYTES = 960; // ~20ms of 24kHz 16-bit mono PCM
+
+    function playChunk(int16Array) {
+        if (!audioCtx || int16Array.length === 0) return;
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
         const f32 = new Float32Array(int16Array.length);
-        for (let i = 0; i < int16Array.length; i++) f32[i] = int16Array[i] / 32768;
+        for (let i = 0; i < int16Array.length; i++) {
+            f32[i] = int16Array[i] / 32768;
+        }
 
         const buf = audioCtx.createBuffer(1, f32.length, 24000);
         buf.copyToChannel(f32, 0);
@@ -51,14 +64,90 @@ function createPcmPlayer(audioCtx) {
         src.buffer = buf;
         src.connect(audioCtx.destination);
 
-        // Schedule each Gemini chunk after the previous one to avoid overlap and distortion.
-        const startTime = Math.max(audioCtx.currentTime, nextPlayTime);
-        src.start(startTime);
-        nextPlayTime = startTime + buf.duration;
+        const now = audioCtx.currentTime;
+        const duration = buf.duration;
+
+        // Schedule playback:
+        // If queue starved or starting new turn (nextPlayTime < now), start with 40ms jitter safety buffer.
+        // Otherwise, append seamlessly back-to-back at nextPlayTime.
+        if (nextPlayTime < now) {
+            nextPlayTime = now + 0.040;
+        }
+
+        src.start(nextPlayTime);
+        nextPlayTime += duration;
+
+        activeSources.add(src);
+        src.onended = () => {
+            activeSources.delete(src);
+        };
     }
 
-    return { queuePcm };
+    function flushPending() {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
+        if (pendingBytes.length === 0) return;
+
+        const evenLen = Math.floor(pendingBytes.length / 2) * 2;
+        if (evenLen === 0) return;
+
+        // .slice(0, evenLen) creates a new ArrayBuffer starting at byteOffset 0, preventing RangeError
+        const pcmSlice = pendingBytes.slice(0, evenLen);
+        const int16 = new Int16Array(pcmSlice.buffer);
+
+        if (pendingBytes.length > evenLen) {
+            pendingBytes = pendingBytes.slice(evenLen);
+        } else {
+            pendingBytes = new Uint8Array(0);
+        }
+
+        playChunk(int16);
+    }
+
+    function queuePcm(int16Array) {
+        const newBytes = new Uint8Array(int16Array.buffer, int16Array.byteOffset, int16Array.byteLength);
+        const combined = new Uint8Array(pendingBytes.length + newBytes.length);
+        combined.set(pendingBytes, 0);
+        combined.set(newBytes, pendingBytes.length);
+        pendingBytes = combined;
+
+        if (pendingBytes.length >= MIN_FLUSH_BYTES) {
+            flushPending();
+        } else if (!flushTimer) {
+            flushTimer = setTimeout(flushPending, 10);
+        }
+    }
+
+    function isPlaying() {
+        return activeSources.size > 0 || pendingBytes.length > 0;
+    }
+
+    function stopAll() {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
+        pendingBytes = new Uint8Array(0);
+        activeSources.forEach((src) => {
+            try {
+                src.stop(0);
+                src.disconnect();
+            } catch (_) {}
+        });
+        activeSources.clear();
+        if (audioCtx) {
+            nextPlayTime = audioCtx.currentTime;
+        } else {
+            nextPlayTime = 0;
+        }
+    }
+
+    return { queuePcm, stopAll, isPlaying, flushPending };
 }
+
+
 
 export const useVoiceAssistant = (userId, storeId, options = {}) => {
     const { onAiText, onAiTranscript, onUserTranscript, onTurnComplete } = options;
@@ -97,7 +186,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
 
     const getAudioCtx = () => {
         if (!audioCtxRef.current) {
-            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
             pcmPlayerRef.current = createPcmPlayer(audioCtxRef.current);
         }
         return audioCtxRef.current;
@@ -169,8 +258,11 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         ws.onmessage = (event) => {
             if (event.data instanceof ArrayBuffer) {
                 if (pcmPlayerRef.current) {
-                    const int16 = new Int16Array(event.data);
-                    pcmPlayerRef.current.queuePcm(int16);
+                    const cleanLen = Math.floor(event.data.byteLength / 2) * 2;
+                    if (cleanLen > 0) {
+                        const int16 = new Int16Array(event.data, 0, cleanLen / 2);
+                        pcmPlayerRef.current.queuePcm(int16);
+                    }
                 }
             } else if (typeof event.data === 'string') {
                 try {
@@ -181,12 +273,15 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
                     } else if (msg.type === 'audio_received') {
                         console.log('[Voice] Backend forwarded audio to Gemini', msg.chunks, 'chunks');
                     } else if (msg.type === 'ai_text') {
+                        pcmPlayerRef.current?.flushPending();
                         onAiTextRef.current?.(msg.text);
                     } else if (msg.type === 'ai_transcript') {
+                        pcmPlayerRef.current?.flushPending();
                         onAiTranscriptRef.current?.(msg.text);
                     } else if (msg.type === 'user_transcript') {
                         onUserTranscriptRef.current?.(msg.text);
                     } else if (msg.type === 'turn_complete') {
+                        pcmPlayerRef.current?.flushPending();
                         onTurnCompleteRef.current?.();
                     } else if (msg.type === 'tool_start') {
                         optionsRef.current?.onToolStart?.(msg);
@@ -219,6 +314,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
     }, []);
 
     function stopRecordingImpl() {
+        pcmPlayerRef.current?.stopAll();
         if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
         }
@@ -235,6 +331,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         sentChunksCountRef.current = 0;
         setIsMuted(false);
     }
+
 
     const startRecording = useCallback(async () => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
@@ -278,18 +375,33 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
                 const isVoiceActive = rms >= SILENCE_THRESHOLD;
                 const now = Date.now();
 
-                if (isVoiceActive) {
-                    hasSpokenRef.current = true;
-                    silenceStartRef.current = null;
-                } else if (hasSpokenRef.current) {
-                    if (!silenceStartRef.current) {
-                        silenceStartRef.current = now;
-                    } else if (now - silenceStartRef.current > AUTO_END_SILENCE_MS) {
-                        console.log('[Voice] VAD: Silence threshold reached after speech. Auto-ending turn.');
-                        wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
-                        hasSpokenRef.current = false;
+                const BARGE_IN_THRESHOLD = 0.22; // High threshold to prevent speaker feedback from interrupting AI speech
+                const aiIsSpeaking = pcmPlayerRef.current?.isPlaying();
+
+                if (aiIsSpeaking) {
+                    if (isVoiceActive && rms >= BARGE_IN_THRESHOLD) {
+                        console.log('[Voice] Loud user interruption detected (RMS:', rms.toFixed(4), ') — Stopping AI speech.');
+                        pcmPlayerRef.current.stopAll();
+                        hasSpokenRef.current = true;
                         silenceStartRef.current = null;
+                    } else {
+                        // While AI is speaking, do not send background mic audio to Gemini to prevent self-interruption
                         return;
+                    }
+                } else {
+                    if (isVoiceActive) {
+                        hasSpokenRef.current = true;
+                        silenceStartRef.current = null;
+                    } else if (hasSpokenRef.current) {
+                        if (!silenceStartRef.current) {
+                            silenceStartRef.current = now;
+                        } else if (now - silenceStartRef.current > AUTO_END_SILENCE_MS) {
+                            console.log('[Voice] VAD: Silence threshold reached after speech. Auto-ending turn.');
+                            wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
+                            hasSpokenRef.current = false;
+                            silenceStartRef.current = null;
+                            return;
+                        }
                     }
                 }
 
@@ -309,7 +421,12 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             };
 
             source.connect(processor);
-            processor.connect(ctx.destination);
+            // Route processor through zero gain node to prevent mic loopback to destination speakers
+            const muteGainNode = ctx.createGain();
+            muteGainNode.gain.value = 0;
+            processor.connect(muteGainNode);
+            muteGainNode.connect(ctx.destination);
+
             processorRef.current = processor;
             setIsRecording(true);
             mutedRef.current = false;
@@ -327,21 +444,29 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
     }, []);
 
     const toggleMute = useCallback(() => {
-        if (!isRecording) return;
+        setIsMuted((prevMuted) => {
+            const nextMuted = !prevMuted;
+            mutedRef.current = nextMuted;
 
-        const nextMuted = !isMuted;
-        mutedRef.current = nextMuted;
-        mediaStreamRef.current?.getAudioTracks().forEach(track => {
-            track.enabled = !nextMuted;
+            if (mediaStreamRef.current) {
+                mediaStreamRef.current.getAudioTracks().forEach((track) => {
+                    track.enabled = !nextMuted;
+                });
+            }
+
+            if (nextMuted && wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
+            }
+
+            console.log('[Voice] Microphone mute toggled:', nextMuted);
+            return nextMuted;
         });
-        if (nextMuted && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: 'audio_stream_end' }));
-        }
-        setIsMuted(nextMuted);
-    }, [isMuted, isRecording]);
+    }, []);
+
 
     const sendTextMessage = useCallback((text) => {
         if (!text || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        pcmPlayerRef.current?.stopAll();
         wsRef.current.send(JSON.stringify({
             type: 'user_text',
             text: text.trim(),
@@ -350,6 +475,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
 
     const sendImageInput = useCallback((base64Data, mimeType = 'image/jpeg', textCaption = '') => {
         if (!base64Data || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        pcmPlayerRef.current?.stopAll();
         let cleanB64 = base64Data;
         let finalMime = mimeType;
         if (base64Data.startsWith('data:')) {
@@ -364,6 +490,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             text: textCaption ? textCaption.trim() : '',
         }));
     }, []);
+
 
     return {
         isConnected,

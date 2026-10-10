@@ -8,15 +8,15 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex-shrink-0">
               <Image
-                src="/images/logo/vs_logo.png"
-                alt="Vyapar Sathi"
+                src="/images/logo/vyapar-sakha-version2-logo.svg"
+                alt="Vyapar Sakha"
                 width={80}
                 height={80}
                 className="w-full h-full object-contain"
               />
             </div>
             <span className="text-xl font-black tracking-tight text-white uppercase italic">
-              VyaparSathi
+              VyaparSakha
             </span>
           </div>
           <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] leading-relaxed max-w-xs">
@@ -57,7 +57,7 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto pt-16 md:pt-20 mt-16 md:mt-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-10 text-slate-500 text-[10px] font-black tracking-[0.5em] text-center md:text-left">
-        <p>© MMXXVI VYAPAR SATHI GLOBAL &bull; ALL RIGHTS RESERVED</p>
+        <p>© MMXXVI VYAPAR SAKHA GLOBAL &bull; ALL RIGHTS RESERVED</p>
         <div className="flex gap-8 md:gap-10">
           {["Twitter", "GitHub", "LinkedIn"].map((s) => (
             <a

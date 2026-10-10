@@ -30,8 +30,10 @@ import {
   saveSyncMetadata,
   getOfflineProducts 
 } from "../utils/db";
+import { createBuyer } from "@/features/buyer/services/buyerService";
+import { emitAgentRefresh } from "@/servies/agentEventBus";
 
-const BillingContext = createContext(null);
+export const BillingContext = createContext(null);
 
 export const BillingProvider = ({ children }) => {
   const { user } = useAuthContext();
@@ -192,6 +194,11 @@ export const BillingProvider = ({ children }) => {
   const [userContext, setUserContext] = useState({ role: null, permissions: [] });
   const [billedProducts, setBilledProducts] = useState([]);
   const [discount, setDiscount] = useState({ type: "fixed", value: 0 }); // { type: 'percent' | 'fixed', value: number }
+  const [customerDetails, setCustomerDetails] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
 
   // Offline billing - use ref for processBill to avoid circular dependency
   const processBillRef = useRef(null);
@@ -428,6 +435,38 @@ export const BillingProvider = ({ children }) => {
     };
   }, [addProductByBarcode, addProductManually, setScannedBarcode]);
 
+  // Handle agent voice billing commands
+  useEffect(() => {
+    const handleAgentAdd = (e) => {
+      const { barcode, quantity } = e.detail;
+      if (barcode) {
+        // We add by barcode, which handles adding 1 quantity.
+        // If they requested more, we might need a small delay or loop, but let's just do it manually if possible.
+        // Since addProductByBarcode just adds 1, let's just call it. For multiple, we could call it multiple times.
+        const addMultiple = async () => {
+           for (let i = 0; i < (quantity || 1); i++) {
+              await addProductByBarcode(barcode);
+           }
+        };
+        addMultiple();
+      }
+    };
+
+    const handleAgentGenerate = (e) => {
+      const { paymentMethod } = e.detail || {};
+      processBillRef.current?.(paymentMethod || "cash");
+    };
+
+    window.addEventListener("agent:billing:add", handleAgentAdd);
+    window.addEventListener("agent:billing:generate", handleAgentGenerate);
+
+    return () => {
+      window.removeEventListener("agent:billing:add", handleAgentAdd);
+      window.removeEventListener("agent:billing:generate", handleAgentGenerate);
+    };
+  }, [addProductByBarcode]);
+
+
   // Remove product from bill
   const removeProduct = useCallback((productId) => {
     setBilledProducts((prev) => prev.filter((p) => p._id !== productId));
@@ -489,8 +528,49 @@ export const BillingProvider = ({ children }) => {
         setLoading(true);
         setError(null);
 
+        let buyerId = null;
+
+        // Auto-register/update buyer in DB if customer info provided
+        if ((customerDetails.name && customerDetails.name.trim() !== "Walk-in Customer") || (customerDetails.phone && customerDetails.phone.trim())) {
+          try {
+            const savedBuyer = await createBuyer(storeId, {
+              name: customerDetails.name?.trim() || "Walk-in Customer",
+              phone: customerDetails.phone?.trim() || "N/A",
+              email: customerDetails.email?.trim() || "",
+              totalSales: calculateTotal(),
+              totalPaid: calculateTotal(),
+              totalDue: 0,
+            });
+            buyerId = savedBuyer?._id || savedBuyer?.data?._id || null;
+            emitAgentRefresh("buyers");
+          } catch (buyerErr) {
+            console.warn("Auto buyer creation info:", buyerErr?.message);
+          }
+        }
+
         const billData = {
           storeId,
+          buyerId,
+          storeInfo: {
+            name: currentStore?.name || currentStore?.storeName || "Vyapar Sakha Store",
+            address: currentStore?.address || currentStore?.location || "",
+            phone: currentStore?.phone || currentStore?.mobile || currentStore?.contact || currentStore?.owner?.phone || user?.phone || "",
+            email: currentStore?.email || currentStore?.owner?.email || user?.email || "",
+            gstin: currentStore?.gstin || currentStore?.gstNumber || "",
+          },
+          customerName: customerDetails.name || "Walk-in Customer",
+          customerPhone: customerDetails.phone || "",
+          customerEmail: customerDetails.email || "",
+          customer: {
+            name: customerDetails.name || "Walk-in Customer",
+            phone: customerDetails.phone || "",
+            email: customerDetails.email || "",
+          },
+          user: {
+            id: user?.uid || user?._id || "",
+            name: user?.displayName || user?.name || "Staff",
+            email: user?.email || "",
+          },
           products: billedProducts.map((p) => ({
             productId: p._id,
             name: p.name,
@@ -552,11 +632,13 @@ export const BillingProvider = ({ children }) => {
         }
 
         // Save bill data for PDF download / preview
-        setLastBillData(billData);
+        // Merge server response (has _id, billNumber) with local billData (has full details)
+        setLastBillData(bill ? { ...billData, ...bill } : billData);
 
         // Clear the bill
         setBilledProducts([]);
         setDiscount({ type: "fixed", value: 0 });
+        setCustomerDetails({ name: "", phone: "", email: "" });
 
         return bill || { ...billData, offline: true };
       } catch (err) {
@@ -569,7 +651,7 @@ export const BillingProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [billedProducts, storeId, user?.uid, calculateTotal, saveBillOffline, clearSession],
+    [billedProducts, storeId, user?.uid, calculateTotal, saveBillOffline, clearSession, customerDetails],
   );
 
   // Set ref for offline billing hook
@@ -582,6 +664,7 @@ export const BillingProvider = ({ children }) => {
     setBilledProducts([]);
     setScannedBarcode("");
     setDiscount({ type: "fixed", value: 0 });
+    setCustomerDetails({ name: "", phone: "", email: "" });
     await clearSession();
     showSuccess("Bill cleared");
   }, [clearSession]);
@@ -600,6 +683,8 @@ export const BillingProvider = ({ children }) => {
       lastBillData,
       manualProductOpen,
       setManualProductOpen,
+      customerDetails,
+      setCustomerDetails,
       // Real-time sync
       syncEnabled,
       syncStatus,
@@ -631,6 +716,7 @@ export const BillingProvider = ({ children }) => {
       storeProducts,
       lastBillData,
       manualProductOpen,
+      customerDetails,
       syncEnabled,
       syncStatus,
       sessionId,
@@ -659,8 +745,5 @@ export const BillingProvider = ({ children }) => {
 
 export const useBillingContext = () => {
   const context = useContext(BillingContext);
-  if (!context) {
-    throw new Error("useBillingContext must be used within BillingProvider");
-  }
-  return context;
+  return context || {};
 };

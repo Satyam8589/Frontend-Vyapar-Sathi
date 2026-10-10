@@ -14,6 +14,9 @@ import {
   Send,
   Image as ImageIcon,
   Paperclip,
+  ShoppingCart,
+  CheckCircle2,
+  Package,
 } from "lucide-react";
 
 export default function CartoonVoiceBotView({
@@ -208,8 +211,8 @@ export default function CartoonVoiceBotView({
             <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-[1.5px] shadow-md shadow-indigo-500/30">
               <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center p-1 overflow-hidden">
                 <img
-                  src="/images/logo/vs_logo.png"
-                  alt="Vyapar Sathi Logo"
+                  src="/images/logo/vyapar-sakha-version2-logo.svg"
+                  alt="Vyapar Sakha Logo"
                   className="h-full w-full object-contain"
                 />
               </div>
@@ -222,7 +225,7 @@ export default function CartoonVoiceBotView({
 
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-white leading-tight">Vyapar Sathi</h2>
+              <h2 className="text-sm font-bold text-white leading-tight">Vyapar Sakha</h2>
               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-300 border border-amber-400/30">
                 AI Voice + Vision
               </span>
@@ -383,8 +386,8 @@ export default function CartoonVoiceBotView({
               <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-amber-400 via-indigo-600 to-blue-500 p-[1px] shadow-md">
                 <div className="h-full w-full rounded-[7px] bg-white flex items-center justify-center p-0.5 overflow-hidden">
                   <img
-                    src="/images/logo/vs_logo.png"
-                    alt="Vyapar Sathi Logo"
+                    src="/images/logo/vyapar-sakha-version2-logo.svg"
+                    alt="Vyapar Sakha Logo"
                     className="h-full w-full object-contain"
                   />
                 </div>
@@ -395,8 +398,47 @@ export default function CartoonVoiceBotView({
           <div className="w-32 h-3 mt-2 rounded-full bg-indigo-500/20 blur-md animate-pulse" />
         </div>
 
-        {/* ACTIVE TOOL EXECUTION BADGE */}
-        {activeToolStatus?.active && (
+        {/* BILLING / PRODUCT ADDED VISUAL CONFIRMATION CARD */}
+        {activeToolStatus?.active && (activeToolStatus.name === "tool_add_billing_item" || activeToolStatus.name === "tool_generate_bill") ? (
+          <div className="mt-2 w-full max-w-sm px-3 z-20 animate-in fade-in zoom-in duration-300">
+            <div className="relative rounded-2xl bg-gradient-to-r from-emerald-950/90 via-slate-900/95 to-teal-950/90 border border-emerald-400/40 p-3 shadow-xl backdrop-blur-md">
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 text-emerald-300 shadow-inner">
+                    <ShoppingCart className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold text-white leading-tight">
+                        {activeToolStatus.result?.message?.replace(/^Added \d+ x /, '') || activeToolStatus.args?.product_name || "Product"}
+                      </span>
+                      {activeToolStatus.completed && activeToolStatus.result?.success && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          ✓ Added to Bill
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-300">
+                      <span>Qty: <strong className="text-white">{activeToolStatus.args?.quantity || activeToolStatus.result?.quantity || 1}</strong></span>
+                      {activeToolStatus.result?.price ? (
+                        <span>Rate: <strong className="text-emerald-300">₹{activeToolStatus.result.price}</strong></span>
+                      ) : null}
+                      {activeToolStatus.result?.price ? (
+                        <span>Total: <strong className="text-emerald-400 font-bold">₹{((activeToolStatus.args?.quantity || activeToolStatus.result?.quantity || 1) * activeToolStatus.result.price).toFixed(2)}</strong></span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {activeToolStatus.result?.error && (
+                <div className="mt-2 text-[11px] font-semibold text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded-lg">
+                  ⚠️ {activeToolStatus.result.error}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeToolStatus?.active && (
           <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/50 shadow-md text-white text-xs font-bold z-20">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
@@ -543,23 +585,24 @@ export default function CartoonVoiceBotView({
         {/* 1. Mic On / Mute Button */}
         <button
           type="button"
-          onClick={isRecording ? onStopRecording : onStartRecording}
+          onClick={onToggleMute}
           className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
-          title={isRecording ? "Mute Microphone" : "Turn On Microphone"}
+          title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
         >
           <div
             className={`h-12 w-12 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
-              isRecording
-                ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-emerald-500/40 ring-4 ring-emerald-400/40"
-                : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-white/15"
+              isMuted
+                ? "bg-slate-800/90 text-rose-400 border border-rose-500/40 ring-2 ring-rose-500/20"
+                : "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-emerald-500/40 ring-4 ring-emerald-400/40"
             }`}
           >
-            {isRecording ? <Mic className="h-5 w-5 animate-pulse" /> : <MicOff className="h-5 w-5" />}
+            {isMuted ? <MicOff className="h-5 w-5 text-rose-400" /> : <Mic className="h-5 w-5 animate-pulse" />}
           </div>
           <span className="text-[11px] font-semibold text-slate-200">
-            {isRecording ? "Mic On" : "Muted"}
+            {isMuted ? "Muted" : "Mic On"}
           </span>
         </button>
+
 
         {/* 2. End Call Button */}
         <button

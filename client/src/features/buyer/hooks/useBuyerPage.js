@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getBuyers, createBuyer, updateBuyer, deleteBuyer } from '../services/buyerService';
+import { useAgentRefresh } from '@/hooks/useAgentRefresh';
 
 export const useBuyerPage = () => {
   const { storeId } = useParams();
@@ -23,15 +24,19 @@ export const useBuyerPage = () => {
   const fetchBuyers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getBuyers(storeId, {
+      const rawData = await getBuyers(storeId, {
         search,
         status: statusFilter,
         page,
         limit: 15,
       });
-      setBuyers(data.buyers || []);
-      setTotalPages(data.totalPages || 1);
-      setTotal(data.total || 0);
+      const buyersList = rawData?.buyers || rawData?.data?.buyers || (Array.isArray(rawData) ? rawData : []);
+      const totalCount = rawData?.total ?? rawData?.data?.total ?? buyersList.length;
+      const pagesCount = rawData?.totalPages ?? rawData?.data?.totalPages ?? 1;
+
+      setBuyers(buyersList);
+      setTotalPages(pagesCount);
+      setTotal(totalCount);
       setError('');
     } catch (err) {
       setError(err.message || 'Failed to fetch buyers');
@@ -40,9 +45,12 @@ export const useBuyerPage = () => {
     }
   }, [storeId, search, statusFilter, page]);
 
+  // Auto-refresh when AI agent mutates buyers
+  const { refreshKey } = useAgentRefresh('buyers');
+
   useEffect(() => {
     fetchBuyers();
-  }, [fetchBuyers]);
+  }, [fetchBuyers, refreshKey]);
 
   const handleAddBuyer = async (data) => {
     try {

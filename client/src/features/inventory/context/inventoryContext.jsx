@@ -6,6 +6,7 @@ import { useAuthContext } from '@/features/auth/context/AuthContext';
 import * as inventoryService from '../services/inventoryService';
 import { fetchStoreById } from '@/features/storeDashboard/services/storeDashboardService';
 import { showSuccess, showError } from '@/utils/toast';
+import { onAgentRefresh } from '@/servies/agentEventBus';
 
 const InventoryContext = createContext(null);
 
@@ -59,6 +60,16 @@ export const InventoryProvider = ({ children }) => {
     fetchProducts();
   }, [fetchStoreDetails, fetchProducts]);
 
+  // Auto-refresh when the AI agent mutates products or inventory
+  useEffect(() => {
+    const unsub = onAgentRefresh(({ section }) => {
+      if (section === 'products' || section === 'inventory' || section === '*') {
+        fetchProducts();
+      }
+    });
+    return unsub;
+  }, [fetchProducts]);
+
   // Add a new product
   const addProduct = async (productData) => {
     try {
@@ -79,7 +90,9 @@ export const InventoryProvider = ({ children }) => {
 
       // Synchronize currentStore local stats
       if (currentStore) {
-        const productValue = (newProduct.price || 0) * (newProduct.quantity || newProduct.qty || 0);
+        const priceNum = Number(newProduct?.sellingPrice ?? newProduct?.price ?? newProduct?.salesPrice ?? 0);
+        const qtyNum = Number(newProduct?.quantity ?? newProduct?.qty ?? 0);
+        const productValue = (isNaN(priceNum) ? 0 : priceNum) * (isNaN(qtyNum) ? 0 : qtyNum);
         setCurrentStore(prev => ({
           ...prev,
           totalProducts: (prev.totalProducts || 0) + 1,
@@ -123,7 +136,9 @@ export const InventoryProvider = ({ children }) => {
       setLoading(true);
       // Get the product snapshot to update store stats locally
       const productToDelete = products.find(p => p._id === productId);
-      const productValue = (productToDelete?.price || 0) * (productToDelete?.quantity || productToDelete?.qty || 0);
+      const delPriceNum = Number(productToDelete?.sellingPrice ?? productToDelete?.price ?? productToDelete?.salesPrice ?? 0);
+      const delQtyNum = Number(productToDelete?.quantity ?? productToDelete?.qty ?? 0);
+      const productValue = (isNaN(delPriceNum) ? 0 : delPriceNum) * (isNaN(delQtyNum) ? 0 : delQtyNum);
 
       await inventoryService.deleteProduct(productId);
       
