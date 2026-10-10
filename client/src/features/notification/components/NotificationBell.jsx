@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import * as PusherPushNotifications from '@pusher/push-notifications-web';
 import { Bell, AlertCircle, AlertTriangle, Info, CheckCircle2, ShoppingCart, ArrowLeftRight, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/servies/api";
@@ -19,6 +20,12 @@ const getNotificationIcon = (type) => {
       return <CheckCircle2 className="text-emerald-500 w-5 h-5 flex-shrink-0" />;
     case 'PURCHASE_RETURNED':
       return <ArrowLeftRight className="text-purple-500 w-5 h-5 flex-shrink-0" />;
+    case 'SALE_CREATED':
+      return <ShoppingCart className="text-emerald-500 w-5 h-5 flex-shrink-0" />;
+    case 'GRN_CREATED':
+      return <CheckCircle2 className="text-indigo-500 w-5 h-5 flex-shrink-0" />;
+    case 'PAYMENT_RECEIVED':
+      return <CheckCircle2 className="text-teal-500 w-5 h-5 flex-shrink-0" />;
     case 'SYSTEM_ERROR':
       return <AlertCircle className="text-red-600 w-5 h-5 flex-shrink-0" />;
     default:
@@ -46,6 +53,7 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
   const { storeId } = useParams();
   const router = useRouter();
   const dropdownRef = useRef(null);
@@ -54,8 +62,9 @@ export default function NotificationBell() {
     if (!storeId) return;
     try {
       const res = await api.get(`/notifications/${storeId}/unread-count`);
-      if (res.data?.success) {
-        setUnreadCount(res.data.data.count);
+      const count = res.data?.data?.count ?? res.data?.count;
+      if (count !== undefined) {
+        setUnreadCount(count);
       }
     } catch (err) {
       console.error("Failed to fetch unread count", err);
@@ -67,9 +76,9 @@ export default function NotificationBell() {
     setLoading(true);
     try {
       const res = await api.get(`/notifications/${storeId}?limit=20`);
-      if (res.data?.success) {
-        setNotifications(res.data.data.notifications);
-        // Also update unread count based on fetched items (could be slightly different from unread count endpoint)
+      const list = res.data?.data?.notifications || res.data?.notifications || (Array.isArray(res.data?.data) ? res.data.data : null);
+      if (list) {
+        setNotifications(list);
         fetchUnreadCount();
       }
     } catch (err) {
@@ -80,10 +89,135 @@ export default function NotificationBell() {
   };
 
   useEffect(() => {
+    // Check if notifications are already allowed, auto-register Pusher Beams
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        enablePushNotifications();
+      } else if (Notification.permission === 'default') {
+        const pref = localStorage.getItem('pushNotificationPreference');
+        if (pref !== 'disabled') {
+          setTimeout(() => setShowPushModal(true), 1500);
+        }
+      }
+    }
+  }, [storeId]);
+
+  const enablePushNotifications = async () => {
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        let perm = Notification.permission;
+        
+        // Explicitly request permission first to ensure the browser prompt appears
+        if (perm === 'default') {
+          perm = await Notification.requestPermission();
+        }
+        
+        if (perm === 'denied') {
+          alert("Your browser is blocking notifications. Please click the lock icon next to your URL bar, change Notifications to 'Allow', and refresh the page.");
+          setShowPushModal(false);
+          return;
+        }
+      }
+
+      setShowPushModal(false);
+      localStorage.setItem('pushNotificationPreference', 'enabled');
+      
+      const registration = await navigator.serviceWorker.ready;
+      const BeamsClient = PusherPushNotifications.Client || (typeof window !== "undefined" ? window.PusherPushNotifications?.Client : null);
+      if (!BeamsClient) {
+        throw new Error("Pusher Beams SDK is not loaded");
+      }
+      const instanceId = process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID || 'be4228c4-3829-4723-a544-2cbdbee5493d';
+      const beamsClient = new BeamsClient({
+        instanceId,
+        serviceWorkerRegistration: registration,
+      });
+      
+      await beamsClient.start();
+      const interests = ['hello'];
+      if (storeId) {
+        interests.push(`store-${storeId}`);
+      }
+      await beamsClient.setDeviceInterests(interests);
+      console.log('[Pusher Beams] Registered and subscribed to interests:', interests);
+    } catch (e) {
+      console.error('Pusher Beams initialization error:', e);
+      alert('Error enabling notifications: ' + e.message + '\n\nPlease ensure notifications are allowed in your browser settings (Lock icon next to URL).');
+      // Revert preference if it failed so they can try again later
+      localStorage.removeItem('pushNotificationPreference');
+    }
+  };
+
+  const declinePushNotifications = () => {
+    localStorage.setItem('pushNotificationPreference', 'disabled');
+    setShowPushModal(false);
+  };
+
+  useEffect(() => {
     fetchUnreadCount();
-    // Poll every minute
+    // Poll every minute as fallback
     const interval = setInterval(fetchUnreadCount, 60000);
-    return () => clearInterval(interval);
+
+    // Initialize WebSocket for real-time notifications
+    let ws;
+    let reconnectTimer;
+    let isMounted = true;
+
+    const connectWebSocket = () => {
+      if (!isMounted || !storeId) return;
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      if (!token) return;
+
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const wsOrigin = new URL(apiUrl).origin.replace(/^http/, 'ws');
+        const wsUrl = `${wsOrigin}/api/ws/notifications?token=${encodeURIComponent(token)}&storeId=${storeId}`;
+        
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log("[WebSocket] Connected for real-time notifications");
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.event === "NEW_NOTIFICATION" && data.data) {
+              setNotifications(prev => [data.data, ...prev]);
+              setUnreadCount(prev => prev + 1);
+            }
+          } catch (err) {
+            console.warn("[WebSocket] Could not parse incoming message", err);
+          }
+        };
+
+        ws.onerror = (err) => {
+          // Log as info/warn to prevent Next.js Turbopack dev error boundary
+          console.warn("[WebSocket] Notification channel unavailable, polling active.");
+        };
+
+        ws.onclose = (e) => {
+          console.log("[WebSocket] Disconnected (code:", e.code, ")");
+          if (isMounted && e.code !== 1000 && e.code !== 4001) {
+            reconnectTimer = setTimeout(connectWebSocket, 5000);
+          }
+        };
+      } catch (err) {
+        console.warn("[WebSocket] Init failed:", err.message);
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.close(1000, "Component unmounted");
+      }
+    };
   }, [storeId]);
 
   useEffect(() => {
@@ -225,6 +359,45 @@ export default function NotificationBell() {
                 ))}
               </ul>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Push Notifications Permission Modal */}
+      {showPushModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 relative animate-in fade-in zoom-in duration-200">
+            <button 
+              onClick={declinePushNotifications}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="flex flex-col items-center text-center mt-2">
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-5 ring-8 ring-blue-50/50">
+                <Bell className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Enable Notifications</h3>
+              <p className="text-sm text-slate-600 mb-8 leading-relaxed">
+                Stay updated with important alerts about low stock and purchase orders even when you're away.
+              </p>
+              
+              <div className="flex w-full gap-3">
+                <button 
+                  onClick={declinePushNotifications}
+                  className="flex-1 py-2.5 px-4 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors"
+                >
+                  Not Now
+                </button>
+                <button 
+                  onClick={enablePushNotifications}
+                  className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                >
+                  Enable
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
