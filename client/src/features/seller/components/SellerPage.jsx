@@ -222,7 +222,7 @@ export default function SellerPage() {
                     <tr
                       key={seller._id}
                       className="hover:bg-slate-50/60 cursor-pointer transition-colors"
-                      onClick={() => openDetailModal(seller)}
+                      onClick={() => window.location.href = `/storeDashboard/${stats?.storeId || seller.store}/sellers/${seller._id}`}
                     >
                       {/* Seller info */}
                       <td className="px-4 py-3.5">

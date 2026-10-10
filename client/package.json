@@ -12,8 +12,10 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@pusher/push-notifications-web": "^1.1.0",
     "axios": "^1.13.5",
     "chart.js": "^4.5.1",
+    "date-fns": "^4.4.0",
     "dexie": "^4.4.5",
     "firebase": "^12.9.0",
     "html5-qrcode": "^2.3.8",

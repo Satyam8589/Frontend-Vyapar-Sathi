@@ -49,11 +49,26 @@ export const usePurchasePage = () => {
   const handleAddPurchase = async (data) => {
     try {
       setActionLoading(true);
-      await createPurchase(storeId, data);
+      const result = await createPurchase(storeId, data);
       setIsAddModalOpen(false);
       fetchPurchases();
-      // Optional: Add toast success here if react-hot-toast is set up
+
+      // Surface success message — show stock update status
+      const stockMsg = result?.stockUpdated === false
+        ? "Purchase saved but stock update had issues. Please verify product quantities."
+        : "Purchase saved and stock updated successfully.";
+      
+      if (typeof window !== 'undefined') {
+        import('@/utils/toast').then(({ showSuccess, showError }) => {
+          if (result?.stockUpdated === false) {
+            showError(stockMsg);
+          } else {
+            showSuccess(stockMsg);
+          }
+        }).catch(() => {});
+      }
     } catch (err) {
+      // Re-throw so PurchaseFormModal can catch and display it
       throw err;
     } finally {
       setActionLoading(false);

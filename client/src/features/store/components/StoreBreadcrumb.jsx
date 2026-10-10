@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
+import NotificationBell from "@/features/notification/components/NotificationBell";
 
 const formatSegmentLabel = (segment) =>
   decodeURIComponent(segment)
@@ -122,6 +123,10 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
             );
           })}
         </nav>
+        
+        <div className="ml-auto">
+          <NotificationBell />
+        </div>
       </div>
     </div>
   );

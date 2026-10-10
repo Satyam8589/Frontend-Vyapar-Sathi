@@ -115,12 +115,12 @@ export const BillPreviewModal = () => {
 
   const formattedDate = billedAt
     ? new Date(billedAt).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : new Date().toLocaleString("en-IN");
 
   const grandTotal = Number(totalAmount || 0);
@@ -129,7 +129,7 @@ export const BillPreviewModal = () => {
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto select-none">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
-        
+
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white shrink-0 shadow-md">
           <div className="flex items-center gap-2.5">
@@ -156,7 +156,7 @@ export const BillPreviewModal = () => {
         {/* Scrollable Bill Content (Digital Thermal / A4 Paper Invoice Card) */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-100/60">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 text-slate-800 space-y-4">
-            
+
             {/* Store Branding & Header */}
             <div className="text-center border-b border-slate-200 pb-4">
               <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider mb-1.5">

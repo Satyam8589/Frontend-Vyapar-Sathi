@@ -1,3 +1,4 @@
+importScripts("https://js.pusher.com/beams/service-worker.js");
 const CACHE_VERSION = 'v1';
 const STATIC_CACHE = `vyapar-sakha-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `vyapar-sakha-runtime-${CACHE_VERSION}`;

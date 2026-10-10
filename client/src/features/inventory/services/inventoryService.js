@@ -26,6 +26,17 @@ export const getStoreProducts = async (storeId) => {
   }
 };
 
+// Search products within a store
+export const searchStoreProducts = async (query, storeId) => {
+  try {
+    if (!query || !storeId) return [];
+    const response = await apiGet(`/product/search?query=${encodeURIComponent(query)}&storeId=${storeId}`);
+    return response?.data ?? [];
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Update a product
 export const updateProduct = async (productId, updateData) => {
   try {
