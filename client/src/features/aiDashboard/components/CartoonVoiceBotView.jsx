@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import WaveRibbonAnimation from "./WaveRibbonAnimation";
 import {
   Mic,
   MicOff,
@@ -163,7 +164,8 @@ export default function CartoonVoiceBotView({
     setTimeout(() => setShareCopied(false), 2000);
   };
 
-  const isUserTalking = Boolean(isRecording && !isMuted);
+  const isUserTalking = Boolean(isRecording && !isMuted && liveTranscript?.trim());
+  const isAiTalking = Boolean(isAISpeaking || speakingMsgId);
 
   return (
     <div className="relative flex flex-col h-full w-full bg-gradient-to-b from-slate-50 via-white to-slate-100/90 text-slate-800 overflow-hidden select-none font-sans">
@@ -245,7 +247,7 @@ export default function CartoonVoiceBotView({
               <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
               Getting ready...
             </span>
-          ) : isAISpeaking ? (
+          ) : isAiTalking ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold shadow-xs">
               <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
               Speaking...
@@ -464,9 +466,9 @@ export default function CartoonVoiceBotView({
       </main>
 
       {/* ------------------------------------------------------------- */}
-      {/* ANIMATION AREA: "GETTING READY" VS 3D BLUE ORB (CLEAN & JUMP)  */}
+      {/* ANIMATION AREA: "GETTING READY" VS 3D BLUE ORB + SOUNDWAVE     */}
       {/* ------------------------------------------------------------- */}
-      <section className="relative flex flex-col items-center justify-center py-2.5 shrink-0 z-10 select-none">
+      <section className="relative w-full flex flex-col items-center justify-center py-4 shrink-0 z-10 select-none overflow-hidden min-h-[140px]">
         {!isReady ? (
           /* BEFORE READY: "GETTING READY..." STATE */
           <div className="flex flex-col items-center justify-center py-4 transition-all animate-fadeIn">
@@ -484,33 +486,47 @@ export default function CartoonVoiceBotView({
             </p>
           </div>
         ) : (
-          /* ONCE READY: CLEAN 3D BLUE GLOWING ORB WITH JUMP ANIMATION ON TURN CHANGE */
-          <div className="relative flex flex-col items-center justify-center transition-all animate-fadeIn">
-            {/* Audio reactive pulse ripple rings while speaking */}
-            {(isAISpeaking || isUserTalking) && (
-              <>
-                <div
-                  className="absolute rounded-full pointer-events-none w-28 h-28 border border-blue-400/40 bg-blue-400/10"
-                  style={{ animation: "orbRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite" }}
-                />
-                <div
-                  className="absolute rounded-full pointer-events-none w-36 h-36 border border-blue-400/25 bg-blue-400/5"
-                  style={{
-                    animation: "orbRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite",
-                    animationDelay: "0.8s",
-                  }}
-                />
-              </>
-            )}
+          /* ONCE READY: WAVY SOUNDWAVE RIBBONS BEHIND 3D BLUE ORB WITH CONCENTRIC RINGS */
+          <div className="relative w-full flex items-center justify-center transition-all animate-fadeIn py-2 min-h-[130px]">
+            {/* 1. Fluid Wavy Soundwave Ribbon Animation (Behind the orb, stretching horizontally across) */}
+            <div className="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-center z-0">
+              <WaveRibbonAnimation
+                isAISpeaking={isAiTalking}
+                isUserTalking={isUserTalking}
+              />
+            </div>
 
-            {/* Ambient soft blue volumetric glow */}
-            <div
-              className={`absolute rounded-full w-24 h-24 blur-xl transition-all duration-500 pointer-events-none ${
-                isAISpeaking ? "bg-blue-500/35 scale-125" : "bg-blue-400/20 scale-100"
-              }`}
-            />
+            {/* 2. Concentric Halo Rings & Volumetric Glow (matching reference image) */}
+            <div className="relative z-10 flex items-center justify-center">
+              {/* Outer static concentric halo ring from reference image */}
+              <div className="absolute rounded-full pointer-events-none w-32 h-32 sm:w-36 sm:h-36 border border-blue-400/35 bg-blue-400/5 shadow-[0_0_20px_rgba(96,165,250,0.18)]" />
+              <div className="absolute rounded-full pointer-events-none w-44 h-44 border border-blue-300/15" />
 
-            {/* The 3D Sphere Container (Clean Blue with Jump Animation) */}
+              {/* Audio reactive pulse ripple rings while speaking */}
+              {(isAiTalking || isUserTalking) && (
+                <>
+                  <div
+                    className="absolute rounded-full pointer-events-none w-28 h-28 border border-blue-400/40 bg-blue-400/10"
+                    style={{ animation: "orbRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite" }}
+                  />
+                  <div
+                    className="absolute rounded-full pointer-events-none w-36 h-36 border border-blue-400/25 bg-blue-400/5"
+                    style={{
+                      animation: "orbRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite",
+                      animationDelay: "0.8s",
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Ambient soft blue volumetric glow */}
+              <div
+                className={`absolute rounded-full w-24 h-24 blur-xl transition-all duration-500 pointer-events-none ${
+                  isAiTalking ? "bg-blue-500/35 scale-125" : "bg-blue-400/20 scale-100"
+                }`}
+              />
+
+              {/* The 3D Sphere Container (Clean Blue with Jump Animation) */}
             <div
               className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden shadow-2xl transition-all duration-300"
               style={{
@@ -583,6 +599,7 @@ export default function CartoonVoiceBotView({
               />
             </div>
           </div>
+        </div>
         )}
       </section>
 
