@@ -48,34 +48,34 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
   }
 
   return (
-    <div className="sticky top-3 z-40 w-full -mb-3 px-1 sm:px-2 md:px-3">
+    <div className="sticky top-2 z-40 w-full -mb-2 px-1 sm:px-2 md:px-3">
       {/* Opaque layer that blocks content from showing behind breadcrumb while scrolling */}
       <div
         aria-hidden="true"
-        className="absolute -inset-x-2 -top-2.5 -bottom-2.5 rounded-2x"
+        className="absolute -inset-x-2 -top-2 -bottom-2"
       />
 
-      <div className="relative flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="relative flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 sm:px-4 py-1.5 sm:py-2">
         {isResponsive && (
           <>
             <button
               type="button"
               onClick={() => router.push("/storeDashboard")}
               aria-label="Back to store dashboard"
-              className="inline-flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100"
+              className="inline-flex h-7 w-7 sm:h-7.5 sm:w-7.5 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} />
             </button>
             <button
               type="button"
               onClick={toggleStoreSidebar}
               aria-label="Open sidebar"
               aria-expanded={storeSidebarOpen}
-              className="inline-flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100"
+              className="inline-flex h-7 w-7 sm:h-7.5 sm:w-7.5 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100"
             >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -93,13 +93,13 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
 
         <nav
           aria-label="Breadcrumb"
-          className="flex min-w-0 w-0 flex-1 flex-wrap items-center gap-1.0 text-xs text-slate-700"
+          className="flex min-w-0 w-0 flex-1 flex-wrap items-center gap-1.5 text-xs text-slate-700"
         >
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
 
             return (
-              <div key={`${crumb.label}-${index}`} className="flex items-center gap-2">
+              <div key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
                 {crumb.href ? (
                   <Link
                     href={crumb.href}
@@ -124,7 +124,7 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
           })}
         </nav>
         
-        <div className="ml-auto">
+        <div className="ml-auto flex shrink-0 items-center">
           <NotificationBell />
         </div>
       </div>

@@ -30,17 +30,17 @@ export const OverviewHeader = ({
   });
 
   return (
-    <header className="mb-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-6 bg-white/70 backdrop-blur-md rounded-3xl border border-white/80 shadow-sm">
+    <header className="mb-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-sm">
         {/* Left Side: Store title, greeting, and status */}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60 shadow-xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60 shadow-xs">
               <StoreIcon className="w-3.5 h-3.5 text-blue-600" />
               Store Dashboard
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               Live Sync
             </span>
             <span className="text-xs text-gray-500 font-medium">
@@ -48,12 +48,12 @@ export const OverviewHeader = ({
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
             <span>{storeName} Overview</span>
-            <Sparkles className="w-5 h-5 text-amber-500 hidden sm:inline" />
+            <Sparkles className="w-4 h-4 text-amber-500 hidden sm:inline" />
           </h1>
-          <p className="text-sm text-gray-600">
-            Real-time financial performance, inventory valuation, and procurement snapshot.
+          <p className="text-xs text-gray-600">
+            Real-time sales performance, stock health, and procurement snapshot.
           </p>
         </div>
 
