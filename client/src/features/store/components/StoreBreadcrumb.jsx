@@ -48,14 +48,8 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
   }
 
   return (
-    <div className="sticky top-2 z-40 w-full -mb-2 px-1 sm:px-2 md:px-3">
-      {/* Opaque layer that blocks content from showing behind breadcrumb while scrolling */}
-      <div
-        aria-hidden="true"
-        className="absolute -inset-x-2 -top-2 -bottom-2"
-      />
-
-      <div className="relative flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 sm:px-4 py-1.5 sm:py-2">
+    <div className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/60 shadow-xs transition-all">
+      <div className="relative flex w-full items-center gap-2 pl-4 sm:pl-6 md:pl-8 pr-3 sm:pr-4 py-1 sm:py-1.5 min-h-[36px] sm:min-h-[38px]">
         {isResponsive && (
           <>
             <button

@@ -62,15 +62,15 @@ export default function StoreLayout({ children }) {
           }`}
           style={{
             padding: isResponsive
-              ? "12px 8px 16px 8px"
+              ? "0px 8px 16px 8px"
               : copilotOpen
-              ? "12px 2px 16px 0px"
-              : "12px 12px 16px 0px",
+              ? "0px 2px 16px 0px"
+              : "0px 12px 16px 0px",
             marginRight: !isResponsive && copilotOpen ? `${copilotWidth || 480}px` : "0px",
           }}
         >
-          {/* Breadcrumb - hidden when printing */}
-          <div className="print:hidden">
+          {/* Breadcrumb - fixed sticky at top so it always appears while scrolling */}
+          <div className="print:hidden sticky top-1 z-40 sm:ml-3 sm:mr-4">
             <StoreBreadcrumb isResponsive={isResponsive} />
           </div>
 
