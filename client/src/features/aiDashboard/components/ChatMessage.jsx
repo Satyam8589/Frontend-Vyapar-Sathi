@@ -1014,6 +1014,10 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
     const meta = STATUS_META[status] || STATUS_META.completed;
     const StatusIcon = meta.Icon;
 
+    const isPlan =
+      String(name || "").toLowerCase().includes("plan") ||
+      String(name || "").toLowerCase().includes("goal");
+
     const argEntries = args && typeof args === "object" ? Object.entries(args) : [];
 
     return (
@@ -1047,26 +1051,24 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
         "
         >
           <span
-            className="
-            flex
-            h-7
-            w-7
-            flex-shrink-0
-            items-center
-            justify-center
-            rounded-lg
-            bg-slate-100
-            text-slate-500
-          "
+            className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
+              isPlan ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-500"
+            }`}
           >
-            <Wrench className="h-3.5 w-3.5" />
+            {isPlan ? <Sparkles className="h-3.5 w-3.5" /> : <Wrench className="h-3.5 w-3.5" />}
           </span>
 
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
-              <code className="truncate font-mono text-xs font-medium text-slate-700">
-                {name}
-              </code>
+              {isPlan ? (
+                <span className="truncate text-xs font-semibold text-slate-800">
+                  {name}
+                </span>
+              ) : (
+                <code className="truncate font-mono text-xs font-medium text-slate-700">
+                  {name}
+                </code>
+              )}
 
               <StatusIcon className={`h-3.5 w-3.5 flex-shrink-0 ${meta.className}`} />
             </span>
@@ -1139,9 +1141,25 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
     const running = toolCalls.some((call) => call.status === "running");
     const expanded = isOpen || isStreaming;
 
-    const summary = toolCalls.length
-      ? `${toolCalls.length} ${toolCalls.length === 1 ? "tool" : "tools"} used`
-      : "Context loaded";
+    const planCalls = toolCalls.filter((call) =>
+      String(call.name || "").toLowerCase().includes("plan")
+    );
+    const regularCalls = toolCalls.filter(
+      (call) => !String(call.name || "").toLowerCase().includes("plan")
+    );
+
+    let summary = "Context loaded";
+    if (planCalls.length > 0 && regularCalls.length > 0) {
+      summary = `Plan & ${regularCalls.length} ${
+        regularCalls.length === 1 ? "tool" : "tools"
+      } used`;
+    } else if (planCalls.length > 0) {
+      summary = "Execution plan created";
+    } else if (regularCalls.length > 0) {
+      summary = `${regularCalls.length} ${
+        regularCalls.length === 1 ? "tool" : "tools"
+      } used`;
+    }
 
     return (
       <div className="mb-3 w-full min-w-0">

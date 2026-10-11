@@ -4,27 +4,27 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Mic,
   MicOff,
-  PhoneOff,
   Sparkles,
   AlertTriangle,
-  Radio,
-  Star,
   X,
-  Zap,
+  Plus,
   Send,
-  Image as ImageIcon,
-  Paperclip,
-  ShoppingCart,
-  CheckCircle2,
-  Package,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  Volume2,
+  Loader2,
+  Share2,
 } from "lucide-react";
 
 export default function CartoonVoiceBotView({
-  isConnected,
-  isReady,
-  isRecording,
-  isMuted,
-  permissionError,
+  messages = [],
+  isConnected = false,
+  isReady = false,
+  isRecording = false,
+  isMuted = false,
+  permissionError = "",
   onStartRecording,
   onStopRecording,
   onToggleMute,
@@ -36,19 +36,27 @@ export default function CartoonVoiceBotView({
   activeToolStatus = null,
   onQuickPrompt,
   onClose,
+  onFeedback,
+  onCopy,
 }) {
   const [callDuration, setCallDuration] = useState(0);
-  const [isBlinking, setIsBlinking] = useState(false);
-  const [entrancePhase, setEntrancePhase] = useState("portal");
-
-  // Multimodal Text & Image Input States
   const [inputText, setInputText] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState(null);
   const [selectedMime, setSelectedMime] = useState("image/jpeg");
-  const fileInputRef = useRef(null);
+  const [copiedMsgId, setCopiedMsgId] = useState(null);
+  const [speakingMsgId, setSpeakingMsgId] = useState(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
-  // Call timer (starts once ready)
+  // Jump animation on turn change
+  const [isJumping, setIsJumping] = useState(false);
+  const prevTurnRef = useRef({ isAISpeaking: false, isUserTalking: false });
+
+  const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const transcriptContainerRef = useRef(null);
+
+  // Call timer (ticks once connected)
   useEffect(() => {
     const timer = setInterval(() => {
       setCallDuration((prev) => prev + 1);
@@ -56,30 +64,30 @@ export default function CartoonVoiceBotView({
     return () => clearInterval(timer);
   }, []);
 
-  // Multi-Phase Entrance Sequence
+  // Simple, clean jump animation whenever the turn switches
   useEffect(() => {
-    setEntrancePhase("portal");
+    const userTalking = Boolean(isRecording && !isMuted && liveTranscript);
+    const prev = prevTurnRef.current;
 
-    const t1 = setTimeout(() => setEntrancePhase("ascending"), 400);
-    const t2 = setTimeout(() => setEntrancePhase("powering"), 900);
-    const t3 = setTimeout(() => setEntrancePhase("ready"), 1500);
+    const aiTurnStarted = !prev.isAISpeaking && isAISpeaking;
+    const aiTurnEnded = prev.isAISpeaking && !isAISpeaking;
+    const userTurnEnded = prev.isUserTalking && !userTalking;
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, []);
+    if (aiTurnStarted || aiTurnEnded || userTurnEnded) {
+      setIsJumping(true);
+      const timer = setTimeout(() => setIsJumping(false), 600);
+      return () => clearTimeout(timer);
+    }
 
-  // Cute eye blink loop
+    prevTurnRef.current = { isAISpeaking: Boolean(isAISpeaking), isUserTalking: userTalking };
+  }, [isAISpeaking, isRecording, isMuted, liveTranscript]);
+
+  // Auto-scroll transcript to bottom smoothly when messages or transcripts update
   useEffect(() => {
-    if (entrancePhase !== "ready") return;
-    const blinkInterval = setInterval(() => {
-      setIsBlinking(true);
-      setTimeout(() => setIsBlinking(false), 200);
-    }, 3400);
-    return () => clearInterval(blinkInterval);
-  }, [entrancePhase]);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, liveTranscript, isReady]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -113,510 +121,575 @@ export default function CartoonVoiceBotView({
     }
   };
 
-  const isBotTalking = Boolean(isAISpeaking);
-  const isUserTalking = isRecording && !isMuted;
+  const handleCopyMessage = (text, id) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedMsgId(id);
+    onCopy?.(id);
+    setTimeout(() => setCopiedMsgId(null), 2000);
+  };
+
+  const handleSpeakMessage = (text, id) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    if (speakingMsgId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgId(null);
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/[*_#`~>-]/g, " ").trim();
+      if (!clean) return;
+
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.onstart = () => setSpeakingMsgId(id);
+      utterance.onend = () => setSpeakingMsgId(null);
+      utterance.onerror = () => setSpeakingMsgId(null);
+      window.speechSynthesis.speak(utterance);
+    } catch (_) {
+      setSpeakingMsgId(null);
+    }
+  };
+
+  const handleShareTranscript = () => {
+    if (!messages.length) return;
+    const transcriptText = messages
+      .map((m) => `${m.role === "user" ? "You" : "Vyapar Sakha"}: ${m.text || ""}`)
+      .join("\n\n");
+    navigator.clipboard.writeText(transcriptText);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  const isUserTalking = Boolean(isRecording && !isMuted);
 
   return (
-    <div className="relative flex flex-col h-full w-full bg-gradient-to-b from-[#070a17] via-[#0d132b] to-[#050712] text-white overflow-hidden select-none">
+    <div className="relative flex flex-col h-full w-full bg-gradient-to-b from-slate-50 via-white to-slate-100/90 text-slate-800 overflow-hidden select-none font-sans">
       {/* ------------------------------------------------------------- */}
-      {/* ANIMATION KEYFRAMES                                            */}
+      {/* CSS KEYFRAMES FOR 3D BLUE ORB & JUMP ANIMATION                */}
       {/* ------------------------------------------------------------- */}
       <style jsx>{`
-        @keyframes portalSpin {
-          0% {
-            transform: translate(-50%, -50%) rotate(0deg) scale(0.3);
-            opacity: 0;
-          }
-          100% {
-            transform: translate(-50%, -50%) rotate(360deg) scale(1);
-            opacity: 0.8;
-          }
-        }
-        @keyframes gentleHoverWave {
+        @keyframes orbFloat {
           0%, 100% {
             transform: translateY(0px);
           }
           50% {
-            transform: translateY(-8px);
+            transform: translateY(-4px);
           }
         }
-        @keyframes wavePulse {
+        @keyframes orbJump {
           0% {
-            transform: scale(0.85);
+            transform: translateY(0px) scale(1);
+          }
+          30% {
+            transform: translateY(-14px) scale(1.05, 0.95);
+          }
+          55% {
+            transform: translateY(0px) scale(0.96, 1.04);
+          }
+          75% {
+            transform: translateY(-4px) scale(1.01);
+          }
+          100% {
+            transform: translateY(0px) scale(1);
+          }
+        }
+        @keyframes orbAiPulse {
+          0%, 100% {
+            transform: scale(1);
+            filter: brightness(1) drop-shadow(0 0 16px rgba(59, 130, 246, 0.4));
+          }
+          50% {
+            transform: scale(1.06);
+            filter: brightness(1.16) drop-shadow(0 0 24px rgba(99, 102, 241, 0.55));
+          }
+        }
+        @keyframes orbRipple {
+          0% {
+            transform: scale(0.9);
             opacity: 0.8;
           }
           100% {
-            transform: scale(1.6);
+            transform: scale(1.55);
             opacity: 0;
           }
         }
-        @keyframes starTwinkle {
-          0%, 100% {
-            transform: scale(0.8) rotate(0deg);
-            opacity: 0.3;
+        @keyframes orbClouds1 {
+          0% {
+            transform: rotate(0deg) scale(1.1);
           }
-          50% {
-            transform: scale(1.2) rotate(180deg);
-            opacity: 0.9;
+          100% {
+            transform: rotate(360deg) scale(1.1);
           }
         }
-        .animate-portal-spin {
-          animation: portalSpin 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .animate-hover-wave {
-          animation: gentleHoverWave 3.5s ease-in-out infinite;
-        }
-        .animate-wave-pulse {
-          animation: wavePulse 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
-        }
-        .animate-star-twinkle {
-          animation: starTwinkle 2.8s ease-in-out infinite;
+        @keyframes orbClouds2 {
+          0% {
+            transform: rotate(360deg) scale(1.25);
+          }
+          100% {
+            transform: rotate(0deg) scale(1.25);
+          }
         }
       `}</style>
 
-      {/* Hidden File Input for Bill/Image Upload */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleImageSelect}
-        accept="image/*"
-        className="hidden"
-      />
-
-      {/* Ambient Neon Glow */}
-      <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[22rem] h-[22rem] bg-gradient-to-tr from-blue-600/30 via-indigo-600/35 to-violet-500/25 rounded-full blur-[90px] pointer-events-none animate-pulse" />
-      <div className="absolute bottom-10 left-4 w-60 h-60 bg-emerald-500/15 rounded-full blur-[80px] pointer-events-none" />
-      <div className="absolute top-1/3 right-4 w-56 h-56 bg-amber-500/15 rounded-full blur-[70px] pointer-events-none" />
-
-      {/* Twinkling Background Stars */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-6 text-amber-300 animate-star-twinkle">
-          <Star className="h-4 w-4 fill-amber-300/30" />
-        </div>
-        <div className="absolute top-20 right-8 text-cyan-300 animate-star-twinkle [animation-delay:0.7s]">
-          <Sparkles className="h-4 w-4 text-cyan-300" />
-        </div>
-        <div className="absolute bottom-24 left-8 text-indigo-300 animate-star-twinkle [animation-delay:1.4s]">
-          <Star className="h-3 w-3 fill-indigo-300/30" />
-        </div>
-      </div>
-
       {/* ------------------------------------------------------------- */}
-      {/* TOP MINIMALIST HEADER: LOGO, STATUS, TIMER & CLOSE             */}
+      {/* TOP HEADER BAR (STATUS BADGE, CALL DURATION, SHARE, CLOSE)     */}
       {/* ------------------------------------------------------------- */}
-      <div className="relative z-20 flex items-center justify-between px-4 py-3 border-b border-white/[0.08] backdrop-blur-md bg-[#090d1f]/85 shadow-sm">
-        {/* Brand Logo & Connection Status */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex items-center justify-center">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-[1.5px] shadow-md shadow-indigo-500/30">
-              <div className="h-full w-full rounded-[10px] bg-white flex items-center justify-center p-1 overflow-hidden">
-                <img
-                  src="/images/logo/vyapar-sakha-version2-logo.svg"
-                  alt="Vyapar Sakha Logo"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-slate-900" />
+      <header className="flex items-center justify-between px-6 py-3 border-b border-slate-200/80 bg-white/80 backdrop-blur-md shrink-0 z-10">
+        <div className="flex items-center gap-3">
+          {/* Status badge */}
+          {!isReady ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold shadow-xs">
+              <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+              Getting ready...
             </span>
-          </div>
+          ) : isAISpeaking ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+              Speaking...
+            </span>
+          ) : isUserTalking ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+              Listening...
+            </span>
+          ) : isMuted ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold shadow-xs">
+              <MicOff className="h-3 w-3 text-rose-600" />
+              Microphone Muted
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-blue-600" />
+              Connected
+            </span>
+          )}
 
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-white leading-tight">Vyapar Sakha</h2>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-300 border border-amber-400/30">
-                AI Voice + Vision
-              </span>
-            </div>
-            <p className="text-[10px] font-semibold text-emerald-400 leading-tight flex items-center gap-1">
-              <span>Live Partner</span>
-              <span className="h-1 w-1 rounded-full bg-emerald-400" />
-              <span className="text-indigo-200 font-medium">
-                {permissionError
-                  ? "Mic Error"
-                  : isBotTalking
-                  ? "Speaking..."
-                  : isUserTalking
-                  ? "Listening..."
-                  : "Ready"}
-              </span>
-            </p>
-          </div>
+          {/* Call duration timer */}
+          <span className="font-mono text-xs text-slate-400 font-medium tracking-wide">
+            {formatTimer(callDuration)}
+          </span>
         </div>
 
-        {/* Live Call Duration Timer & Close Button */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] border border-white/10 text-xs font-mono font-bold text-indigo-200 shadow-sm backdrop-blur-sm">
-            <Radio className="h-3 w-3 text-red-400 animate-pulse" />
-            <span>{formatTimer(callDuration)}</span>
-          </div>
+          {/* Share / Copy Transcript */}
+          <button
+            type="button"
+            onClick={handleShareTranscript}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition flex items-center gap-1.5 text-xs font-medium"
+            title="Copy conversation transcript"
+          >
+            {shareCopied ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-emerald-600">Copied</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Share</span>
+              </>
+            )}
+          </button>
 
+          {/* Close button if provided */}
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition"
-              title="Close Voice Assistant"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              title="Close"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
-      </div>
+      </header>
 
       {/* ------------------------------------------------------------- */}
-      {/* CENTER STAGE: ANIMATED MASCOT & VOICE STAGE                    */}
+      {/* PERMISSION ERROR ALERT (IF MIC BLOCKED)                       */}
       {/* ------------------------------------------------------------- */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-2">
-        {/* Holographic Portal Background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <div className="w-64 h-64 rounded-full border border-dashed border-cyan-400/30 animate-portal-spin" />
-          <div className="absolute inset-6 rounded-full bg-gradient-to-tr from-cyan-500/10 via-indigo-600/15 to-purple-500/10 blur-xl" />
+      {permissionError && (
+        <div className="mx-6 mt-3 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 shrink-0">
+          <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+          <span className="flex-1 font-medium">{permissionError}</span>
         </div>
+      )}
 
-        {/* Dynamic Voice Activity Pulsing Rings */}
-        {(isBotTalking || isUserTalking) && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className={`w-64 h-64 rounded-full border-2 ${isBotTalking ? "border-amber-400/40" : "border-emerald-400/40"} animate-wave-pulse`} />
-            <div className={`w-80 h-80 rounded-full border ${isBotTalking ? "border-amber-300/25" : "border-emerald-300/25"} animate-wave-pulse [animation-delay:0.6s]`} />
-          </div>
-        )}
-
-        {/* Mascot Wrapper */}
-        <div className={entrancePhase === "ready" ? "animate-hover-wave flex flex-col items-center z-10" : "flex flex-col items-center z-10"}>
-          {/* Golden Sparkle Antenna */}
-          <div className="relative flex flex-col items-center">
-            <span
-              className={`h-5 w-5 rounded-full shadow-md flex items-center justify-center transition-all duration-500 ${
-                isBotTalking
-                  ? "bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-amber-400/90 scale-125 animate-bounce"
-                  : isUserTalking
-                  ? "bg-gradient-to-tr from-emerald-400 to-teal-300 shadow-emerald-400/90 scale-110 animate-pulse"
-                  : "bg-gradient-to-tr from-cyan-400 to-blue-400 shadow-cyan-400/80"
-              }`}
-            >
-              <Sparkles className="h-3.5 w-3.5 text-white animate-spin" />
-            </span>
-            <div className="w-1.5 h-4 bg-gradient-to-b from-cyan-300 to-indigo-600 rounded-full" />
-          </div>
-
-          {/* CUTE ROBOT HEAD */}
-          <div className="relative group">
-            {/* Left Ear */}
-            <div className="absolute -left-4 top-7 w-5 h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-1 shadow-md border border-cyan-300/30 flex items-center justify-center">
-              <div className="w-2 h-8 rounded-full bg-cyan-300/80 animate-pulse" />
+      {/* ------------------------------------------------------------- */}
+      {/* TRANSCRIPT AREA (VISIBLE ABOVE ANIMATION)                      */}
+      {/* ------------------------------------------------------------- */}
+      <main
+        ref={transcriptContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0"
+      >
+        {/* Empty State when no messages yet */}
+        {!messages.length && !liveTranscript ? (
+          <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+            <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-xs">
+              <Sparkles className="h-6 w-6" />
             </div>
-            {/* Right Ear */}
-            <div className="absolute -right-4 top-7 w-5 h-14 rounded-2xl bg-gradient-to-l from-blue-600 to-indigo-600 p-1 shadow-md border border-cyan-300/30 flex items-center justify-center">
-              <div className="w-2 h-8 rounded-full bg-cyan-300/80 animate-pulse" />
-            </div>
+            <h3 className="text-base font-semibold text-slate-800">
+              Hi there! What's on your mind today?
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
+              Speak naturally in English or Hindi. You'll see real-time transcripts and answers right here.
+            </p>
+            {onQuickPrompt && (
+              <div className="flex flex-wrap gap-2 justify-center mt-5">
+                {["Low stock items?", "Today's sales summary?", "Help me create a product"].map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => onQuickPrompt(q)}
+                    className="text-xs px-3.5 py-1.5 rounded-full bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-slate-700 transition font-medium shadow-xs"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Render messages list */
+          messages.map((msg, idx) => {
+            const isUser = msg.role === "user";
 
-            {/* Helmet Shell */}
-            <div className="relative w-48 h-40 rounded-[42px] bg-gradient-to-b from-indigo-600 via-indigo-900 to-slate-900 p-2.5 shadow-[0_10px_35px_rgba(79,70,229,0.4)] border-2 border-indigo-400/40 ring-4 ring-indigo-500/20 transition-transform duration-300 hover:scale-105">
-              {/* Visor Screen */}
-              <div className="relative w-full h-full rounded-[32px] bg-gradient-to-b from-[#060919] via-[#0b122e] to-[#070b1e] border border-cyan-400/30 p-3 flex flex-col items-center justify-between overflow-hidden shadow-inner">
-                {/* Curved Reflection */}
-                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/[0.12] to-transparent rounded-t-[32px] pointer-events-none" />
-
-                {/* Kawaii Eyes */}
-                <div className="relative z-10 flex items-center justify-center gap-7 pt-2">
-                  {/* Left Eye */}
-                  <div className="flex flex-col items-center">
-                    {isBlinking ? (
-                      <div className="h-1.5 w-7 rounded-full bg-cyan-300 shadow-md" />
-                    ) : isBotTalking ? (
-                      <div className="h-7 w-7 rounded-xl bg-gradient-to-b from-cyan-300 to-blue-400 shadow-lg shadow-cyan-400/80 flex items-center justify-center">
-                        <span className="text-white font-black text-xs">^</span>
-                      </div>
-                    ) : (
-                      <div className="relative h-7 w-7 rounded-xl bg-gradient-to-b from-cyan-300 via-blue-400 to-indigo-600 shadow-[0_0_15px_rgba(34,211,238,0.8)] flex items-center justify-center">
-                        <span className="absolute top-1 left-1 h-2.5 w-2.5 rounded-full bg-white" />
-                      </div>
+            if (isUser) {
+              return (
+                <div key={msg.id || idx} className="flex justify-end animate-fadeIn">
+                  <div className="max-w-[78%] rounded-2xl rounded-tr-sm bg-blue-600 text-white px-4 py-2.5 shadow-sm text-sm font-medium leading-relaxed break-words">
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="Uploaded"
+                        className="mt-2 rounded-lg max-h-40 object-cover border border-white/20"
+                      />
                     )}
-                    <div className="mt-1 h-1 w-4 rounded-full bg-pink-400/60 blur-[0.5px]" />
-                  </div>
-
-                  {/* Right Eye */}
-                  <div className="flex flex-col items-center">
-                    {isBlinking ? (
-                      <div className="h-1.5 w-7 rounded-full bg-cyan-300 shadow-md" />
-                    ) : isBotTalking ? (
-                      <div className="h-7 w-7 rounded-xl bg-gradient-to-b from-cyan-300 to-blue-400 shadow-lg shadow-cyan-400/80 flex items-center justify-center">
-                        <span className="text-white font-black text-xs">^</span>
-                      </div>
-                    ) : (
-                      <div className="relative h-7 w-7 rounded-xl bg-gradient-to-b from-cyan-300 via-blue-400 to-indigo-600 shadow-[0_0_15px_rgba(34,211,238,0.8)] flex items-center justify-center">
-                        <span className="absolute top-1 left-1 h-2.5 w-2.5 rounded-full bg-white" />
-                      </div>
-                    )}
-                    <div className="mt-1 h-1 w-4 rounded-full bg-pink-400/60 blur-[0.5px]" />
                   </div>
                 </div>
+              );
+            }
 
-                {/* Mouth Equalizer / Expression */}
-                <div className="relative z-10 flex items-center justify-center gap-1 h-5">
-                  {isBotTalking ? (
-                    <>
-                      <span className="w-1.5 bg-amber-400 rounded-full animate-bounce [animation-delay:-0.4s] h-3.5" />
-                      <span className="w-1.5 bg-amber-300 rounded-full animate-bounce [animation-delay:-0.2s] h-5" />
-                      <span className="w-1.5 bg-yellow-200 rounded-full animate-bounce [animation-delay:-0.5s] h-4" />
-                      <span className="w-1.5 bg-amber-300 rounded-full animate-bounce [animation-delay:-0.1s] h-5" />
-                      <span className="w-1.5 bg-amber-400 rounded-full animate-bounce [animation-delay:-0.3s] h-3" />
-                    </>
-                  ) : isUserTalking ? (
-                    <>
-                      <span className="w-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s] h-3.5" />
-                      <span className="w-1.5 bg-teal-300 rounded-full animate-bounce [animation-delay:-0.15s] h-5" />
-                      <span className="w-1.5 bg-emerald-400 rounded-full animate-bounce h-3" />
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-1.5 border-b-2 border-r-2 border-cyan-400 rounded-br-full" />
-                      <div className="w-3 h-1.5 border-b-2 border-l-2 border-cyan-400 rounded-bl-full" />
-                    </div>
+            // Assistant turn
+            return (
+              <div
+                key={msg.id || idx}
+                className="flex flex-col items-start max-w-[85%] space-y-1.5 animate-fadeIn"
+              >
+                <div className="text-[15px] text-slate-800 leading-relaxed font-normal whitespace-pre-wrap break-words">
+                  {msg.text}
+                  {msg.streaming && (
+                    <span className="inline-block h-2 w-2 ml-1 rounded-full bg-blue-600 animate-pulse" />
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* Chest Logo */}
-            <div className="relative -mt-3 mx-auto flex items-center justify-center z-20">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-amber-400 via-indigo-600 to-blue-500 p-[1px] shadow-md">
-                <div className="h-full w-full rounded-[7px] bg-white flex items-center justify-center p-0.5 overflow-hidden">
-                  <img
-                    src="/images/logo/vyapar-sakha-version2-logo.svg"
-                    alt="Vyapar Sakha Logo"
-                    className="h-full w-full object-contain"
-                  />
+                {/* Action buttons (Copy, Speaker, Thumbs Up/Down) */}
+                <div className="flex items-center gap-1 text-slate-400 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyMessage(msg.text, msg.id || idx)}
+                    className="p-1 rounded-md hover:bg-slate-100 hover:text-slate-700 transition"
+                    title="Copy text"
+                  >
+                    {copiedMsgId === (msg.id || idx) ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSpeakMessage(msg.text, msg.id || idx)}
+                    className={`p-1 rounded-md hover:bg-slate-100 transition ${
+                      speakingMsgId === (msg.id || idx)
+                        ? "text-blue-600 bg-blue-50"
+                        : "hover:text-slate-700"
+                    }`}
+                    title="Read aloud"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onFeedback?.(msg.id, "like")}
+                    className="p-1 rounded-md hover:bg-slate-100 hover:text-slate-700 transition"
+                    title="Good answer"
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onFeedback?.(msg.id, "dislike")}
+                    className="p-1 rounded-md hover:bg-slate-100 hover:text-slate-700 transition"
+                    title="Bad answer"
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })
+        )}
 
-          <div className="w-32 h-3 mt-2 rounded-full bg-indigo-500/20 blur-md animate-pulse" />
-        </div>
-
-        {/* BILLING / PRODUCT ADDED VISUAL CONFIRMATION CARD */}
-        {activeToolStatus?.active && (activeToolStatus.name === "tool_add_billing_item" || activeToolStatus.name === "tool_generate_bill") ? (
-          <div className="mt-2 w-full max-w-sm px-3 z-20 animate-in fade-in zoom-in duration-300">
-            <div className="relative rounded-2xl bg-gradient-to-r from-emerald-950/90 via-slate-900/95 to-teal-950/90 border border-emerald-400/40 p-3 shadow-xl backdrop-blur-md">
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 text-emerald-300 shadow-inner">
-                    <ShoppingCart className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-bold text-white leading-tight">
-                        {activeToolStatus.result?.message?.replace(/^Added \d+ x /, '') || activeToolStatus.args?.product_name || "Product"}
-                      </span>
-                      {activeToolStatus.completed && activeToolStatus.result?.success && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                          ✓ Added to Bill
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-300">
-                      <span>Qty: <strong className="text-white">{activeToolStatus.args?.quantity || activeToolStatus.result?.quantity || 1}</strong></span>
-                      {activeToolStatus.result?.price ? (
-                        <span>Rate: <strong className="text-emerald-300">₹{activeToolStatus.result.price}</strong></span>
-                      ) : null}
-                      {activeToolStatus.result?.price ? (
-                        <span>Total: <strong className="text-emerald-400 font-bold">₹{((activeToolStatus.args?.quantity || activeToolStatus.result?.quantity || 1) * activeToolStatus.result.price).toFixed(2)}</strong></span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+        {/* Live speech interim transcript bubble ONLY when user is actively speaking and AI is NOT speaking */}
+        {!isAISpeaking &&
+          liveTranscript &&
+          isRecording &&
+          !isMuted &&
+          (!messages.length ||
+            messages[messages.length - 1]?.role !== "user" ||
+            messages[messages.length - 1]?.text?.trim() !== liveTranscript.trim()) && (
+            <div className="flex justify-end animate-fadeIn">
+              <div className="max-w-[78%] rounded-2xl rounded-tr-sm bg-blue-600 text-white px-4 py-2.5 shadow-sm text-sm font-medium leading-relaxed break-words flex items-center gap-2">
+                <span className="whitespace-pre-wrap">{liveTranscript}</span>
+                <span className="h-2 w-2 rounded-full bg-white animate-ping shrink-0" />
               </div>
-
-              {activeToolStatus.result?.error && (
-                <div className="mt-2 text-[11px] font-semibold text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded-lg">
-                  ⚠️ {activeToolStatus.result.error}
-                </div>
-              )}
             </div>
-          </div>
-        ) : activeToolStatus?.active && (
-          <div className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-cyan-400/50 shadow-md text-white text-xs font-bold z-20">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
-            </span>
-            <span className={activeToolStatus.completed ? "text-emerald-300" : "text-cyan-200"}>
-              {activeToolStatus.label}
-            </span>
-            {activeToolStatus.completed ? (
-              <span className="text-[11px] text-emerald-400">✓</span>
-            ) : (
-              <Sparkles className="h-3 w-3 text-cyan-300 animate-spin" />
-            )}
+        )}
+
+        {/* Realtime Tool Execution Status Pill */}
+        {activeToolStatus?.active && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium w-fit animate-fadeIn">
+            <Sparkles className="h-3.5 w-3.5 animate-spin text-blue-600 shrink-0" />
+            <span>{activeToolStatus.label || `Executing ${activeToolStatus.name}...`}</span>
           </div>
         )}
 
-        {/* LIVE TRANSCRIPT SPEECH BUBBLE */}
-        <div className="mt-3 w-full max-w-sm px-3 z-10">
-          <div className="relative rounded-2xl bg-white/[0.07] border border-white/15 p-3 backdrop-blur-md text-center shadow-lg">
-            {liveTranscript ? (
-              <p className="text-xs sm:text-sm font-semibold text-cyan-100 italic leading-relaxed">
-                "{liveTranscript}"
-              </p>
-            ) : isBotTalking ? (
-              <p className="text-xs sm:text-sm font-semibold text-amber-200 animate-pulse">
-                "Speaking..."
-              </p>
-            ) : isUserTalking ? (
-              <p className="text-xs sm:text-sm font-semibold text-emerald-300 animate-pulse">
-                "Listening... Speak, type, or upload bill image!"
-              </p>
-            ) : (
-              <p className="text-xs text-indigo-200">
-                Speak into mic, upload paper bill image, or type text below.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Permission Error Banner */}
-        {permissionError && (
-          <div className="mt-2 flex items-center gap-2 rounded-xl bg-red-500/20 border border-red-500/40 px-3 py-2 text-xs text-red-200 z-10">
-            <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
-            <span>{permissionError}</span>
-          </div>
-        )}
-
-        {/* Quick Voice Suggestions Chips */}
-        {onQuickPrompt && !liveTranscript && (
-          <div className="mt-2.5 flex flex-wrap justify-center gap-1.5 max-w-xs z-10">
-            <button
-              type="button"
-              onClick={() => onQuickPrompt("What are my top selling items today?")}
-              className="px-2.5 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-[11px] font-medium text-indigo-200 hover:text-white transition flex items-center gap-1"
-            >
-              <Zap className="h-3 w-3 text-amber-400" />
-              <span>Top selling items?</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onQuickPrompt("Which items are low in stock?")}
-              className="px-2.5 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-[11px] font-medium text-indigo-200 hover:text-white transition flex items-center gap-1"
-            >
-              <Zap className="h-3 w-3 text-cyan-400" />
-              <span>Low stock alerts?</span>
-            </button>
-          </div>
-        )}
-      </div>
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} className="h-2 shrink-0" />
+      </main>
 
       {/* ------------------------------------------------------------- */}
-      {/* MULTIMODAL INPUT BAR (TEXT + IMAGE ATTACHMENT)                */}
+      {/* ANIMATION AREA: "GETTING READY" VS 3D BLUE ORB (CLEAN & JUMP)  */}
       {/* ------------------------------------------------------------- */}
-      <div className="relative z-20 px-4 pt-2 pb-1 border-t border-white/[0.08] backdrop-blur-md bg-slate-950/70 flex flex-col gap-2">
-        {/* Image Attachment Preview Badge */}
+      <section className="relative flex flex-col items-center justify-center py-2.5 shrink-0 z-10 select-none">
+        {!isReady ? (
+          /* BEFORE READY: "GETTING READY..." STATE */
+          <div className="flex flex-col items-center justify-center py-4 transition-all animate-fadeIn">
+            <div className="relative flex items-center justify-center mb-2.5">
+              <div className="absolute h-16 w-16 rounded-full bg-blue-500/15 animate-ping" />
+              <div className="relative h-12 w-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Loader2 className="h-6 w-6 text-white animate-spin" />
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-slate-700 tracking-tight">
+              Getting ready...
+            </span>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Connecting live audio stream to Vyapar Sakha
+            </p>
+          </div>
+        ) : (
+          /* ONCE READY: CLEAN 3D BLUE GLOWING ORB WITH JUMP ANIMATION ON TURN CHANGE */
+          <div className="relative flex flex-col items-center justify-center transition-all animate-fadeIn">
+            {/* Audio reactive pulse ripple rings while speaking */}
+            {(isAISpeaking || isUserTalking) && (
+              <>
+                <div
+                  className="absolute rounded-full pointer-events-none w-28 h-28 border border-blue-400/40 bg-blue-400/10"
+                  style={{ animation: "orbRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite" }}
+                />
+                <div
+                  className="absolute rounded-full pointer-events-none w-36 h-36 border border-blue-400/25 bg-blue-400/5"
+                  style={{
+                    animation: "orbRipple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite",
+                    animationDelay: "0.8s",
+                  }}
+                />
+              </>
+            )}
+
+            {/* Ambient soft blue volumetric glow */}
+            <div
+              className={`absolute rounded-full w-24 h-24 blur-xl transition-all duration-500 pointer-events-none ${
+                isAISpeaking ? "bg-blue-500/35 scale-125" : "bg-blue-400/20 scale-100"
+              }`}
+            />
+
+            {/* The 3D Sphere Container (Clean Blue with Jump Animation) */}
+            <div
+              className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden shadow-2xl transition-all duration-300"
+              style={{
+                boxShadow:
+                  "0 14px 28px -6px rgba(37, 99, 235, 0.35), 0 0 20px rgba(96, 165, 250, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -6px 12px rgba(15, 23, 42, 0.55)",
+                animation: isJumping
+                  ? "orbJump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  : isAISpeaking
+                  ? "orbAiPulse 2s ease-in-out infinite"
+                  : "orbFloat 4s ease-in-out infinite",
+              }}
+            >
+              {/* Base 3D Radial Sphere Lighting (Sky-Blue to Oceanic Deep) */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle at 35% 30%, #bfdbfe 0%, #60a5fa 30%, #2563eb 65%, #1e40af 88%, #0f172a 100%)",
+                }}
+              />
+
+              {/* Swirling Atmospheric Cloud Layer 1 */}
+              <div
+                className="absolute -inset-2 rounded-full opacity-80"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 40% 45%, rgba(255, 255, 255, 0.9) 0%, rgba(191, 219, 254, 0.55) 35%, rgba(59, 130, 246, 0.25) 65%, transparent 80%)",
+                  animation: "orbClouds1 16s linear infinite",
+                  mixBlendMode: "overlay",
+                }}
+              />
+
+              {/* Swirling Atmospheric Cloud Layer 2 */}
+              <div
+                className="absolute -inset-3 rounded-full opacity-65"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 60% 55%, rgba(255, 255, 255, 0.75) 0%, rgba(147, 197, 253, 0.45) 40%, transparent 75%)",
+                  animation: "orbClouds2 22s linear infinite",
+                  mixBlendMode: "screen",
+                }}
+              />
+
+              {/* Equatorial Soft Light Glow Band */}
+              <div
+                className="absolute inset-0 rounded-full opacity-45"
+                style={{
+                  background:
+                    "linear-gradient(135deg, transparent 20%, rgba(255,255,255,0.7) 48%, rgba(255,255,255,0.95) 52%, transparent 70%)",
+                  mixBlendMode: "overlay",
+                }}
+              />
+
+              {/* 3D Specular Highlight */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 20%, rgba(255, 255, 255, 0) 50%)",
+                }}
+              />
+
+              {/* Bottom Rim Ambient Occlusion Shadow */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 115%, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0) 65%)",
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* BOTTOM CONTROL BAR: PILL-STYLE INPUT + MIC + CLOSE BUTTON     */}
+      {/* ------------------------------------------------------------- */}
+      <footer className="px-6 pb-4 pt-1 shrink-0 z-20">
+        {/* Attachment preview chip if image selected */}
         {selectedImagePreview && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-900/60 border border-indigo-400/40 w-fit self-start text-xs text-indigo-200">
+          <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 w-fit text-xs text-blue-700">
             <img
               src={selectedImagePreview}
-              alt="Attached Bill"
-              className="h-7 w-7 rounded object-cover border border-white/30"
+              alt="Attachment"
+              className="h-7 w-7 rounded object-cover border border-blue-300"
             />
-            <span className="font-semibold text-[11px]">Bill image attached</span>
+            <span className="font-medium text-[11px]">Bill image attached</span>
             <button
               type="button"
               onClick={() => {
                 setSelectedImage(null);
                 setSelectedImagePreview(null);
               }}
-              className="p-0.5 rounded-full hover:bg-white/20 text-slate-300 hover:text-white"
+              className="p-0.5 rounded-full hover:bg-blue-200/60 text-blue-600 transition"
+              title="Remove attachment"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
 
-        <div className="flex items-center gap-2">
-          {/* Bill Photo Upload Button */}
+        {/* Floating pill container */}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-slate-200/90 shadow-md shadow-slate-200/50 transition-all focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 max-w-2xl mx-auto">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+
+          {/* Plus / Attach Button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/15 text-indigo-200 hover:text-white transition flex items-center justify-center shrink-0"
-            title="Upload Supplier Bill Photo or Image"
+            className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center transition shrink-0"
+            title="Attach image or bill"
           >
-            <ImageIcon className="h-4 w-4 text-cyan-400" />
+            <Plus className="h-4 w-4" />
           </button>
 
-          {/* Text Input Box */}
+          {/* Text Input */}
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
               }
             }}
-            placeholder={
-              selectedImage
-                ? "Add instruction for bill image..."
-                : "Type message or ask anything..."
-            }
-            className="flex-1 px-3 py-2 rounded-xl bg-white/[0.08] border border-white/15 text-xs text-white placeholder-indigo-300/60 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+            placeholder={selectedImage ? "Add instruction for image..." : "Type..."}
+            className="flex-1 bg-transparent border-0 text-sm text-slate-800 placeholder-slate-400 focus:outline-none px-2 min-w-0"
           />
 
-          {/* Send Button */}
+          {/* Send Button (if user typed text or attached image) */}
+          {(inputText.trim() || selectedImage) && (
+            <button
+              type="button"
+              onClick={handleSend}
+              className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition shrink-0 shadow-xs"
+              title="Send"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* Mic Mute / Unmute Button */}
           <button
             type="button"
-            onClick={handleSend}
-            disabled={!inputText.trim() && !selectedImage}
-            className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white disabled:opacity-40 disabled:hover:from-cyan-500 transition flex items-center justify-center shrink-0 shadow-md shadow-cyan-500/20"
-            title="Send Text / Image to Gemini Realtime"
+            onClick={onToggleMute}
+            className={`h-8 w-8 rounded-full flex items-center justify-center transition shrink-0 ${
+              isMuted
+                ? "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+            title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
           >
-            <Send className="h-4 w-4" />
+            {isMuted ? (
+              <MicOff className="h-4 w-4 text-rose-600" />
+            ) : (
+              <Mic className="h-4 w-4 text-slate-700" />
+            )}
+          </button>
+
+          {/* Close Voice Call Button (Blue circle with X matching screenshot) */}
+          <button
+            type="button"
+            onClick={onEndCall}
+            className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-sm shadow-blue-500/30 transition shrink-0 active:scale-95"
+            title="Exit voice mode"
+          >
+            <X className="h-4 w-4 stroke-[2.5]" />
           </button>
         </div>
-      </div>
-
-      {/* ------------------------------------------------------------- */}
-      {/* SIMPLIFIED 2-BUTTON CONTROLS BAR (MIC TOGGLE + END CALL)      */}
-      {/* ------------------------------------------------------------- */}
-      <div className="relative z-20 px-8 py-3 backdrop-blur-lg bg-black/60 flex items-center justify-center gap-8 border-t border-white/[0.05]">
-        {/* 1. Mic On / Mute Button */}
-        <button
-          type="button"
-          onClick={onToggleMute}
-          className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
-          title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
-        >
-          <div
-            className={`h-12 w-12 rounded-2xl flex items-center justify-center shadow-xl transition-all ${
-              isMuted
-                ? "bg-slate-800/90 text-rose-400 border border-rose-500/40 ring-2 ring-rose-500/20"
-                : "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-emerald-500/40 ring-4 ring-emerald-400/40"
-            }`}
-          >
-            {isMuted ? <MicOff className="h-5 w-5 text-rose-400" /> : <Mic className="h-5 w-5 animate-pulse" />}
-          </div>
-          <span className="text-[11px] font-semibold text-slate-200">
-            {isMuted ? "Muted" : "Mic On"}
-          </span>
-        </button>
-
-
-        {/* 2. End Call Button */}
-        <button
-          type="button"
-          onClick={onEndCall}
-          className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
-          title="End Live Call"
-        >
-          <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-rose-600 via-red-600 to-rose-500 text-white shadow-xl shadow-rose-600/50 flex items-center justify-center hover:scale-105 hover:from-rose-500 hover:to-red-500 ring-4 ring-rose-500/30 transition-all">
-            <PhoneOff className="h-5 w-5 stroke-[2.5]" />
-          </div>
-          <span className="text-[11px] font-bold text-rose-300">End Call</span>
-        </button>
-      </div>
+      </footer>
     </div>
   );
 }

@@ -317,12 +317,12 @@ export default function VyaparSathiSidebar({
     () => [
       {
         label: "Overview",
-        href: `/storeDashboard/${storeId}/overview`,
+        href: `/storeDashboard/${storeId}`,
         key: "overview",
       },
       {
         label: "Inventory",
-        href: `/storeDashboard/${storeId}`,
+        href: `/storeDashboard/${storeId}/inventory`,
         key: "inventory",
       },
       {
@@ -375,7 +375,7 @@ export default function VyaparSathiSidebar({
   );
 
   const getActiveNav = () => {
-    if (pathname.includes("/overview")) return "overview";
+    if (pathname.includes("/inventory")) return "inventory";
     if (pathname.includes("/billing-history")) return "billing-history";
     if (pathname.includes("/billing")) return "billing";
     if (pathname.includes("/purchases")) return "purchases";
@@ -385,7 +385,7 @@ export default function VyaparSathiSidebar({
     if (pathname.includes("/analytics")) return "analytics";
     if (pathname.includes("/ai-dashboard")) return "ai-dashboard";
     if (pathname.includes("/automations")) return "automations";
-    return "inventory";
+    return "overview";
   };
 
   const activeNav = getActiveNav();

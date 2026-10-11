@@ -198,10 +198,12 @@ const AskCopilotSection = ({
   const handleVoiceAiText = useCallback((chunk) => {
     if (!chunk) return;
     setIsSpeaking(true);
-    setLiveSpeechTranscript(chunk);
+    // Never leak AI speech chunk into user live transcript
+    setLiveSpeechTranscript("");
     setShowSuggestions(false);
     const aiId = liveAiMsgIdRef.current || `assistant-voice-${Date.now()}`;
     liveAiMsgIdRef.current = aiId;
+    liveUserMsgIdRef.current = null;
     setMessages((prev) => {
       const exists = prev.some((m) => m.id === aiId);
       if (exists) {
@@ -226,7 +228,7 @@ const AskCopilotSection = ({
 
   // Live user speech transcript handler from WebSocket (if server provides it)
   const handleVoiceUserTranscript = useCallback((userText) => {
-    if (!userText) return;
+    if (!userText || isSpeakingRef.current) return;
     setLiveSpeechTranscript(userText);
     setShowSuggestions(false);
     const userId = liveUserMsgIdRef.current || `user-voice-${Date.now()}`;
@@ -253,6 +255,7 @@ const AskCopilotSection = ({
   // Turn completion handler from WebSocket
   const handleVoiceTurnComplete = useCallback(() => {
     setIsSpeaking(false);
+    setLiveSpeechTranscript("");
     if (liveAiMsgIdRef.current) {
       const currentId = liveAiMsgIdRef.current;
       setMessages((prev) =>
@@ -397,6 +400,37 @@ const AskCopilotSection = ({
     liveUserMsgIdRef.current = null;
     setLiveSpeechTranscript("");
   }, [disconnectVoiceWs, isListening]);
+
+  const handleVoiceSendTextMessage = useCallback((text) => {
+    if (!text || !text.trim()) return;
+    const cleanText = text.trim();
+    sendVoiceWsTextMessage(cleanText);
+    const userId = `user-voice-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: userId,
+        role: "user",
+        text: cleanText,
+        timestamp: Date.now(),
+      },
+    ]);
+  }, [sendVoiceWsTextMessage]);
+
+  const handleVoiceSendImageInput = useCallback((base64Data, mimeType, textCaption) => {
+    sendVoiceWsImageInput(base64Data, mimeType, textCaption);
+    const userId = `user-voice-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: userId,
+        role: "user",
+        text: textCaption || "Attached bill/image for analysis",
+        timestamp: Date.now(),
+        image: base64Data,
+      },
+    ]);
+  }, [sendVoiceWsImageInput]);
 
   const handleToggleLiveCall = useCallback(() => {
     if (isLiveCallActive || isVoiceWsConnected) {
@@ -1145,6 +1179,7 @@ const AskCopilotSection = ({
           /* FULL SCREEN INTERACTIVE CARTOON TALKING BOT WITH ITS OWN BLUE HEADER */
           <div className="flex-1 min-h-0 flex flex-col">
             <CartoonVoiceBotView
+              messages={messages}
               isConnected={isVoiceWsConnected}
               isReady={isVoiceWsReady}
               isRecording={isVoiceWsRecording}
@@ -1154,12 +1189,14 @@ const AskCopilotSection = ({
               onStopRecording={stopVoiceWsRecording}
               onToggleMute={toggleVoiceWsMute}
               onEndCall={handleEndLiveCall}
-              onSendTextMessage={sendVoiceWsTextMessage}
-              onSendImageInput={sendVoiceWsImageInput}
+              onSendTextMessage={handleVoiceSendTextMessage}
+              onSendImageInput={handleVoiceSendImageInput}
               liveTranscript={liveSpeechTranscript}
               isAISpeaking={isSpeaking}
               activeToolStatus={voiceToolStatus}
               onClose={onClose}
+              onFeedback={handleFeedback}
+              onCopy={handleCopy}
               voiceAutoSpeak={voiceAutoSpeak}
               onToggleVoiceAutoSpeak={() => setVoiceAutoSpeak((prev) => !prev)}
               onQuickPrompt={(promptText) => {
@@ -1176,6 +1213,7 @@ const AskCopilotSection = ({
               onNewChat={newChat}
               onToggleSidebar={onToggleSidebar}
               onClose={onClose}
+              storeId={storeId}
             />
 
 

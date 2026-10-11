@@ -1,9 +1,13 @@
 "use client";
 
 import React from "react";
-import { Plus, MessageSquare, X } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Plus, MessageSquare, X, Maximize2 } from "lucide-react";
 
-export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose }) {
+export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose, storeId }) {
+  const params = useParams();
+  const currentStoreId = storeId || params?.storeId;
   return (
     <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3.5 backdrop-blur-md">
       <div className="flex items-center gap-3">
@@ -20,18 +24,9 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose }) {
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-slate-800 text-sm sm:text-base tracking-tight">
-              Vyapar Sakha
+            <h3 className="font-medium text-slate-800 text-sm sm:text-base tracking-tight">
+              Vyapar AI Copilot
             </h3>
-            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 border border-indigo-100">
-              AI Copilot
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 flex items-center gap-1">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Online & Ready
-          </p>
         </div>
       </div>
 
@@ -65,6 +60,16 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose }) {
           >
             <X className="h-4 w-4" />
           </button>
+        )}
+
+        {currentStoreId && (
+          <Link
+            href={`/storeDashboard/${currentStoreId}/ai-dashboard`}
+            className="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition ml-0.5"
+            title="Open Full Page AI Dashboard"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Link>
         )}
       </div>
     </div>
