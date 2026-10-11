@@ -22,15 +22,20 @@ export const fetchStoreComprehensiveOverview = async (storeId) => {
     if (response?.data) {
       return response.data;
     }
+    if (response?.sales) {
+      return response;
+    }
   } catch (error) {
-    console.warn("Analytics overview endpoint fallback, trying /store overview:", error?.message);
     try {
       const fallbackResponse = await apiGet(`/store/${storeId}/overview`);
       if (fallbackResponse?.data) {
         return fallbackResponse.data;
       }
+      if (fallbackResponse?.sales) {
+        return fallbackResponse;
+      }
     } catch (fallbackError) {
-      console.error("Failed to fetch store overview:", fallbackError);
+      console.warn("Comprehensive overview endpoint unavailable, falling back to local calculation");
     }
   }
   return null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 import {
@@ -18,9 +18,43 @@ import {
   SuppliersAndPurchasesSection,
 } from "@/features/overview/components";
 
+// In-memory cache across tab/route navigation
+const overviewMemoryCache = new Map();
+
+const getCachedOverview = (id) => {
+  if (!id || typeof window === "undefined") return null;
+  if (overviewMemoryCache.has(id)) {
+    return overviewMemoryCache.get(id);
+  }
+  try {
+    const stored = sessionStorage.getItem(`vyapar_overview_${id}`);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      overviewMemoryCache.set(id, parsed);
+      return parsed;
+    }
+  } catch (e) {
+    // Ignore storage parse errors
+  }
+  return null;
+};
+
+const setCachedOverview = (id, data) => {
+  if (!id || !data) return;
+  overviewMemoryCache.set(id, data);
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem(`vyapar_overview_${id}`, JSON.stringify(data));
+    } catch (e) {
+      // Ignore storage quota errors
+    }
+  }
+};
+
 /**
  * OverviewPage - Modular Store Overview Dashboard
  * Aggregates live metrics across Sales, Inventory, Products, Purchases, and Vendors.
+ * Silently refreshes and updates live metrics without blocking the user interface.
  */
 const OverviewPage = () => {
   const params = useParams();
@@ -28,141 +62,244 @@ const OverviewPage = () => {
   const { currentStore } = useInventoryContext();
   const storeId = currentStore?._id || routeStoreId;
 
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // High-level store overview state from unified backend API
-  const [overview, setOverview] = useState(null);
+  // Initialize overview state from cache for instant rendering
+  const [overview, setOverview] = useState(() => getCachedOverview(storeId));
 
   // Sales metrics state
-  const [salesData, setSalesData] = useState({
-    dailySales: 0,
-    weeklySales: 0,
-    monthlySales: 0,
-    yearlySales: 0,
-    totalSales: 0,
-    totalOrders: 0,
-    averageOrderValue: 0,
-    topProduct: "N/A",
-    topProductQty: 0,
-    salesGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
-    ordersGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
-    aovGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+  const [salesData, setSalesData] = useState(() => {
+    const cached = getCachedOverview(storeId);
+    if (cached?.sales) {
+      return {
+        dailySales: cached.sales.todaySales || 0,
+        weeklySales: cached.sales.weeklySales || 0,
+        monthlySales: cached.sales.monthlySales || 0,
+        yearlySales: cached.sales.yearlySales || 0,
+        totalSales: cached.sales.totalSales || 0,
+        totalOrders: cached.sales.totalOrders || 0,
+        todayOrders: cached.sales.todayOrders || 0,
+        averageOrderValue: cached.sales.averageOrderValue || 0,
+        topProduct: cached.products?.topProduct?.name || "N/A",
+        topProductQty: cached.products?.topProduct?.unitsSold || 0,
+        salesGrowth: cached.sales.salesGrowth || { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+        ordersGrowth: cached.sales.ordersGrowth || { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+        aovGrowth: cached.sales.aovGrowth || { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+      };
+    }
+    return {
+      dailySales: 0,
+      weeklySales: 0,
+      monthlySales: 0,
+      yearlySales: 0,
+      totalSales: 0,
+      totalOrders: 0,
+      todayOrders: 0,
+      averageOrderValue: 0,
+      topProduct: "N/A",
+      topProductQty: 0,
+      salesGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+      ordersGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+      aovGrowth: { value: 0, isPositive: true, isNeutral: true, text: "0% from last month" },
+    };
   });
 
   // Chart datasets state
-  const [chartData, setChartData] = useState({
-    dailyBreakdown: [],
-    dailyLabels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    weeklyBreakdown: [0, 0, 0, 0],
-    quarterlyBreakdown: [0, 0, 0, 0],
+  const [chartData, setChartData] = useState(() => {
+    const cached = getCachedOverview(storeId);
+    if (cached?.sales?.charts) {
+      return {
+        dailyBreakdown: cached.sales.charts.dailyBreakdown || [],
+        dailyLabels: cached.sales.charts.dailyLabels || ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        weeklyBreakdown: cached.sales.charts.weeklyBreakdown || [0, 0, 0, 0],
+        quarterlyBreakdown: cached.sales.charts.quarterlyBreakdown || [0, 0, 0, 0],
+      };
+    }
+    return {
+      dailyBreakdown: [],
+      dailyLabels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      weeklyBreakdown: [0, 0, 0, 0],
+      quarterlyBreakdown: [0, 0, 0, 0],
+    };
   });
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const applyOverviewData = useCallback((comprehensiveData) => {
+    if (!comprehensiveData || !isMountedRef.current) return;
+
+    setOverview(comprehensiveData);
+
+    if (comprehensiveData.sales) {
+      setSalesData({
+        dailySales: comprehensiveData.sales.todaySales || 0,
+        weeklySales: comprehensiveData.sales.weeklySales || 0,
+        monthlySales: comprehensiveData.sales.monthlySales || 0,
+        yearlySales: comprehensiveData.sales.yearlySales || 0,
+        totalSales: comprehensiveData.sales.totalSales || 0,
+        totalOrders: comprehensiveData.sales.totalOrders || 0,
+        todayOrders: comprehensiveData.sales.todayOrders || 0,
+        averageOrderValue: comprehensiveData.sales.averageOrderValue || 0,
+        topProduct: comprehensiveData.products?.topProduct?.name || "N/A",
+        topProductQty: comprehensiveData.products?.topProduct?.unitsSold || 0,
+        salesGrowth: comprehensiveData.sales.salesGrowth || {
+          value: 0,
+          isPositive: true,
+          isNeutral: true,
+          text: "0% from last month",
+        },
+        ordersGrowth: comprehensiveData.sales.ordersGrowth || {
+          value: 0,
+          isPositive: true,
+          isNeutral: true,
+          text: "0% from last month",
+        },
+        aovGrowth: comprehensiveData.sales.aovGrowth || {
+          value: 0,
+          isPositive: true,
+          isNeutral: true,
+          text: "0% from last month",
+        },
+      });
+
+      if (comprehensiveData.sales.charts) {
+        setChartData({
+          dailyBreakdown: comprehensiveData.sales.charts.dailyBreakdown || [],
+          dailyLabels: comprehensiveData.sales.charts.dailyLabels || [
+            "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+          ],
+          weeklyBreakdown: comprehensiveData.sales.charts.weeklyBreakdown || [0, 0, 0, 0],
+          quarterlyBreakdown: comprehensiveData.sales.charts.quarterlyBreakdown || [0, 0, 0, 0],
+        });
+      }
+    }
+  }, []);
+
+  // Internal silent data fetcher
   const loadOverviewData = useCallback(
-    async (isManualRefresh = false) => {
+    async ({ isManualRefresh = false } = {}) => {
       if (!storeId) return;
 
       try {
-        if (isManualRefresh) {
+        if (isManualRefresh && isMountedRef.current) {
           setRefreshing(true);
-        } else {
-          setLoading(true);
         }
 
-        // 1. Fetch comprehensive overview from backend API
+        // Fetch comprehensive overview silently from backend API
         const comprehensiveData = await fetchStoreComprehensiveOverview(storeId);
 
         if (comprehensiveData && comprehensiveData.sales) {
-          setOverview(comprehensiveData);
-
-          // Populate sales metrics
-          setSalesData({
-            dailySales: comprehensiveData.sales.todaySales || 0,
-            weeklySales: comprehensiveData.sales.weeklySales || 0,
-            monthlySales: comprehensiveData.sales.monthlySales || 0,
-            yearlySales: comprehensiveData.sales.yearlySales || 0,
-            totalSales: comprehensiveData.sales.totalSales || 0,
-            totalOrders: comprehensiveData.sales.totalOrders || 0,
-            todayOrders: comprehensiveData.sales.todayOrders || 0,
-            averageOrderValue: comprehensiveData.sales.averageOrderValue || 0,
-            topProduct: comprehensiveData.products?.topProduct?.name || "N/A",
-            topProductQty: comprehensiveData.products?.topProduct?.unitsSold || 0,
-            salesGrowth: comprehensiveData.sales.salesGrowth || {
-              value: 0,
-              isPositive: true,
-              isNeutral: true,
-              text: "0% from last month",
-            },
-            ordersGrowth: comprehensiveData.sales.ordersGrowth || {
-              value: 0,
-              isPositive: true,
-              isNeutral: true,
-              text: "0% from last month",
-            },
-            aovGrowth: comprehensiveData.sales.aovGrowth || {
-              value: 0,
-              isPositive: true,
-              isNeutral: true,
-              text: "0% from last month",
-            },
-          });
-
-          // Populate chart datasets
-          if (comprehensiveData.sales.charts) {
-            setChartData({
-              dailyBreakdown: comprehensiveData.sales.charts.dailyBreakdown || [],
-              dailyLabels: comprehensiveData.sales.charts.dailyLabels || [
-                "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
-              ],
-              weeklyBreakdown: comprehensiveData.sales.charts.weeklyBreakdown || [0, 0, 0, 0],
-              quarterlyBreakdown: comprehensiveData.sales.charts.quarterlyBreakdown || [0, 0, 0, 0],
-            });
-          }
+          applyOverviewData(comprehensiveData);
+          setCachedOverview(storeId, comprehensiveData);
         } else {
-          // Fallback to legacy calculation if backend endpoint unavailable
+          // Fallback calculation if backend endpoint is unavailable
           const legacyData = await fetchSalesOverview(storeId);
           const bills = legacyData.bills || [];
 
           const metrics = calculateSalesMetrics(bills);
-          setSalesData(metrics);
-
           const charts = generateChartData(bills);
+
+          if (!isMountedRef.current) return;
+
+          setSalesData(metrics);
           setChartData(charts);
+
+          const fallbackOverview = {
+            sales: {
+              todaySales: metrics.dailySales,
+              weeklySales: metrics.weeklySales,
+              monthlySales: metrics.monthlySales,
+              yearlySales: metrics.yearlySales,
+              totalSales: metrics.totalSales,
+              totalOrders: metrics.totalOrders,
+              todayOrders: 0,
+              averageOrderValue: metrics.averageOrderValue,
+              salesGrowth: metrics.salesGrowth,
+              ordersGrowth: metrics.ordersGrowth,
+              aovGrowth: metrics.aovGrowth,
+              charts,
+            },
+            inventory: {
+              totalQuantity: 0,
+              totalValue: 0,
+              totalCostValue: 0,
+              lowStockCount: 0,
+              outOfStockCount: 0,
+              inStockCount: 0,
+            },
+            products: {
+              totalProducts: 0,
+              totalCategories: 0,
+              topProduct: { name: metrics.topProduct, unitsSold: metrics.topProductQty },
+              criticalStock: [],
+              topSelling: [],
+            },
+            purchases: {
+              totalAmount: 0,
+              dueAmount: 0,
+              totalPurchases: 0,
+              monthlyPurchases: 0,
+              monthlyPurchasesCount: 0,
+            },
+            sellers: {
+              totalSellers: 0,
+              activeSellers: 0,
+              totalDue: 0,
+            },
+          };
+
+          setOverview(fallbackOverview);
+          setCachedOverview(storeId, fallbackOverview);
         }
       } catch (error) {
-        console.error("Failed to load store overview data:", error);
+        console.warn("Silent overview refresh completed with error:", error);
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (isMountedRef.current) {
+          setRefreshing(false);
+        }
       }
     },
-    [storeId]
+    [storeId, applyOverviewData]
   );
 
+  // Silently refresh whenever user enters the overview page or tab gains focus
   useEffect(() => {
-    loadOverviewData();
-  }, [loadOverviewData]);
+    if (!storeId) return;
 
-  if (loading && !overview) {
-    return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="text-center p-8 bg-white/60 backdrop-blur-md rounded-3xl border border-white shadow-sm">
-          <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <h3 className="text-base font-bold text-gray-800">Loading Store Overview</h3>
-          <p className="text-xs text-gray-500 mt-1">Aggregating live sales, inventory, and procurement metrics...</p>
-        </div>
-      </div>
-    );
-  }
+    // Immediately hydrate from memory/sessionStorage if not already set
+    const cached = getCachedOverview(storeId);
+    if (cached) {
+      applyOverviewData(cached);
+    }
+
+    // Silently revalidate data internally in background
+    loadOverviewData();
+
+    // Silently revalidate when user switches back to this tab
+    const handleFocus = () => {
+      loadOverviewData();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [storeId, loadOverviewData, applyOverviewData]);
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 px-2 sm:px-4 md:px-6">
-      <div className="w-full max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen py-2 sm:py-3 px-2 sm:px-4">
+      <div className="w-full max-w-7xl mx-auto space-y-3.5">
         {/* 1. Header Section with Quick Navigation & Action Buttons */}
         <OverviewHeader
           storeId={storeId}
           storeName={currentStore?.name || overview?.store?.name || "Store"}
-          onRefresh={() => loadOverviewData(true)}
+          onRefresh={() => loadOverviewData({ isManualRefresh: true })}
           isRefreshing={refreshing}
         />
 
