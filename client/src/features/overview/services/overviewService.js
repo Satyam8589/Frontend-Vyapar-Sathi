@@ -1,8 +1,40 @@
 import { apiGet } from "@/servies/api";
 
 /**
- * Overview/Sales Service - Fetches real sales analytics data
+ * Overview/Sales Service - Fetches real store analytics & comprehensive overview data
  */
+
+export const formatCurrency = (value = 0) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+};
+
+export const formatNumber = (value = 0) => {
+  return new Intl.NumberFormat("en-IN").format(Number(value) || 0);
+};
+
+export const fetchStoreComprehensiveOverview = async (storeId) => {
+  try {
+    const response = await apiGet(`/analytics/store/${storeId}/overview`);
+    if (response?.data) {
+      return response.data;
+    }
+  } catch (error) {
+    console.warn("Analytics overview endpoint fallback, trying /store overview:", error?.message);
+    try {
+      const fallbackResponse = await apiGet(`/store/${storeId}/overview`);
+      if (fallbackResponse?.data) {
+        return fallbackResponse.data;
+      }
+    } catch (fallbackError) {
+      console.error("Failed to fetch store overview:", fallbackError);
+    }
+  }
+  return null;
+};
 
 export const fetchSalesOverview = async (storeId) => {
   try {
