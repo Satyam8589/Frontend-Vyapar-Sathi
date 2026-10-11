@@ -34,7 +34,7 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
   ];
 
   if (pageSegments.length === 0) {
-    breadcrumbs.push({ label: "Inventory", href: null });
+    breadcrumbs.push({ label: "Overview", href: null });
   } else {
     let cumulativePath = `/storeDashboard/${storeId}`;
 

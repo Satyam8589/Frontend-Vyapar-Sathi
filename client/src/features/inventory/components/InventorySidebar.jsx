@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 
@@ -259,6 +259,65 @@ function NavLink({ label, href, icon, active, onClick }) {
   );
 }
 
+function SubNavLink({ label, href, active, onClick, badge }) {
+  return (
+    <Link href={href} onClick={onClick} style={{ textDecoration: "none" }}>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "5.5px 9px 5.5px 11px",
+          borderRadius: 8,
+          background: active ? "rgba(37, 99, 235, 0.22)" : "transparent",
+          color: active ? "#60a5fa" : "#8ea8cc",
+          fontWeight: active ? 600 : 400,
+          fontSize: 12.5,
+          fontFamily: "'Segoe UI', sans-serif",
+          cursor: "pointer",
+          textAlign: "left",
+          transition: "all 0.15s ease",
+          marginBottom: 1,
+          borderLeft: active ? "2.5px solid #3b82f6" : "2.5px solid transparent",
+        }}
+        onMouseEnter={(e) => {
+          if (!active) {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+            e.currentTarget.style.color = "#dbeafe";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!active) {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "#8ea8cc";
+          }
+        }}
+      >
+        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {label}
+        </span>
+        {badge && (
+          <span
+            style={{
+              fontSize: 9.5,
+              fontWeight: 700,
+              padding: "1px 5px",
+              borderRadius: 4,
+              background: "rgba(59, 130, 246, 0.25)",
+              color: "#93c5fd",
+              border: "1px solid rgba(59, 130, 246, 0.35)",
+              marginLeft: 4,
+            }}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 const getUserInitials = (displayName) => {
   if (!displayName) return "U";
   return displayName
@@ -283,6 +342,53 @@ export default function VyaparSathiSidebar({
     useStorePageContext();
   const { currentStore } = useInventoryContext();
   const [showFullName, setShowFullName] = useState(false);
+
+  const isPurchaseRoute = Boolean(pathname?.includes("/purchases"));
+  const [isPurchasesOpen, setIsPurchasesOpen] = useState(isPurchaseRoute);
+
+  // Auto-expand when navigating to any purchases route
+  useEffect(() => {
+    if (pathname?.includes("/purchases")) {
+      setIsPurchasesOpen(true);
+    }
+  }, [pathname]);
+
+  const purchaseSubItems = useMemo(
+    () => [
+      {
+        label: "All Purchases",
+        href: `/storeDashboard/${storeId}/purchases`,
+        key: "purchases",
+      },
+      {
+        label: "Purchase Orders",
+        href: `/storeDashboard/${storeId}/purchases/orders`,
+        key: "purchases-orders",
+      },
+      {
+        label: "Goods Received (GRN)",
+        href: `/storeDashboard/${storeId}/purchases/grns`,
+        key: "purchases-grns",
+      },
+      {
+        label: "Smart Reorder",
+        href: `/storeDashboard/${storeId}/purchases/smart-reorder`,
+        key: "purchases-reorder",
+        badge: "AI",
+      },
+      {
+        label: "Purchase Analytics",
+        href: `/storeDashboard/${storeId}/purchases/analytics`,
+        key: "purchases-analytics",
+      },
+      {
+        label: "Purchase Reports",
+        href: `/storeDashboard/${storeId}/purchases/reports`,
+        key: "purchases-reports",
+      },
+    ],
+    [storeId],
+  );
 
   const getStoreInitials = (name) => {
     if (!name) return "VS";
@@ -375,16 +481,21 @@ export default function VyaparSathiSidebar({
   );
 
   const getActiveNav = () => {
-    if (pathname.includes("/inventory")) return "inventory";
-    if (pathname.includes("/billing-history")) return "billing-history";
-    if (pathname.includes("/billing")) return "billing";
-    if (pathname.includes("/purchases")) return "purchases";
-    if (pathname.includes("/sellers")) return "sellers";
-    if (pathname.includes("/buyers")) return "buyers";
-    if (pathname.includes("/staff")) return "staff";
-    if (pathname.includes("/analytics")) return "analytics";
-    if (pathname.includes("/ai-dashboard")) return "ai-dashboard";
-    if (pathname.includes("/automations")) return "automations";
+    if (pathname?.includes("/inventory")) return "inventory";
+    if (pathname?.includes("/billing-history")) return "billing-history";
+    if (pathname?.includes("/billing")) return "billing";
+    if (pathname?.includes("/purchases/orders")) return "purchases-orders";
+    if (pathname?.includes("/purchases/grns")) return "purchases-grns";
+    if (pathname?.includes("/purchases/smart-reorder")) return "purchases-reorder";
+    if (pathname?.includes("/purchases/analytics")) return "purchases-analytics";
+    if (pathname?.includes("/purchases/reports")) return "purchases-reports";
+    if (pathname?.includes("/purchases")) return "purchases";
+    if (pathname?.includes("/sellers")) return "sellers";
+    if (pathname?.includes("/buyers")) return "buyers";
+    if (pathname?.includes("/staff")) return "staff";
+    if (pathname?.includes("/analytics")) return "analytics";
+    if (pathname?.includes("/ai-dashboard")) return "ai-dashboard";
+    if (pathname?.includes("/automations")) return "automations";
     return "overview";
   };
 
@@ -513,16 +624,133 @@ export default function VyaparSathiSidebar({
         {/* Management Section */}
         <div style={{ padding: "0 4px", marginBottom: 6 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>MANAGEMENT</p>
-          {navItems.filter(i => ["purchases", "sellers", "buyers", "staff", "analytics"].includes(i.key)).map((item) => (
-            <NavLink
-              key={item.key}
-              label={item.label}
-              href={item.href}
-              icon={icons[item.label]}
-              active={activeNav === item.key}
-              onClick={handleNavClick}
-            />
-          ))}
+          {navItems.filter(i => ["purchases", "sellers", "buyers", "staff", "analytics"].includes(i.key)).map((item) => {
+            if (item.key === "purchases") {
+              const isPurchasesParentActive = activeNav.startsWith("purchases");
+              return (
+                <div key="purchases" style={{ marginBottom: 1 }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderRadius: 10,
+                      background: activeNav === "purchases" ? "#2563eb" : (isPurchasesParentActive ? "#203450" : "transparent"),
+                      color: (activeNav === "purchases" || isPurchasesParentActive) ? "#fff" : "#7a97be",
+                      transition: "background 0.13s, color 0.13s",
+                      marginBottom: 0.5,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeNav !== "purchases" && !isPurchasesParentActive) {
+                        e.currentTarget.style.background = "#223350";
+                        e.currentTarget.style.color = "#b8d0ef";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeNav !== "purchases" && !isPurchasesParentActive) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "#7a97be";
+                      }
+                    }}
+                  >
+                    <Link
+                      href={item.href}
+                      onClick={() => {
+                        handleNavClick();
+                        setIsPurchasesOpen(true);
+                      }}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "6.5px 6px 6.5px 11px",
+                        fontWeight: isPurchasesParentActive ? 600 : 400,
+                        fontSize: 13.5,
+                        fontFamily: "'Segoe UI', sans-serif",
+                        color: "inherit",
+                        textDecoration: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span style={{ opacity: isPurchasesParentActive ? 1 : 0.75, flexShrink: 0, display: "flex" }}>
+                        {icons[item.label]}
+                      </span>
+                      <span style={{ whiteSpace: "nowrap" }}>{item.label}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setIsPurchasesOpen(!isPurchasesOpen);
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "inherit",
+                        cursor: "pointer",
+                        padding: "6.5px 10px 6.5px 4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      aria-label="Toggle purchases sub-options"
+                      title={isPurchasesOpen ? "Collapse purchases" : "Expand purchases"}
+                    >
+                      <ChevronDown
+                        size={14}
+                        style={{
+                          transform: isPurchasesOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.2s ease",
+                          opacity: 0.8,
+                        }}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Expandable sub-options */}
+                  {isPurchasesOpen && (
+                    <div
+                      style={{
+                        marginLeft: 16,
+                        paddingLeft: 8,
+                        borderLeft: "1.5px solid rgba(126, 179, 255, 0.18)",
+                        marginTop: 2,
+                        marginBottom: 4,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                      }}
+                    >
+                      {purchaseSubItems.map((sub) => (
+                        <SubNavLink
+                          key={sub.key}
+                          label={sub.label}
+                          href={sub.href}
+                          active={activeNav === sub.key}
+                          badge={sub.badge}
+                          onClick={handleNavClick}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <NavLink
+                key={item.key}
+                label={item.label}
+                href={item.href}
+                icon={icons[item.label]}
+                active={activeNav === item.key}
+                onClick={handleNavClick}
+              />
+            );
+          })}
         </div>
 
         <div style={{ height: 1, background: "rgba(255,255,255,0.03)", margin: "0 8px 6px 8px" }}></div>
