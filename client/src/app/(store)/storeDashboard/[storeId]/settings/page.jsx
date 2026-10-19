@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 import StoreSettingsModal from "@/features/inventory/components/StoreSettingsModal";
+import { McpConnectionCard } from "@/features/storeDashboard/components";
 
 /**
  * Store Settings Page - Store Details (Left) + UPI Settings (Right)
@@ -282,6 +283,11 @@ const StoreSettingsPage = () => {
               isModal={false}
             />
           </div>
+        </div>
+
+        {/* External AI & Model Context Protocol (MCP) Section */}
+        <div className="mt-8">
+          <McpConnectionCard store={currentStore} />
         </div>
       </div>
     </div>
