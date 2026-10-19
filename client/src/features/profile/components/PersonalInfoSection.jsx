@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function PersonalInfoSection({ user, profileData, onUpdate, saving }) {
   const [name, setName] = useState('');
@@ -115,6 +116,19 @@ export default function PersonalInfoSection({ user, profileData, onUpdate, savin
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-sm" />
               <span>Store Owner / Business Admin</span>
             </div>
+          </div>
+
+          {/* Preferred Language */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-600">
+              Preferred Interface Language / भाषा
+            </label>
+            <div>
+              <LanguageSwitcher variant="pills" />
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium">
+              Changes apply instantly across all dashboards, billing screens, and reports.
+            </p>
           </div>
         </div>
 

@@ -52,12 +52,18 @@ export const streamCopilotResponse = async ({
   storeId,
   message,
   chatId,
+  language,
   onEvent,
   signal,
 }) => {
   const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
   const sessionId = getSessionId();
   const effectiveChatId = chatId || getChatId();
+  const effectiveLanguage =
+    language ||
+    (typeof window !== "undefined" ? localStorage.getItem("preferredLanguage") : null) ||
+    (typeof document !== "undefined" ? document.documentElement.lang : null) ||
+    "en";
 
   const response = await fetch(`${API_BASE_URL}/ai/${storeId}/copilot/stream`, {
     method: "POST",
@@ -65,7 +71,12 @@ export const streamCopilotResponse = async ({
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message, session_id: sessionId, chat_id: effectiveChatId }),
+    body: JSON.stringify({
+      message,
+      session_id: sessionId,
+      chat_id: effectiveChatId,
+      language: effectiveLanguage,
+    }),
     signal,
   });
 

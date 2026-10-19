@@ -8,6 +8,8 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import PageLoader from "@/components/PageLoader";
 import NotificationBell from "@/features/notification/components/NotificationBell";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 const NAV_ITEMS = [
   {
@@ -44,6 +46,7 @@ const getUserInitials = (displayName) => {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [emailExpanded, setEmailExpanded] = useState(false);
@@ -129,7 +132,7 @@ export default function Navbar() {
             <div className="w-12 h-12 md:w-14 md:h-14 transition-transform group-hover:scale-105 flex-shrink-0">
               <Image
                 src="/images/logo/vyapar-sakha-version2-logo.svg"
-                alt="Vyapar Sakha"
+                alt="Vyapar Sathi"
                 width={256}
                 height={256}
                 priority
@@ -144,6 +147,17 @@ export default function Navbar() {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(item.href));
+              const translatedLabel =
+                item.label === "Dashboard"
+                  ? t("navigation.dashboard")
+                  : item.label === "About"
+                  ? t("navigation.about")
+                  : item.label === "Docs"
+                  ? t("navigation.docs")
+                  : item.label === "Features"
+                  ? t("navigation.features")
+                  : item.label;
+
               return (
                 <Link
                   key={item.label}
@@ -155,27 +169,28 @@ export default function Navbar() {
                         : "text-slate-600 font-bold hover:text-blue-600"
                     }`}
                 >
-                  {item.label}
+                  {translatedLabel}
                 </Link>
               );
             })}
           </div>
 
-          {/* Desktop auth */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop auth & language */}
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher align="right" />
             {!isLoading && !isAuthenticated && (
               <>
                 <Link
                   href="/login"
                   className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors"
                 >
-                  Log In
+                  {t("navigation.login")}
                 </Link>
                 <Link
                   href="/signUp"
                   className="btn-primary-yb py-2 px-5 md:px-6 text-sm shadow-sm"
                 >
-                  Get Started
+                  {t("navigation.getStarted")}
                 </Link>
               </>
             )}
@@ -235,7 +250,7 @@ export default function Navbar() {
                         <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        <span>My Profile</span>
+                        <span>{t("navigation.profile")}</span>
                       </Link>
                       <Link
                         href="/settings"
@@ -246,7 +261,7 @@ export default function Navbar() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>Platform Settings</span>
+                        <span>{t("navigation.platformSettings")}</span>
                       </Link>
                     </div>
 
@@ -254,12 +269,13 @@ export default function Navbar() {
                       <button
                         onClick={handleLogout}
                         disabled={isSubmitting}
+                        aria-label="Logout"
                         className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-70"
                       >
                         <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
-                        <span>Logout</span>
+                        <span>{t("navigation.logout")}</span>
                       </button>
                     </div>
                   </div>
@@ -385,7 +401,15 @@ export default function Navbar() {
                       </svg>
                     </span>
                     <span className="tracking-wide uppercase text-xs font-black">
-                      {item.label}
+                      {item.label === "Dashboard"
+                        ? t("navigation.dashboard")
+                        : item.label === "About"
+                        ? t("navigation.about")
+                        : item.label === "Docs"
+                        ? t("navigation.docs")
+                        : item.label === "Features"
+                        ? t("navigation.features")
+                        : item.label}
                     </span>
                     {isActive && (
                       <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
@@ -395,8 +419,16 @@ export default function Navbar() {
               })}
             </nav>
 
+            {/* Mobile Language Switcher */}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Language
+              </span>
+              <LanguageSwitcher variant="pills" className="w-full justify-center" />
+            </div>
+
             {/* Bottom auth section */}
-            <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
+            <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
               {!isLoading && !isAuthenticated && (
                 <>
                   <Link
@@ -404,14 +436,14 @@ export default function Navbar() {
                     onClick={close}
                     className="flex items-center justify-center w-full py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
                   >
-                    Log In
+                    {t("navigation.login")}
                   </Link>
                   <Link
                     href="/signUp"
                     onClick={close}
                     className="flex items-center justify-center w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-blue-600 text-white font-black text-sm shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
                   >
-                    GET STARTED →
+                    {t("navigation.getStarted")} →
                   </Link>
                 </>
               )}
@@ -464,7 +496,7 @@ export default function Navbar() {
                       <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      <span>Profile</span>
+                      <span>{t("navigation.profile")}</span>
                     </Link>
                     <Link
                       href="/settings"
@@ -475,7 +507,7 @@ export default function Navbar() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span>Settings</span>
+                      <span>{t("navigation.platformSettings")}</span>
                     </Link>
                   </div>
 
@@ -483,7 +515,8 @@ export default function Navbar() {
                   <button
                     onClick={handleLogout}
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all disabled:opacity-50"
+                    aria-label="Logout"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold hover:bg-red-500/20 transition-all disabled:opacity-50"
                   >
                     <svg
                       className="w-4 h-4"
@@ -498,7 +531,7 @@ export default function Navbar() {
                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                       />
                     </svg>
-                    {isSubmitting ? "Logging out..." : "Logout"}
+                    {isSubmitting ? t("common.loading") : t("navigation.logout")}
                   </button>
                 </div>
               )}

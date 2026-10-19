@@ -5,16 +5,46 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import NotificationBell from "@/features/notification/components/NotificationBell";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/i18n/LanguageContext";
 
-const formatSegmentLabel = (segment) =>
-  decodeURIComponent(segment)
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+const formatSegmentLabel = (segment, t) => {
+  const seg = decodeURIComponent(segment).toLowerCase();
+  switch (seg) {
+    case "inventory":
+      return t("navigation.inventory");
+    case "billing":
+      return t("navigation.billing");
+    case "purchases":
+      return t("navigation.purchases");
+    case "buyers":
+      return t("navigation.buyers");
+    case "sellers":
+      return t("navigation.sellers");
+    case "staff":
+      return t("navigation.staff");
+    case "analytics":
+      return t("navigation.analytics");
+    case "automations":
+      return t("navigation.automations");
+    case "settings":
+      return t("navigation.settings");
+    case "ai-dashboard":
+      return t("navigation.aiCopilot");
+    case "overview":
+      return t("navigation.overview");
+    default:
+      return seg
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+};
 
 export default function StoreBreadcrumb({ isResponsive = false }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toggleStoreSidebar, storeSidebarOpen } = useStorePageContext();
+  const { t } = useTranslation();
 
   const allSegments = pathname.split("/").filter(Boolean);
   const storeDashboardIndex = allSegments.indexOf("storeDashboard");
@@ -28,20 +58,20 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
 
   const breadcrumbs = [
     {
-      label: "Store Dashboard",
+      label: t("navigation.storeDashboard"),
       href: `/storeDashboard/${storeId}`,
     },
   ];
 
   if (pageSegments.length === 0) {
-    breadcrumbs.push({ label: "Overview", href: null });
+    breadcrumbs.push({ label: t("navigation.overview"), href: null });
   } else {
     let cumulativePath = `/storeDashboard/${storeId}`;
 
     pageSegments.forEach((segment, index) => {
       cumulativePath += `/${segment}`;
       breadcrumbs.push({
-        label: formatSegmentLabel(segment),
+        label: formatSegmentLabel(segment, t),
         href: index === pageSegments.length - 1 ? null : cumulativePath,
       });
     });
@@ -118,7 +148,8 @@ export default function StoreBreadcrumb({ isResponsive = false }) {
           })}
         </nav>
         
-        <div className="ml-auto flex shrink-0 items-center">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <LanguageSwitcher align="right" />
           <NotificationBell />
         </div>
       </div>

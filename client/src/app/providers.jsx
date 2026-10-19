@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Background from "@/components/Background";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { StorePageProvider } from "@/features/store/context/storePageContext";
+import { LanguageProvider } from "@/i18n/LanguageContext";
 import SwipeToCloseToast from "@/components/SwipeToCloseToast";
 import { FloatingChatBot } from "@/features/aiDashboard/components";
 
@@ -18,7 +19,8 @@ export default function Providers({ children }) {
 
   return (
     <AuthProvider>
-      <StorePageProvider>
+      <LanguageProvider>
+        <StorePageProvider>
         <Background />
         {showNavbar && <Navbar />}
         <div
@@ -70,7 +72,8 @@ export default function Providers({ children }) {
             </SwipeToCloseToast>
           )}
         </Toaster>
-      </StorePageProvider>
+        </StorePageProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

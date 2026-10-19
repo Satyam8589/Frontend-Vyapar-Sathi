@@ -145,12 +145,79 @@ const formatDate = (dateString) => {
   });
 };
 
+const PDF_LABELS = {
+  en: {
+    taxInvoice: "TAX INVOICE",
+    invoiceDetails: "INVOICE DETAILS",
+    invoiceNo: "Invoice No:",
+    dateTime: "Date & Time:",
+    payment: "Payment:",
+    billedTo: "BILLED TO (CUSTOMER)",
+    itemDesc: "ITEM DESCRIPTION",
+    qty: "QTY",
+    rate: "RATE (Rs.)",
+    gst: "GST",
+    amount: "AMOUNT (Rs.)",
+    subtotal: "Sub Total:",
+    discount: "Discount:",
+    totalTaxable: "Total Taxable Value:",
+    grandTotal: "GRAND TOTAL:",
+    amountInWords: "Amount in words:",
+    termsConditions: "TERMS & CONDITIONS",
+    thankYou: "THANK YOU FOR SHOPPING WITH US!",
+  },
+  hi: {
+    taxInvoice: "टैक्स इनवॉइस",
+    invoiceDetails: "इनवॉइस विवरण (DETAILS)",
+    invoiceNo: "बिल नंबर / Inv No:",
+    dateTime: "तारीख / Date:",
+    payment: "भुगतान / Payment:",
+    billedTo: "ग्राहक विवरण (BILLED TO)",
+    itemDesc: "सामान विवरण (ITEM DESC)",
+    qty: "मात्रा (QTY)",
+    rate: "दर / RATE (Rs.)",
+    gst: "जीएसटी (GST)",
+    amount: "रकम / AMOUNT (Rs.)",
+    subtotal: "उप-कुल / Sub Total:",
+    discount: "छूट / Discount:",
+    totalTaxable: "कर योग्य मूल्य / Taxable:",
+    grandTotal: "कुल देय / GRAND TOTAL:",
+    amountInWords: "शब्दों में / In words:",
+    termsConditions: "नियम व शर्तें (TERMS)",
+    thankYou: "हमारे साथ व्यापार करने के लिए धन्यवाद!",
+  },
+  bn: {
+    taxInvoice: "ট্যাক্স ইনভয়েস",
+    invoiceDetails: "চালান বিবরণ (DETAILS)",
+    invoiceNo: "চালান নং / Inv No:",
+    dateTime: "তারিখ / Date:",
+    payment: "পেমেন্ট / Payment:",
+    billedTo: "গ্রাহক তথ্য (BILLED TO)",
+    itemDesc: "পণ্যের বিবরণ (ITEM DESC)",
+    qty: "পরিমাণ (QTY)",
+    rate: "দর / RATE (Rs.)",
+    gst: "জিএসটি (GST)",
+    amount: "মোট পরিমাণ (Rs.)",
+    subtotal: "উপ-মোট / Sub Total:",
+    discount: "ছাড় / Discount:",
+    totalTaxable: "করযোগ্য মূল্য / Taxable:",
+    grandTotal: "সর্বমোট / GRAND TOTAL:",
+    amountInWords: "কথায় / In words:",
+    termsConditions: "শর্তাবলী (TERMS)",
+    thankYou: "আমাদের সাথে কেনাকাটা করার জন্য ধন্যবাদ!",
+  },
+};
+
 /**
  * Generate a highly realistic & professional GST Tax Invoice PDF
  * @param {Object} billData - The bill data containing store, products, customer, and payment info
+ * @param {string} [locale='en'] - Active user locale (en, hi, bn)
  * @returns {jsPDF} - The generated PDF document
  */
-export const generateBillPDF = (billData) => {
+export const generateBillPDF = (billData, locale = "en") => {
+  const activeLocale = billData.locale || locale || "en";
+  const labels = PDF_LABELS[activeLocale] || PDF_LABELS.en;
+
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -343,11 +410,11 @@ export const generateBillPDF = (billData) => {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   doc.text("#", colX.sno, yPos + 5.5);
-  doc.text("ITEM DESCRIPTION", colX.item, yPos + 5.5);
-  doc.text("QTY", colX.qty, yPos + 5.5, { align: "center" });
-  doc.text("RATE (Rs.)", colX.price, yPos + 5.5, { align: "right" });
-  doc.text("GST", colX.gst, yPos + 5.5, { align: "center" });
-  doc.text("AMOUNT (Rs.)", colX.total, yPos + 5.5, { align: "right" });
+  doc.text(labels.itemDesc, colX.item, yPos + 5.5);
+  doc.text(labels.qty, colX.qty, yPos + 5.5, { align: "center" });
+  doc.text(labels.rate, colX.price, yPos + 5.5, { align: "right" });
+  doc.text(labels.gst, colX.gst, yPos + 5.5, { align: "center" });
+  doc.text(labels.amount, colX.total, yPos + 5.5, { align: "right" });
 
   yPos += 8;
 
@@ -434,7 +501,7 @@ export const generateBillPDF = (billData) => {
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...secondaryColor);
-  doc.text("AMOUNT IN WORDS:", summaryLeftX + 3, yPos + 5);
+  doc.text(labels.amountInWords, summaryLeftX + 3, yPos + 5);
 
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "bold");
@@ -450,14 +517,14 @@ export const generateBillPDF = (billData) => {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...secondaryColor);
 
-  doc.text("Subtotal:", summaryRightX, figY);
+  doc.text(labels.subtotal, summaryRightX, figY);
   doc.text(`Rs. ${subtotal.toFixed(2)}`, pageWidth - margin, figY, { align: "right" });
 
   if (discountAmount > 0) {
     figY += 4.5;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(16, 185, 129); // Emerald 500
-    doc.text("Discount:", summaryRightX, figY);
+    doc.text(labels.discount, summaryRightX, figY);
     doc.text(`- Rs. ${discountAmount.toFixed(2)}`, pageWidth - margin, figY, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...secondaryColor);
@@ -477,7 +544,7 @@ export const generateBillPDF = (billData) => {
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.text("GRAND TOTAL:", summaryRightX + 2, figY + 1.5);
+  doc.text(labels.grandTotal, summaryRightX + 2, figY + 1.5);
   doc.text(`Rs. ${totalAmount.toFixed(2)}`, pageWidth - margin - 2, figY + 1.5, { align: "right" });
 
   yPos += 28;

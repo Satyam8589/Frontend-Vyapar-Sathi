@@ -5,6 +5,8 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useAuthContext } from '@/features/auth/context/AuthContext';
 import PageLoader from '@/components/PageLoader';
+import { useLanguage, useTranslation } from '@/i18n/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const DEFAULT_PREFERENCES = {
   language: 'en',
@@ -18,6 +20,8 @@ const DEFAULT_PREFERENCES = {
 
 export default function PlatformSettingsPage() {
   const { user, isLoading: authLoading } = useAuthContext();
+  const { locale, setLocale } = useLanguage();
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -114,16 +118,20 @@ export default function PlatformSettingsPage() {
               {/* Language */}
               <div className="space-y-2">
                 <label className="block text-xs font-black uppercase tracking-wider text-slate-600">
-                  Primary Language
+                  {t('settings.selectLanguage')}
                 </label>
                 <select
-                  value={preferences.language}
-                  onChange={(e) => handleChange('language', e.target.value)}
+                  value={locale}
+                  onChange={(e) => {
+                    const nextLang = e.target.value;
+                    handleChange('language', nextLang);
+                    setLocale(nextLang);
+                  }}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
                 >
-                  <option value="en">English (Default)</option>
-                  <option value="hi">हिन्दी (Hindi — Bharat First)</option>
-                  <option value="hinglish">Hinglish (Retail Mix)</option>
+                  <option value="en">English</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="bn">বাংলা (Bengali)</option>
                 </select>
               </div>
 

@@ -7,6 +7,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 const icons = {
   Inventory: (
@@ -343,6 +344,8 @@ export default function VyaparSathiSidebar({
   const { currentStore } = useInventoryContext();
   const [showFullName, setShowFullName] = useState(false);
 
+  const { t } = useTranslation();
+
   const isPurchaseRoute = Boolean(pathname?.includes("/purchases"));
   const [isPurchasesOpen, setIsPurchasesOpen] = useState(isPurchaseRoute);
 
@@ -356,38 +359,38 @@ export default function VyaparSathiSidebar({
   const purchaseSubItems = useMemo(
     () => [
       {
-        label: "All Purchases",
+        label: t("purchases.title"),
         href: `/storeDashboard/${storeId}/purchases`,
         key: "purchases",
       },
       {
-        label: "Purchase Orders",
+        label: t("purchases.purchaseOrders"),
         href: `/storeDashboard/${storeId}/purchases/orders`,
         key: "purchases-orders",
       },
       {
-        label: "Goods Received (GRN)",
+        label: t("purchases.grn"),
         href: `/storeDashboard/${storeId}/purchases/grns`,
         key: "purchases-grns",
       },
       {
-        label: "Smart Reorder",
+        label: t("purchases.smartReorder"),
         href: `/storeDashboard/${storeId}/purchases/smart-reorder`,
         key: "purchases-reorder",
         badge: "AI",
       },
       {
-        label: "Purchase Analytics",
+        label: t("analytics.title"),
         href: `/storeDashboard/${storeId}/purchases/analytics`,
         key: "purchases-analytics",
       },
       {
-        label: "Purchase Reports",
+        label: t("purchases.subtitle"),
         href: `/storeDashboard/${storeId}/purchases/reports`,
         key: "purchases-reports",
       },
     ],
-    [storeId],
+    [storeId, t],
   );
 
   const getStoreInitials = (name) => {
@@ -422,62 +425,62 @@ export default function VyaparSathiSidebar({
   const navItems = useMemo(
     () => [
       {
-        label: "Overview",
+        label: t("navigation.overview"),
         href: `/storeDashboard/${storeId}`,
         key: "overview",
       },
       {
-        label: "Inventory",
+        label: t("navigation.inventory"),
         href: `/storeDashboard/${storeId}/inventory`,
         key: "inventory",
       },
       {
-        label: "Billing",
+        label: t("navigation.billing"),
         href: `/storeDashboard/${storeId}/billing`,
         key: "billing",
       },
       {
-        label: "Billing History",
+        label: t("navigation.billingHistory"),
         href: `/storeDashboard/${storeId}/billing-history`,
         key: "billing-history",
       },
       {
-        label: "Staff",
+        label: t("navigation.staff"),
         href: `/storeDashboard/${storeId}/staff`,
         key: "staff",
       },
       {
-        label: "Purchases",
+        label: t("navigation.purchases"),
         href: `/storeDashboard/${storeId}/purchases`,
         key: "purchases",
       },
       {
-        label: "Sellers",
+        label: t("navigation.sellers"),
         href: `/storeDashboard/${storeId}/sellers`,
         key: "sellers",
       },
       {
-        label: "Buyers",
+        label: t("navigation.buyers"),
         href: `/storeDashboard/${storeId}/buyers`,
         key: "buyers",
       },
       {
-        label: "Analytics",
+        label: t("navigation.analytics"),
         href: `/storeDashboard/${storeId}/analytics`,
         key: "analytics",
       },
       {
-        label: "AI Dashboard",
+        label: t("navigation.aiCopilot"),
         href: `/storeDashboard/${storeId}/ai-dashboard`,
         key: "ai-dashboard",
       },
       {
-        label: "Automations",
+        label: t("navigation.automations"),
         href: `/storeDashboard/${storeId}/automations`,
         key: "automations",
       },
     ],
-    [storeId],
+    [storeId, t],
   );
 
   const getActiveNav = () => {
@@ -889,7 +892,7 @@ export default function VyaparSathiSidebar({
           <span style={{ opacity: 0.75, flexShrink: 0, display: "flex" }}>
             {icons.Settings}
           </span>
-          <span style={{ whiteSpace: "nowrap" }}>Settings</span>
+          <span style={{ whiteSpace: "nowrap" }}>{t("navigation.settings")}</span>
         </button>
       </Link>
 
@@ -929,7 +932,7 @@ export default function VyaparSathiSidebar({
         <span style={{ opacity: 0.85, flexShrink: 0, display: "flex" }}>
           {icons.Logout}
         </span>
-        <span style={{ whiteSpace: "nowrap" }}>Logout</span>
+        <span style={{ whiteSpace: "nowrap" }}>{t("navigation.logout")}</span>
       </button>
     </>
   );
